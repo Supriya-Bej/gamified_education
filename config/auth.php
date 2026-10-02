@@ -43,11 +43,17 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-        
+
         // EcoQuest Student Guard
         'student' => [
             'driver' => 'session',
             'provider' => 'student_users',
+        ],
+
+        // EcoQuest Admin Guard
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'admins',
         ],
     ],
 
@@ -81,6 +87,12 @@ return [
 
         // EcoQuest Student User
         'student_users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\UserRegister::class,
+        ],
+
+        // EcoQuest Admin User
+        'admins' => [
             'driver' => 'eloquent',
             'model' => App\Models\UserRegister::class,
         ],

@@ -30,10 +30,7 @@ class UserRegister extends Authenticatable
 
     public function progress()
     {
-        return $this->hasOne(
-            StudentProgress::class,
-            'user_id'
-        );
+        return $this->hasOne(StudentProgress::class, 'user_id');
     }
 
     public function taskCompletions()

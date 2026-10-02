@@ -3070,31 +3070,11 @@
                                  REAL START QUEST FORM
                             ================================================== -->
 
-                            <form action="{{ route('student.task.complete', $task->id) }}"
-                                  method="POST"
-                                  class="quest-action-form">
-
-                                @csrf
-
-
-                                <button type="submit"
-                                        class="action-btn-outline">
-
-
-                                    <span>
-
-                                        Start Quest
-
-                                    </span>
-
-
-                                    <i class="bi bi-chevron-right"></i>
-
-
-                                </button>
-
-                            </form>
-
+                            <a href="{{ route('student.game.play', $task->id) }}"
+                               class="action-btn-outline text-decoration-none">
+                                <span>Start Quest</span>
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
 
                         </div>
 
