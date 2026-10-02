@@ -5,32 +5,34 @@
 
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
     <title>
-        {{ $aiProfile['dashboard_title'] ?? 'Student Dashboard' }} | EcoQuest
+        {{ $aiProfile['dashboard_title'] ?? 'Student Dashboard' }}
+        | EcoQuest
     </title>
 
 
-    <!-- =========================================================
+    {{-- =====================================================
          BOOTSTRAP
-    ========================================================== -->
+    ====================================================== --}}
 
     <link rel="stylesheet"
           href="{{ asset('Asset/Bootstrap-5/css/bootstrap.min.css') }}">
 
 
-    <!-- =========================================================
+    {{-- =====================================================
          BOOTSTRAP ICONS
-    ========================================================== -->
+    ====================================================== --}}
 
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 
-    <!-- =========================================================
+    {{-- =====================================================
          GOOGLE FONTS
-    ========================================================== -->
+    ====================================================== --}}
 
     <link rel="preconnect"
           href="https://fonts.googleapis.com">
@@ -43,21 +45,50 @@
           rel="stylesheet">
 
 
-    @if(!empty($themeConfig['font_url']))
-
-        <link href="{{ $themeConfig['font_url'] }}"
-              rel="stylesheet">
-
-    @endif
-
-
-    <!-- =========================================================
+    {{-- =====================================================
          THEME DATA
-    ========================================================== -->
+    ====================================================== --}}
 
     @php
 
-        $theme = $themeKey ?? 'general';
+        /*
+        |--------------------------------------------------------------------------
+        | SAFE AI PROFILE
+        |--------------------------------------------------------------------------
+        */
+
+        $aiProfile = is_array($aiProfile ?? null)
+            ? $aiProfile
+            : [];
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | SAFE THEME CONFIG
+        |--------------------------------------------------------------------------
+        */
+
+        $themeConfig = is_array($themeConfig ?? null)
+            ? $themeConfig
+            : [];
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | THEME KEY
+        |--------------------------------------------------------------------------
+        */
+
+        $theme = strtolower(
+            trim($themeKey ?? 'general')
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CHESS CHECK
+        |--------------------------------------------------------------------------
+        */
 
         $isChess = ($theme === 'chess');
 
@@ -65,86 +96,101 @@
         /*
         |--------------------------------------------------------------------------
         | THEME COLORS
+        |
+        | IMPORTANT:
+        |
+        | First use learning_themes.php
+        | Then AI profile
+        | Then fallback.
         |--------------------------------------------------------------------------
         */
 
+
         $primaryColor =
             $themeConfig['primary']
-            ?? ($aiProfile['primary_color'] ?? '#0F172A');
+            ?? $aiProfile['primary_color']
+            ?? ($isChess ? '#08080A' : '#0F172A');
 
 
         $secondaryColor =
             $themeConfig['secondary']
-            ?? ($aiProfile['secondary_color'] ?? '#38BDF8');
+            ?? $aiProfile['secondary_color']
+            ?? ($isChess ? '#E5E7EB' : '#38BDF8');
 
 
         $accentColor =
             $themeConfig['accent']
-            ?? ($aiProfile['accent_color'] ?? '#22D3EE');
+            ?? $aiProfile['accent_color']
+            ?? ($isChess ? '#94A3B8' : '#22D3EE');
 
 
         $backgroundColor =
             $themeConfig['background']
+            ?? $aiProfile['background_color']
             ?? ($isChess ? '#08080A' : '#0F172A');
 
 
         $surfaceColor =
             $themeConfig['surface']
+            ?? $aiProfile['surface_color']
             ?? ($isChess ? '#121216' : '#1E293B');
 
 
         $surfaceAlt =
             $themeConfig['surface_alt']
+            ?? $aiProfile['surface_alt_color']
             ?? ($isChess ? '#1A1A22' : '#27354D');
 
 
         $borderColor =
             $themeConfig['border']
-            ?? ($isChess ? '#2E2E3E' : 'rgba(255,255,255,0.10)');
+            ?? $aiProfile['border_color']
+            ?? (
+                $isChess
+                    ? '#2E2E3E'
+                    : 'rgba(255,255,255,0.10)'
+            );
 
 
         $textColor =
             $themeConfig['text']
+            ?? $aiProfile['text_color']
             ?? '#F8FAFC';
 
 
         $mutedColor =
             $themeConfig['muted']
+            ?? $aiProfile['muted_color']
             ?? '#94A3B8';
 
 
         $glowColor =
             $themeConfig['glow']
+            ?? $aiProfile['glow_color']
             ?? 'rgba(56,189,248,0.25)';
 
 
         /*
         |--------------------------------------------------------------------------
-        | THEME ICONS
+        | ICON
         |--------------------------------------------------------------------------
         */
 
         $themeIcon =
             $themeConfig['icon']
+            ?? $aiProfile['theme_icon']
             ?? ($isChess ? '♞' : '✦');
-
-
-        $decorations =
-            $themeConfig['decorations']
-            ?? ($isChess
-                ? ['♔','♕','♖','♗','♘','♙']
-                : ['✦','★','◆']
-            );
 
 
         /*
         |--------------------------------------------------------------------------
-        | FONTS
+        | FONT
         |--------------------------------------------------------------------------
         */
 
         $fontDisplay =
             $themeConfig['font_display']
+            ?? $aiProfile['font_display']
             ?? ($isChess ? 'Cinzel' : 'Plus Jakarta Sans');
 
 
@@ -156,24 +202,26 @@
 
         $rankTitle =
             $aiProfile['rank_title']
-            ?? ($themeConfig['gamified_rank'] ?? 'Explorer');
+            ?? $themeConfig['gamified_rank']
+            ?? 'Explorer';
 
 
         $dashboardTitle =
             $aiProfile['dashboard_title']
-            ?? ($themeConfig['title'] ?? 'Learning Arena');
+            ?? $themeConfig['title']
+            ?? 'Learning Arena';
 
 
         $tagline =
             $aiProfile['tagline']
-            ?? ($themeConfig['subtitle'] ?? 'Your personalized learning world');
+            ?? $themeConfig['subtitle']
+            ?? 'Your personalized learning world';
 
 
         $motto =
             $aiProfile['motto']
-            ?? ($themeConfig['gamified_motto']
-                ?? 'Every step forward makes you stronger.'
-            );
+            ?? $themeConfig['gamified_motto']
+            ?? 'Every step forward makes you stronger.';
 
 
         $welcomeMessage =
@@ -203,23 +251,20 @@
 
         /*
         |--------------------------------------------------------------------------
-        | XP / PROGRESS
+        | XP
         |--------------------------------------------------------------------------
         */
 
         $userXp =
-            $progress->total_xp
-            ?? 0;
+            $progress->total_xp ?? 0;
 
 
         $userLevel =
-            $progress->level
-            ?? 1;
+            $progress->level ?? 1;
 
 
         $completedTasks =
-            $progress->completed_tasks
-            ?? 0;
+            $progress->completed_tasks ?? 0;
 
 
         /*
@@ -248,13 +293,17 @@
 
 
 
+    {{-- =====================================================
+         THEME CSS
+    ====================================================== --}}
+
     <style>
 
-        /* =========================================================
-           ROOT THEME VARIABLES
-        ========================================================== */
-
         :root {
+
+            /* IMPORTANT:
+               These MUST be normal Blade expressions.
+            */
 
             --primary: {{ $primaryColor }};
 
@@ -276,36 +325,28 @@
 
             --glow: {{ $glowColor }};
 
+
             --font-display:
                 '{{ $fontDisplay }}',
                 serif,
                 sans-serif;
 
+
             --font-body:
                 'Plus Jakarta Sans',
                 system-ui,
-                -apple-system,
                 sans-serif;
 
         }
 
 
-
-        /* =========================================================
-           GLOBAL
-        ========================================================== */
-
         * {
-
             box-sizing: border-box;
-
         }
 
 
         html {
-
             scroll-behavior: smooth;
-
         }
 
 
@@ -320,11 +361,13 @@
             color: var(--text-main);
 
             background:
+
                 radial-gradient(
                     circle at top right,
                     var(--glow),
                     transparent 35%
                 ),
+
                 var(--page-bg);
 
             overflow-x: hidden;
@@ -332,10 +375,14 @@
         }
 
 
+        a {
+            text-decoration: none;
+        }
 
-        /* =========================================================
+
+        /* =====================================================
            CHESS BACKGROUND
-        ========================================================== */
+        ====================================================== */
 
         .chess-grid-bg {
 
@@ -347,7 +394,7 @@
 
             z-index: 0;
 
-            opacity: 0.045;
+            opacity: .045;
 
             background-image:
 
@@ -386,10 +433,9 @@
         }
 
 
-
-        /* =========================================================
-           FLOATING DECORATIONS
-        ========================================================== */
+        /* =====================================================
+           FLOATING CHESS PIECES
+        ====================================================== */
 
         .floating-piece {
 
@@ -401,9 +447,7 @@
 
             color: var(--secondary);
 
-            opacity: 0.045;
-
-            font-family: var(--font-display);
+            opacity: .05;
 
             user-select: none;
 
@@ -412,11 +456,11 @@
 
         .piece-1 {
 
-            top: 7%;
+            top: 8%;
 
-            right: 4%;
+            right: 5%;
 
-            font-size: 9rem;
+            font-size: 8rem;
 
             transform: rotate(12deg);
 
@@ -425,13 +469,13 @@
 
         .piece-2 {
 
-            bottom: 12%;
+            bottom: 10%;
 
-            left: 19%;
+            left: 20%;
 
-            font-size: 7.5rem;
+            font-size: 7rem;
 
-            transform: rotate(-15deg);
+            transform: rotate(-12deg);
 
         }
 
@@ -440,11 +484,9 @@
 
             top: 48%;
 
-            right: 22%;
+            right: 20%;
 
             font-size: 5rem;
-
-            transform: rotate(8deg);
 
         }
 
@@ -453,81 +495,16 @@
 
             bottom: 25%;
 
-            right: 6%;
+            right: 5%;
 
             font-size: 8rem;
 
-            transform: rotate(-10deg);
-
         }
 
 
-
-        /* =========================================================
-           AMBIENT GLOW
-        ========================================================== */
-
-        .ambient-glow {
-
-            position: fixed;
-
-            border-radius: 50%;
-
-            pointer-events: none;
-
-            filter: blur(120px);
-
-            z-index: 0;
-
-            opacity: 0.12;
-
-        }
-
-
-        .glow-1 {
-
-            width: 450px;
-
-            height: 450px;
-
-            top: -120px;
-
-            right: -80px;
-
-            background:
-                radial-gradient(
-                    circle,
-                    var(--secondary),
-                    transparent 70%
-                );
-
-        }
-
-
-        .glow-2 {
-
-            width: 400px;
-
-            height: 400px;
-
-            bottom: -80px;
-
-            left: 180px;
-
-            background:
-                radial-gradient(
-                    circle,
-                    var(--accent),
-                    transparent 70%
-                );
-
-        }
-
-
-
-        /* =========================================================
+        /* =====================================================
            SIDEBAR
-        ========================================================== */
+        ====================================================== */
 
         .sidebar {
 
@@ -541,7 +518,10 @@
 
             width: 260px;
 
+            padding: 24px 18px;
+
             background:
+
                 linear-gradient(
                     180deg,
                     var(--surface),
@@ -551,23 +531,18 @@
             border-right:
                 1px solid var(--border);
 
-            padding: 24px 18px;
-
-            z-index: 100;
+            z-index: 1000;
 
             display: flex;
 
             flex-direction: column;
 
+            overflow-y: auto;
+
             backdrop-filter: blur(18px);
 
         }
 
-
-
-        /* =========================================================
-           BRAND
-        ========================================================== */
 
         .brand {
 
@@ -577,31 +552,25 @@
 
             gap: 12px;
 
-            text-decoration: none;
+            padding: 5px 8px 22px;
+
+            margin-bottom: 18px;
 
             color: var(--text-main);
 
-            margin-bottom: 32px;
-
-            padding: 8px 10px;
+            border-bottom:
+                1px solid var(--border);
 
         }
 
 
         .brand-icon {
 
-            width: 42px;
+            width: 44px;
 
-            height: 42px;
+            height: 44px;
 
-            border-radius: 12px;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--secondary),
-                    var(--accent)
-                );
+            border-radius: 13px;
 
             display: flex;
 
@@ -609,9 +578,17 @@
 
             justify-content: center;
 
-            font-size: 1.35rem;
+            font-size: 1.4rem;
 
             color: var(--page-bg);
+
+            background:
+
+                linear-gradient(
+                    135deg,
+                    var(--secondary),
+                    var(--accent)
+                );
 
             box-shadow:
                 0 8px 25px var(--glow);
@@ -619,42 +596,46 @@
         }
 
 
-        .brand-text {
+        .brand-title {
 
-            font-size: 1.25rem;
+            font-weight: 900;
 
-            font-weight: 800;
+            font-size: 1.1rem;
 
         }
 
 
-        .brand-text span {
+        .brand-title span {
 
             color: var(--secondary);
 
         }
 
 
+        .brand-subtitle {
 
-        /* =========================================================
-           SIDEBAR LINKS
-        ========================================================== */
-
-        .nav-category {
-
-            font-size: 0.7rem;
-
-            text-transform: uppercase;
-
-            letter-spacing: 1.4px;
-
-            font-weight: 700;
+            font-size: .68rem;
 
             color: var(--text-muted);
 
-            padding: 8px 12px;
+            margin-top: 2px;
 
-            margin-top: 10px;
+        }
+
+
+        .nav-category {
+
+            font-size: .68rem;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1.3px;
+
+            font-weight: 800;
+
+            color: var(--text-muted);
+
+            padding: 9px 12px;
 
         }
 
@@ -667,21 +648,27 @@
 
             gap: 12px;
 
-            padding: 11px 14px;
+            width: 100%;
 
-            border-radius: 11px;
+            padding: 11px 13px;
+
+            margin-bottom: 5px;
+
+            border-radius: 10px;
+
+            border: 0;
+
+            background: transparent;
 
             color: var(--text-muted);
 
-            text-decoration: none;
-
-            font-size: 0.92rem;
+            font-size: .87rem;
 
             font-weight: 600;
 
-            transition: all 0.25s ease;
+            text-decoration: none;
 
-            margin-bottom: 4px;
+            transition: .2s ease;
 
         }
 
@@ -692,37 +679,128 @@
 
             background: var(--surface-alt);
 
-            transform: translateX(3px);
+            transform: translateX(2px);
 
         }
 
 
         .side-link.active {
 
-            color: var(--secondary);
+            color: var(--page-bg);
 
-            background: var(--surface-alt);
+            background:
 
-            border:
-                1px solid var(--secondary);
+                linear-gradient(
+                    135deg,
+                    var(--secondary),
+                    var(--accent)
+                );
 
             box-shadow:
-                0 0 18px var(--glow);
+                0 8px 20px var(--glow);
 
         }
 
 
         .side-link i {
 
+            width: 20px;
+
+            text-align: center;
+
+            font-size: 1rem;
+
+        }
+
+
+        .identity-box {
+
+            margin-top: 15px;
+
+            padding: 13px;
+
+            border-radius: 12px;
+
+            background: var(--surface-alt);
+
+            border:
+                1px solid var(--border);
+
+        }
+
+
+        .identity-top {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+        }
+
+
+        .identity-icon {
+
+            color: var(--secondary);
+
             font-size: 1.1rem;
 
         }
 
 
+        .identity-rank {
 
-        /* =========================================================
+            color: var(--secondary);
+
+            font-size: .8rem;
+
+            font-weight: 800;
+
+        }
+
+
+        .identity-theme {
+
+            color: var(--text-muted);
+
+            font-size: .7rem;
+
+            margin-top: 5px;
+
+        }
+
+
+        .sidebar-bottom {
+
+            margin-top: auto;
+
+            padding-top: 15px;
+
+        }
+
+
+        .logout-link {
+
+            color: #ef4444 !important;
+
+            cursor: pointer;
+
+            text-align: left;
+
+        }
+
+
+        .logout-link:hover {
+
+            background: rgba(239,68,68,.08);
+
+        }
+
+
+        /* =====================================================
            MAIN
-        ========================================================== */
+        ====================================================== */
 
         .main-content {
 
@@ -730,7 +808,8 @@
 
             min-height: 100vh;
 
-            padding: 24px 36px 60px;
+            padding:
+                25px 35px 60px;
 
             position: relative;
 
@@ -739,34 +818,13 @@
         }
 
 
-        @media(max-width: 992px) {
-
-            .sidebar {
-
-                display: none;
-
-            }
-
-            .main-content {
-
-                margin-left: 0;
-
-                padding:
-                    18px
-                    18px
-                    40px;
-
-            }
-
-        }
-
-
-
-        /* =========================================================
+        /* =====================================================
            TOPBAR
-        ========================================================== */
+        ====================================================== */
 
         .topbar {
+
+            min-height: 70px;
 
             display: flex;
 
@@ -774,12 +832,12 @@
 
             justify-content: space-between;
 
-            padding-bottom: 22px;
+            gap: 20px;
 
             border-bottom:
                 1px solid var(--border);
 
-            margin-bottom: 28px;
+            margin-bottom: 30px;
 
         }
 
@@ -788,9 +846,9 @@
 
             font-family: var(--font-display);
 
-            font-size: 1.5rem;
+            font-size: 1.4rem;
 
-            font-weight: 800;
+            font-weight: 900;
 
             color: var(--secondary);
 
@@ -799,7 +857,7 @@
 
         .top-subtitle {
 
-            font-size: 0.85rem;
+            font-size: .78rem;
 
             color: var(--text-muted);
 
@@ -810,20 +868,20 @@
 
         .profile-btn {
 
-            background: var(--surface);
-
-            border:
-                1px solid var(--border);
-
-            border-radius: 13px;
-
-            padding: 6px 12px;
-
             display: flex;
 
             align-items: center;
 
-            gap: 12px;
+            gap: 9px;
+
+            padding: 6px 10px 6px 7px;
+
+            border-radius: 50px;
+
+            border:
+                1px solid var(--border);
+
+            background: var(--surface);
 
             color: var(--text-main);
 
@@ -832,27 +890,24 @@
 
         .profile-btn:hover {
 
-            background: var(--surface-alt);
+            color: var(--text-main);
 
             border-color: var(--secondary);
+
+            background: var(--surface-alt);
 
         }
 
 
-        .avatar {
+        .profile-avatar {
 
-            width: 40px;
+            width: 38px;
 
-            height: 40px;
+            height: 38px;
 
             border-radius: 50%;
 
             object-fit: cover;
-
-            background: var(--surface-alt);
-
-            border:
-                2px solid var(--secondary);
 
             display: flex;
 
@@ -860,17 +915,24 @@
 
             justify-content: center;
 
-            font-weight: 800;
+            background:
 
-            color: var(--secondary);
+                linear-gradient(
+                    135deg,
+                    var(--secondary),
+                    var(--accent)
+                );
+
+            color: var(--page-bg);
+
+            font-weight: 900;
 
         }
 
 
-
-        /* =========================================================
+        /* =====================================================
            DROPDOWN
-        ========================================================== */
+        ====================================================== */
 
         .dropdown-menu {
 
@@ -884,28 +946,45 @@
 
         .dropdown-item {
 
-            color: var(--text-main);
+            color: var(--text-main) !important;
 
         }
 
 
         .dropdown-item:hover {
 
-            background: var(--surface-alt);
+            color: var(--secondary) !important;
 
-            color: var(--secondary);
+            background: var(--surface-alt) !important;
 
         }
 
 
+        .dropdown-divider {
 
-        /* =========================================================
+            border-color: var(--border);
+
+        }
+
+
+        /* =====================================================
            HERO
-        ========================================================== */
+        ====================================================== */
 
-        .theme-hero {
+        .hero {
+
+            position: relative;
+
+            overflow: hidden;
+
+            padding: 35px;
+
+            margin-bottom: 28px;
+
+            border-radius: 22px;
 
             background:
+
                 linear-gradient(
                     135deg,
                     var(--surface),
@@ -915,43 +994,34 @@
             border:
                 1px solid var(--border);
 
-            border-radius: 22px;
-
-            padding: 36px 40px;
-
-            position: relative;
-
-            overflow: hidden;
-
-            margin-bottom: 28px;
-
             box-shadow:
-                0 18px 45px rgba(0,0,0,0.25);
+                0 15px 40px rgba(0,0,0,.25);
 
         }
 
 
-        .theme-hero-grid {
+        .hero::after {
+
+            content: "";
 
             position: absolute;
 
-            inset: 0;
+            width: 300px;
 
-            opacity: 0.04;
+            height: 300px;
 
-            background-image:
-                linear-gradient(
-                    45deg,
-                    var(--secondary) 25%,
-                    transparent 25%
-                ),
-                linear-gradient(
-                    -45deg,
-                    var(--secondary) 25%,
-                    transparent 25%
-                );
+            right: -100px;
 
-            background-size: 32px 32px;
+            top: -100px;
+
+            border-radius: 50%;
+
+            background:
+                var(--secondary);
+
+            opacity: .08;
+
+            filter: blur(20px);
 
         }
 
@@ -962,38 +1032,37 @@
 
             align-items: center;
 
-            gap: 8px;
+            gap: 7px;
 
-            padding: 7px 14px;
+            padding: 7px 13px;
+
+            border-radius: 30px;
+
+            color: var(--secondary);
 
             background: var(--surface);
 
             border:
                 1px solid var(--secondary);
 
-            border-radius: 30px;
+            font-size: .75rem;
 
-            font-size: 0.78rem;
-
-            font-weight: 700;
-
-            text-transform: uppercase;
-
-            color: var(--secondary);
+            font-weight: 800;
 
             margin-bottom: 14px;
-
-            box-shadow:
-                0 0 15px var(--glow);
 
         }
 
 
         .hero-title {
 
+            position: relative;
+
+            z-index: 2;
+
             font-family: var(--font-display);
 
-            font-size: 2.35rem;
+            font-size: 2.25rem;
 
             font-weight: 900;
 
@@ -1004,17 +1073,37 @@
         }
 
 
-        .hero-motto {
+        .hero-text {
 
-            font-size: 0.98rem;
+            position: relative;
+
+            z-index: 2;
+
+            max-width: 700px;
 
             color: var(--text-muted);
 
-            max-width: 680px;
-
             line-height: 1.7;
 
-            margin-bottom: 20px;
+            font-size: .92rem;
+
+        }
+
+
+        .hero-icon {
+
+            position: relative;
+
+            z-index: 2;
+
+            font-size: 6rem;
+
+            color: var(--secondary);
+
+            filter:
+                drop-shadow(
+                    0 0 25px var(--glow)
+                );
 
         }
 
@@ -1025,46 +1114,29 @@
 
             align-items: center;
 
-            gap: 6px;
+            gap: 7px;
 
             padding: 7px 13px;
 
+            margin: 4px;
+
             border-radius: 9px;
+
+            color: var(--text-main);
 
             background: var(--surface);
 
             border:
                 1px solid var(--border);
 
-            color: var(--text-main);
+            font-size: .78rem;
 
-            text-decoration: none;
-
-            font-size: 0.82rem;
-
-            font-weight: 600;
-
-            margin-right: 7px;
-
-            margin-bottom: 7px;
-
-            transition: all 0.25s ease;
+            font-weight: 700;
 
         }
 
 
-        .interest-pill:hover {
-
-            color: var(--secondary);
-
-            border-color: var(--secondary);
-
-            background: var(--surface-alt);
-
-        }
-
-
-        .interest-pill.active-pill {
+        .interest-pill.active {
 
             color: var(--page-bg);
 
@@ -1073,210 +1145,71 @@
             border-color: var(--secondary);
 
             box-shadow:
-                0 5px 20px var(--glow);
+                0 0 18px var(--glow);
 
         }
 
 
-        .hero-visual-icon {
+        /* =====================================================
+           BUTTON
+        ====================================================== */
 
-            font-size: 6rem;
-
-            color: var(--secondary);
-
-            filter:
-                drop-shadow(
-                    0 8px 25px var(--glow)
-                );
-
-        }
-
-
-
-        /* =========================================================
-           BUTTONS
-        ========================================================== */
-
-        .action-btn {
+        .primary-btn {
 
             display: inline-flex;
 
             align-items: center;
 
-            justify-content: center;
-
             gap: 8px;
 
-            padding: 10px 22px;
+            padding: 10px 20px;
 
-            border-radius: 11px;
+            border-radius: 10px;
+
+            background: var(--secondary);
 
             border:
                 1px solid var(--secondary);
 
-            background: var(--secondary);
-
             color: var(--page-bg) !important;
 
-            font-size: 0.88rem;
+            font-size: .82rem;
 
             font-weight: 800;
 
-            text-decoration: none;
-
-            cursor: pointer;
-
-            transition: all 0.25s ease;
-
-            box-shadow:
-                0 6px 20px var(--glow);
+            transition: .2s ease;
 
         }
 
 
-        .action-btn:hover {
+        .primary-btn:hover {
 
             background: var(--accent);
 
             border-color: var(--accent);
 
-            color: var(--page-bg) !important;
-
             transform: translateY(-2px);
 
             box-shadow:
-                0 10px 28px var(--glow);
+                0 8px 25px var(--glow);
 
         }
 
 
-
-        /* =========================================================
-           START QUEST BUTTON
-           VERY IMPORTANT
-        ========================================================== */
-
-        .quest-action-form {
-
-            margin: 0;
-
-            padding: 0;
-
-            display: inline-block;
-
-        }
-
-
-        .action-btn-outline {
-
-            appearance: none;
-
-            -webkit-appearance: none;
-
-            display: inline-flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            gap: 7px;
-
-            padding: 8px 15px;
-
-            min-width: 120px;
-
-            border-radius: 10px;
-
-            border:
-                2px solid var(--secondary) !important;
-
-            background:
-                var(--secondary) !important;
-
-            color:
-                var(--page-bg) !important;
-
-            font-family: var(--font-body);
-
-            font-size: 0.8rem;
-
-            font-weight: 800;
-
-            line-height: 1.2;
-
-            text-decoration: none;
-
-            cursor: pointer;
-
-            opacity: 1 !important;
-
-            transition:
-                transform 0.2s ease,
-                background 0.2s ease,
-                border-color 0.2s ease,
-                box-shadow 0.2s ease;
-
-            box-shadow:
-                0 5px 18px var(--glow);
-
-        }
-
-
-        .action-btn-outline:hover {
-
-            background:
-                var(--accent) !important;
-
-            border-color:
-                var(--accent) !important;
-
-            color:
-                var(--page-bg) !important;
-
-            transform:
-                translateY(-2px);
-
-            box-shadow:
-                0 9px 24px var(--glow);
-
-        }
-
-
-        .action-btn-outline:focus {
-
-            outline: none !important;
-
-            background:
-                var(--secondary) !important;
-
-            border-color:
-                var(--secondary) !important;
-
-            color:
-                var(--page-bg) !important;
-
-            box-shadow:
-                0 0 0 4px var(--glow);
-
-        }
-
-
-        .action-btn-outline:active {
-
-            transform:
-                translateY(0);
-
-        }
-
-
-
-        /* =========================================================
-           CARDS
-        ========================================================== */
+        /* =====================================================
+           CARD
+        ====================================================== */
 
         .glass-card {
 
+            height: 100%;
+
+            padding: 22px;
+
+            border-radius: 17px;
+
             background:
+
                 linear-gradient(
                     145deg,
                     var(--surface),
@@ -1286,43 +1219,29 @@
             border:
                 1px solid var(--border);
 
-            border-radius: 17px;
-
-            padding: 24px;
-
-            position: relative;
-
-            overflow: hidden;
-
             box-shadow:
-                0 8px 25px rgba(0,0,0,0.20);
+                0 8px 25px rgba(0,0,0,.18);
 
-            transition:
-                transform 0.25s ease,
-                border-color 0.25s ease,
-                box-shadow 0.25s ease;
+            transition: .25s ease;
 
         }
 
 
         .glass-card:hover {
 
-            transform:
-                translateY(-3px);
+            transform: translateY(-3px);
 
-            border-color:
-                var(--secondary);
+            border-color: var(--secondary);
 
             box-shadow:
-                0 14px 35px var(--glow);
+                0 12px 30px var(--glow);
 
         }
 
 
-
-        /* =========================================================
+        /* =====================================================
            STATS
-        ========================================================== */
+        ====================================================== */
 
         .stat-card {
 
@@ -1330,26 +1249,18 @@
 
             align-items: center;
 
-            gap: 17px;
-
-            padding: 21px;
+            gap: 15px;
 
         }
 
 
         .stat-icon {
 
-            width: 52px;
+            width: 50px;
 
-            height: 52px;
+            height: 50px;
 
-            border-radius: 14px;
-
-            background:
-                var(--surface-alt);
-
-            border:
-                1px solid var(--secondary);
+            flex-shrink: 0;
 
             display: flex;
 
@@ -1357,12 +1268,14 @@
 
             justify-content: center;
 
-            font-size: 1.4rem;
+            border-radius: 13px;
 
-            color:
-                var(--secondary);
+            color: var(--secondary);
 
-            flex-shrink: 0;
+            background: var(--surface-alt);
+
+            border:
+                1px solid var(--secondary);
 
             box-shadow:
                 0 0 15px var(--glow);
@@ -1374,138 +1287,104 @@
 
             font-family: var(--font-display);
 
-            font-size: 1.65rem;
+            font-size: 1.45rem;
 
             font-weight: 900;
 
-            color:
-                var(--secondary);
-
-            line-height: 1.1;
+            color: var(--secondary);
 
         }
 
 
         .stat-label {
 
-            font-size: 0.75rem;
+            color: var(--text-muted);
 
-            font-weight: 700;
+            font-size: .7rem;
+
+            font-weight: 800;
 
             text-transform: uppercase;
 
-            letter-spacing: 0.8px;
-
-            color:
-                var(--text-muted);
-
-            margin-top: 4px;
+            letter-spacing: .8px;
 
         }
 
 
+        /* =====================================================
+           SECTION
+        ====================================================== */
 
-        /* =========================================================
-           CHESS RANK
-        ========================================================== */
-
-        .rank-tier-list {
+        .section-header {
 
             display: flex;
 
             align-items: center;
 
-            gap: 12px;
+            justify-content: space-between;
 
-            overflow-x: auto;
+            gap: 15px;
 
-            padding: 10px 0;
+            margin-top: 35px;
 
-        }
-
-
-        .rank-node {
-
-            display: flex;
-
-            align-items: center;
-
-            gap: 8px;
-
-            padding: 9px 14px;
-
-            border-radius: 10px;
-
-            background: var(--surface);
-
-            border:
-                1px solid var(--border);
-
-            color:
-                var(--text-muted);
-
-            font-size: 0.82rem;
-
-            font-weight: 600;
-
-            white-space: nowrap;
+            margin-bottom: 18px;
 
         }
 
 
-        .rank-node.current {
+        .section-title {
+
+            font-family: var(--font-display);
+
+            font-size: 1.3rem;
+
+            font-weight: 900;
+
+        }
+
+
+        .section-subtitle {
+
+            color: var(--text-muted);
+
+            font-size: .78rem;
+
+            margin-top: 3px;
+
+        }
+
+
+        /* =====================================================
+           DAILY QUEST
+        ====================================================== */
+
+        .daily-quest {
+
+            padding: 25px;
+
+            margin-bottom: 30px;
+
+            border-radius: 16px;
+
+            border-left:
+                5px solid var(--secondary);
 
             background:
-                var(--secondary);
 
-            border-color:
-                var(--secondary);
-
-            color:
-                var(--page-bg);
-
-            box-shadow:
-                0 0 20px var(--glow);
-
-        }
-
-
-        .rank-divider {
-
-            color:
-                var(--secondary);
-
-        }
-
-
-
-        /* =========================================================
-           GAMBIT
-        ========================================================== */
-
-        .gambit-card {
-
-            background:
                 linear-gradient(
                     135deg,
                     var(--surface-alt),
                     var(--surface)
                 );
 
-            border:
-                1px solid var(--secondary);
+            border-top:
+                1px solid var(--border);
 
-            border-left:
-                5px solid var(--secondary);
+            border-right:
+                1px solid var(--border);
 
-            padding:
-                26px 30px;
-
-            border-radius:
-                16px;
-
-            margin-bottom:
-                28px;
+            border-bottom:
+                1px solid var(--border);
 
             box-shadow:
                 0 8px 25px var(--glow);
@@ -1513,359 +1392,297 @@
         }
 
 
-        .gambit-badge {
+        .quest-label {
 
             display: inline-block;
 
-            padding:
-                5px 10px;
+            color: var(--secondary);
 
-            border-radius:
-                7px;
+            font-size: .7rem;
 
-            color:
-                var(--secondary);
+            font-weight: 900;
 
-            background:
-                var(--surface);
+            text-transform: uppercase;
 
-            border:
-                1px solid var(--secondary);
+            letter-spacing: 1px;
 
-            font-size:
-                0.73rem;
-
-            font-weight:
-                800;
-
-            text-transform:
-                uppercase;
-
-            letter-spacing:
-                1px;
-
-            margin-bottom:
-                10px;
+            margin-bottom: 8px;
 
         }
 
 
-        .gambit-title {
+        .quest-heading {
 
-            font-family:
-                var(--font-display);
+            font-family: var(--font-display);
 
-            font-size:
-                1.25rem;
+            font-size: 1.2rem;
 
-            font-weight:
-                800;
+            font-weight: 900;
 
-            color:
-                var(--text-main);
-
-            margin-bottom:
-                8px;
+            margin-bottom: 5px;
 
         }
 
 
-        .gambit-desc {
+        .quest-description {
 
-            color:
-                var(--text-muted);
+            color: var(--text-muted);
 
-            font-size:
-                0.9rem;
+            font-size: .84rem;
 
         }
 
 
-
-        /* =========================================================
-           QUEST CARDS
-        ========================================================== */
+        /* =====================================================
+           QUEST CARD
+        ====================================================== */
 
         .quest-card {
 
-            display:
-                flex;
+            display: flex;
 
-            flex-direction:
-                column;
+            flex-direction: column;
 
-            justify-content:
-                space-between;
-
-            height:
-                100%;
+            justify-content: space-between;
 
         }
 
 
         .quest-top {
 
-            display:
-                flex;
+            display: flex;
 
-            align-items:
-                center;
+            justify-content: space-between;
 
-            justify-content:
-                space-between;
+            gap: 10px;
 
-            gap:
-                10px;
-
-            margin-bottom:
-                14px;
+            margin-bottom: 13px;
 
         }
 
 
         .quest-category {
 
-            font-size:
-                0.7rem;
+            padding: 4px 8px;
 
-            font-weight:
-                800;
+            border-radius: 6px;
 
-            text-transform:
-                uppercase;
+            background: var(--surface-alt);
 
-            letter-spacing:
-                1px;
-
-            color:
-                var(--secondary);
-
-            background:
-                var(--surface-alt);
-
-            padding:
-                4px 9px;
-
-            border-radius:
-                6px;
+            color: var(--secondary);
 
             border:
                 1px solid var(--border);
+
+            font-size: .65rem;
+
+            font-weight: 900;
+
+            text-transform: uppercase;
 
         }
 
 
         .quest-xp {
 
-            font-size:
-                0.84rem;
+            color: var(--secondary);
 
-            font-weight:
-                900;
+            font-size: .78rem;
 
-            color:
-                var(--secondary);
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            gap:
-                4px;
+            font-weight: 900;
 
         }
 
 
         .quest-title {
 
-            font-family:
-                var(--font-display);
+            font-family: var(--font-display);
 
-            font-size:
-                1.1rem;
+            font-size: 1.05rem;
 
-            font-weight:
-                800;
+            font-weight: 900;
 
-            color:
-                var(--text-main);
-
-            margin-bottom:
-                8px;
+            margin-bottom: 8px;
 
         }
 
 
-        .quest-desc {
+        .quest-description-small {
 
-            font-size:
-                0.85rem;
+            color: var(--text-muted);
 
-            color:
-                var(--text-muted);
+            font-size: .82rem;
 
-            line-height:
-                1.55;
+            line-height: 1.6;
 
-            margin-bottom:
-                18px;
+            margin-bottom: 18px;
 
         }
 
 
+        .start-btn {
 
-        /* =========================================================
-           SECTION HEADERS
-        ========================================================== */
+            display: inline-flex;
 
-        .section-header {
+            align-items: center;
 
-            display:
-                flex;
+            justify-content: center;
 
-            align-items:
-                center;
+            gap: 7px;
 
-            justify-content:
-                space-between;
+            min-width: 120px;
 
-            margin-top:
-                36px;
+            padding: 8px 14px;
 
-            margin-bottom:
-                20px;
+            border-radius: 9px;
 
-        }
+            color: var(--page-bg) !important;
 
+            background: var(--secondary);
 
-        .section-title {
+            border:
+                1px solid var(--secondary);
 
-            font-family:
-                var(--font-display);
+            font-size: .76rem;
 
-            font-size:
-                1.35rem;
-
-            font-weight:
-                800;
-
-            color:
-                var(--text-main);
+            font-weight: 900;
 
         }
 
 
-        .section-subtitle {
+        .start-btn:hover {
 
-            font-size:
-                0.84rem;
+            background: var(--accent);
 
-            color:
-                var(--text-muted);
+            border-color: var(--accent);
 
         }
 
 
-
-        /* =========================================================
-           TOPIC CHIPS
-        ========================================================== */
+        /* =====================================================
+           TOPICS
+        ====================================================== */
 
         .topic-chip {
 
-            display:
-                inline-flex;
+            display: inline-flex;
 
-            align-items:
-                center;
+            align-items: center;
 
-            gap:
-                6px;
+            gap: 7px;
 
-            padding:
-                8px 14px;
+            padding: 8px 13px;
 
-            border-radius:
-                10px;
+            border-radius: 9px;
 
-            background:
-                var(--surface-alt);
+            color: var(--text-main);
+
+            background: var(--surface-alt);
 
             border:
                 1px solid var(--border);
 
-            color:
-                var(--text-main);
+            font-size: .8rem;
 
-            font-size:
-                0.84rem;
-
-            font-weight:
-                600;
-
-            transition:
-                all 0.2s ease;
+            font-weight: 600;
 
         }
 
 
-        .topic-chip:hover {
+        .topic-chip i {
 
-            color:
-                var(--secondary);
-
-            border-color:
-                var(--secondary);
-
-            background:
-                var(--surface);
+            color: var(--secondary);
 
         }
 
 
+        /* =====================================================
+           MOBILE
+        ====================================================== */
 
-        /* =========================================================
-           RESPONSIVE
-        ========================================================== */
+        @media(max-width: 992px) {
+
+            .sidebar {
+
+                display: none;
+
+            }
+
+
+            .main-content {
+
+                margin-left: 0;
+
+                padding: 18px;
+
+            }
+
+        }
+
 
         @media(max-width: 768px) {
 
-            .theme-hero {
+            .hero {
 
-                padding:
-                    25px 22px;
+                padding: 25px;
 
             }
 
 
             .hero-title {
 
-                font-size:
-                    1.8rem;
-
-            }
-
-
-            .gambit-card {
-
-                padding:
-                    22px;
+                font-size: 1.7rem;
 
             }
 
 
             .section-header {
 
-                align-items:
-                    flex-start;
+                align-items: flex-start;
 
-                gap:
+                flex-direction: column;
+
+            }
+
+        }
+
+
+        @media(max-width: 576px) {
+
+            .main-content {
+
+                padding:
                     12px;
 
-                flex-direction:
-                    column;
+            }
+
+
+            .hero {
+
+                padding: 20px;
+
+                border-radius: 15px;
+
+            }
+
+
+            .hero-title {
+
+                font-size: 1.45rem;
+
+            }
+
+
+            .glass-card {
+
+                padding: 17px;
+
+            }
+
+
+            .top-title {
+
+                font-size: 1.1rem;
 
             }
 
@@ -1879,9 +1696,9 @@
 <body>
 
 
-    <!-- =========================================================
+    {{-- =====================================================
          CHESS BACKGROUND
-    ========================================================== -->
+    ====================================================== --}}
 
     @if($isChess)
 
@@ -1898,189 +1715,27 @@
     @endif
 
 
-    <div class="ambient-glow glow-1"></div>
 
-    <div class="ambient-glow glow-2"></div>
+    {{-- =====================================================
+         DYNAMIC SIDEBAR
+    ====================================================== --}}
 
+    @include('student.partials.sidebar')
 
 
-    <!-- =========================================================
-         SIDEBAR
-    ========================================================== -->
 
-    <aside class="sidebar">
-
-
-        <!-- BRAND -->
-
-        <a href="{{ route('student.dashboard') }}"
-           class="brand">
-
-            <div class="brand-icon">
-
-                {{ $themeIcon }}
-
-            </div>
-
-
-            <div class="brand-text">
-
-                Eco<span>Quest</span>
-
-            </div>
-
-        </a>
-
-
-
-        <!-- MAIN MENU -->
-
-        <div class="nav-category">
-
-            Main Menu
-
-        </div>
-
-
-        <a href="{{ route('student.dashboard') }}"
-           class="side-link active">
-
-            <i class="bi bi-grid-1x2-fill"></i>
-
-            Dashboard
-
-        </a>
-
-
-        <a href="{{ route('student.profile') }}"
-           class="side-link">
-
-            <i class="bi bi-person-circle"></i>
-
-            My Profile
-
-        </a>
-
-
-        <a href="#quests"
-           class="side-link">
-
-            <i class="bi bi-trophy-fill"></i>
-
-            {{ $labels['mission_title'] }}
-
-        </a>
-
-
-        <a href="#progress"
-           class="side-link">
-
-            <i class="bi bi-graph-up-arrow"></i>
-
-            My Progress
-
-        </a>
-
-
-        <a href="#topics"
-           class="side-link">
-
-            <i class="bi bi-lightbulb-fill"></i>
-
-            AI Topics
-
-        </a>
-
-
-
-        <!-- IDENTITY -->
-
-        <div class="nav-category mt-3">
-
-            Identity
-
-        </div>
-
-
-        <div class="p-2 px-3 mt-1 rounded"
-             style="
-                background: var(--surface-alt);
-                border: 1px solid var(--border);
-             ">
-
-            <div class="d-flex align-items-center gap-2 mb-1">
-
-                <span style="font-size:1.1rem;">
-                    {{ $themeIcon }}
-                </span>
-
-                <span class="fw-bold small text-truncate"
-                      style="color:var(--secondary);">
-
-                    {{ $rankTitle }}
-
-                </span>
-
-            </div>
-
-
-            <div class="text-muted"
-                 style="font-size:0.72rem;">
-
-                {{ ucfirst($theme) }}
-
-                Theme •
-
-                {{ ucfirst($difficulty) }}
-
-            </div>
-
-        </div>
-
-
-
-        <!-- LOGOUT -->
-
-        <div class="mt-auto">
-
-            <form action="{{ route('logout-user') }}"
-                  method="POST">
-
-                @csrf
-
-                <button type="submit"
-                        class="side-link w-100 border-0"
-                        style="
-                            background:transparent;
-                            color:#ef4444;
-                        ">
-
-                    <i class="bi bi-box-arrow-right"></i>
-
-                    Log Out
-
-                </button>
-
-            </form>
-
-        </div>
-
-    </aside>
-
-
-
-    <!-- =========================================================
+    {{-- =====================================================
          MAIN CONTENT
-    ========================================================== -->
+    ====================================================== --}}
 
-    <div class="main-content">
+    <main class="main-content">
 
 
-        <!-- =====================================================
+        {{-- =================================================
              TOPBAR
-        ====================================================== -->
+        ================================================== --}}
 
-        <header class="topbar">
+        <div class="topbar">
 
 
             <div>
@@ -2102,14 +1757,16 @@
 
 
 
-            <!-- PROFILE -->
+            {{-- PROFILE --}}
 
             <div class="dropdown">
 
 
-                <button class="profile-btn dropdown-toggle"
-                        data-bs-toggle="dropdown"
-                        type="button">
+                <button
+                    type="button"
+                    class="profile-btn dropdown-toggle"
+                    data-bs-toggle="dropdown"
+                >
 
 
                     <div class="d-none d-sm-block text-end">
@@ -2121,8 +1778,7 @@
                         </div>
 
 
-                        <div class="top-subtitle"
-                             style="font-size:0.72rem;">
+                        <div class="top-subtitle">
 
                             {{ $rankTitle }}
 
@@ -2134,13 +1790,15 @@
 
                     @if($user->profile_picture)
 
-                        <img src="{{ asset('storage/' . $user->profile_picture) }}"
-                             class="avatar"
-                             alt="Profile Picture">
+                        <img
+                            src="{{ asset('storage/' . $user->profile_picture) }}"
+                            class="profile-avatar"
+                            alt="Profile Picture"
+                        >
 
                     @else
 
-                        <div class="avatar">
+                        <div class="profile-avatar">
 
                             {{ strtoupper(substr($user->name, 0, 1)) }}
 
@@ -2161,14 +1819,14 @@
                         <div class="px-3 py-2">
 
                             <strong>
-
                                 {{ $user->name }}
-
                             </strong>
 
                             <br>
 
-                            <small class="text-muted">
+                            <small
+                                style="color:var(--text-muted);"
+                            >
 
                                 {{ $user->email }}
 
@@ -2180,19 +1838,18 @@
 
 
                     <li>
-
-                        <hr class="dropdown-divider"
-                            style="border-color:var(--border);">
-
+                        <hr class="dropdown-divider">
                     </li>
 
 
                     <li>
 
-                        <a href="{{ route('student.profile') }}"
-                           class="dropdown-item">
+                        <a
+                            href="{{ route('student.profile') }}"
+                            class="dropdown-item"
+                        >
 
-                            <i class="bi bi-person me-2"></i>
+                            <i class="bi bi-person-circle me-2"></i>
 
                             My Profile
 
@@ -2203,40 +1860,38 @@
 
                     <li>
 
-                        <div class="px-3 py-2">
+                        <a
+                            href="{{ route('student.badges') }}"
+                            class="dropdown-item"
+                        >
 
-                            <span class="badge"
-                                  style="
-                                    background:var(--secondary);
-                                    color:var(--page-bg);
-                                  ">
+                            <i class="bi bi-award-fill me-2"></i>
 
-                                {{ $rankTitle }}
+                            My Badges
 
-                            </span>
-
-                        </div>
+                        </a>
 
                     </li>
 
 
                     <li>
-
-                        <hr class="dropdown-divider"
-                            style="border-color:var(--border);">
-
+                        <hr class="dropdown-divider">
                     </li>
 
 
                     <li>
 
-                        <form action="{{ route('logout-user') }}"
-                              method="POST">
+                        <form
+                            action="{{ route('logout-user') }}"
+                            method="POST"
+                        >
 
                             @csrf
 
-                            <button type="submit"
-                                    class="dropdown-item text-danger">
+                            <button
+                                type="submit"
+                                class="dropdown-item text-danger"
+                            >
 
                                 <i class="bi bi-box-arrow-right me-2"></i>
 
@@ -2253,21 +1908,19 @@
 
             </div>
 
-        </header>
+
+        </div>
 
 
 
-        <!-- =====================================================
+        {{-- =================================================
              HERO
-        ====================================================== -->
+        ================================================== --}}
 
-        <section class="theme-hero">
-
-
-            <div class="theme-hero-grid"></div>
+        <section class="hero">
 
 
-            <div class="row align-items-center position-relative">
+            <div class="row align-items-center">
 
 
                 <div class="col-lg-8">
@@ -2279,9 +1932,9 @@
 
                         AI Personalized
 
-                        •
+                        <span>•</span>
 
-                        {{ ucfirst($theme) }} Arena
+                        {{ ucfirst($theme) }} Theme
 
                     </div>
 
@@ -2296,7 +1949,7 @@
 
 
 
-                    <p class="hero-motto">
+                    <p class="hero-text">
 
                         {{ $welcomeMessage }}
 
@@ -2304,243 +1957,146 @@
 
 
 
-                    <!-- INTERESTS -->
+                    {{-- INTERESTS --}}
 
-                    <div class="d-flex flex-wrap align-items-center mb-3">
-
-
-                        @if(count($interests) > 1)
-
-                            <span class="small me-2 text-muted fw-bold">
-
-                                <i class="bi bi-shuffle me-1"></i>
-
-                                FOCUS:
-
-                            </span>
-
-                        @endif
+                    <div class="mb-3">
 
 
-
-                        @foreach($interests as $interest)
-
+                        @forelse($interests as $interest)
 
                             @php
 
-                                $cleanInt =
+                                $cleanInterest =
                                     strtolower(trim($interest));
 
-                                $isActive = false;
+                                $active =
+                                    $theme === $cleanInterest;
 
-
-                                if (
+                                if(
                                     $theme === 'chess'
                                     &&
                                     (
-                                        stripos($cleanInt,'chess') !== false
+                                        str_contains(
+                                            $cleanInterest,
+                                            'chess'
+                                        )
                                         ||
-                                        stripos($cleanInt,'puzzle') !== false
+                                        str_contains(
+                                            $cleanInterest,
+                                            'puzzle'
+                                        )
                                     )
                                 ) {
-
-                                    $isActive = true;
-
-                                }
-
-                                elseif (
-                                    $theme === 'technology'
-                                    &&
-                                    (
-                                        stripos($cleanInt,'code') !== false
-                                        ||
-                                        stripos($cleanInt,'tech') !== false
-                                        ||
-                                        stripos($cleanInt,'program') !== false
-                                    )
-                                ) {
-
-                                    $isActive = true;
-
-                                }
-
-                                elseif (
-                                    $theme === 'music'
-                                    &&
-                                    (
-                                        stripos($cleanInt,'music') !== false
-                                        ||
-                                        stripos($cleanInt,'song') !== false
-                                    )
-                                ) {
-
-                                    $isActive = true;
-
-                                }
-
-                                elseif (
-                                    $theme === 'sports'
-                                    &&
-                                    stripos($cleanInt,'sport') !== false
-                                ) {
-
-                                    $isActive = true;
-
-                                }
-
-                                elseif (
-                                    $theme === 'reading'
-                                    &&
-                                    stripos($cleanInt,'read') !== false
-                                ) {
-
-                                    $isActive = true;
-
-                                }
-
-                                elseif (
-                                    $theme === 'creative'
-                                    &&
-                                    (
-                                        stripos($cleanInt,'art') !== false
-                                        ||
-                                        stripos($cleanInt,'design') !== false
-                                    )
-                                ) {
-
-                                    $isActive = true;
-
-                                }
-
-                                elseif (
-                                    $theme === 'science'
-                                    &&
-                                    (
-                                        stripos($cleanInt,'science') !== false
-                                        ||
-                                        stripos($cleanInt,'environ') !== false
-                                    )
-                                ) {
-
-                                    $isActive = true;
-
-                                }
-
-                                elseif (
-                                    $theme === 'mathematics'
-                                    &&
-                                    stripos($cleanInt,'math') !== false
-                                ) {
-
-                                    $isActive = true;
-
+                                    $active = true;
                                 }
 
                             @endphp
 
 
+                            <a
+                                href="?focus={{ urlencode($interest) }}"
+                                class="interest-pill
+                                {{ $active ? 'active' : '' }}"
+                            >
 
-                            @if(count($interests) > 1)
-
-                                <a href="?focus={{ urlencode($interest) }}"
-                                   class="interest-pill {{ $isActive ? 'active-pill' : '' }}">
-
-
-                                    @if(stripos($interest,'chess') !== false)
-
-                                        ♟️
-
-                                    @elseif(
-                                        stripos($interest,'code') !== false
-                                        ||
-                                        stripos($interest,'tech') !== false
+                                @if(
+                                    str_contains(
+                                        $cleanInterest,
+                                        'chess'
                                     )
+                                )
 
-                                        💻
+                                    ♟️
 
-                                    @elseif(
-                                        stripos($interest,'music') !== false
-                                        ||
-                                        stripos($interest,'song') !== false
+                                @elseif(
+                                    str_contains(
+                                        $cleanInterest,
+                                        'code'
                                     )
-
-                                        🎵
-
-                                    @elseif(
-                                        stripos($interest,'sport') !== false
+                                    ||
+                                    str_contains(
+                                        $cleanInterest,
+                                        'program'
                                     )
+                                )
 
-                                        ⚽
+                                    💻
 
-                                    @elseif(
-                                        stripos($interest,'art') !== false
+                                @elseif(
+                                    str_contains(
+                                        $cleanInterest,
+                                        'music'
                                     )
-
-                                        🎨
-
-                                    @elseif(
-                                        stripos($interest,'read') !== false
+                                    ||
+                                    str_contains(
+                                        $cleanInterest,
+                                        'song'
                                     )
+                                )
 
-                                        📚
+                                    🎵
 
-                                    @elseif(
-                                        stripos($interest,'puzzle') !== false
+                                @elseif(
+                                    str_contains(
+                                        $cleanInterest,
+                                        'sport'
                                     )
+                                )
 
-                                        🧩
+                                    ⚽
 
-                                    @else
+                                @elseif(
+                                    str_contains(
+                                        $cleanInterest,
+                                        'art'
+                                    )
+                                )
 
-                                        ✦
+                                    🎨
 
-                                    @endif
+                                @elseif(
+                                    str_contains(
+                                        $cleanInterest,
+                                        'read'
+                                    )
+                                )
 
+                                    📚
 
-                                    {{ $interest }}
+                                @else
 
+                                    ✦
 
-                                    @if($isActive)
-
-                                        <span class="badge ms-1 rounded-pill"
-                                              style="
-                                                background:var(--page-bg);
-                                                color:var(--secondary);
-                                              ">
-
-                                            Active
-
-                                        </span>
-
-                                    @endif
-
-
-                                </a>
-
-                            @else
-
-                                <span class="interest-pill active-pill">
-
-                                    {{ $interest }}
-
-                                </span>
-
-                            @endif
+                                @endif
 
 
-                        @endforeach
+                                {{ $interest }}
+
+                            </a>
+
+                        @empty
+
+                            <span class="interest-pill active">
+
+                                General Learning
+
+                            </span>
+
+                        @endforelse
+
 
                     </div>
 
 
 
-                    <!-- HERO ACTION -->
+                    <div
+                        class="d-flex flex-wrap align-items-center gap-3"
+                    >
 
-                    <div class="d-flex align-items-center gap-3 mt-3 flex-wrap">
-
-
-                        <a href="#quests"
-                           class="action-btn">
+                        <a
+                            href="#quests"
+                            class="primary-btn"
+                        >
 
                             <i class="bi bi-play-circle-fill"></i>
 
@@ -2549,11 +2105,13 @@
                         </a>
 
 
-                        <span class="small"
-                              style="
+                        <span
+                            style="
                                 color:var(--text-muted);
+                                font-size:.78rem;
                                 font-style:italic;
-                              ">
+                            "
+                        >
 
                             "{{ $motto }}"
 
@@ -2561,27 +2119,29 @@
 
                     </div>
 
+
                 </div>
 
 
 
-                <!-- HERO ICON -->
+                <div
+                    class="col-lg-4 text-center d-none d-lg-block"
+                >
 
-                <div class="col-lg-4 text-center d-none d-lg-block">
-
-                    <div class="hero-visual-icon">
+                    <div class="hero-icon">
 
                         {{ $themeIcon }}
 
                     </div>
 
 
-                    <div class="fw-bold mt-2"
-                         style="
-                            font-family:var(--font-display);
-                            letter-spacing:1px;
+                    <div
+                        class="fw-bold"
+                        style="
                             color:var(--secondary);
-                         ">
+                            font-family:var(--font-display);
+                        "
+                    >
 
                         {{ $rankTitle }}
 
@@ -2592,23 +2152,22 @@
 
             </div>
 
+
         </section>
 
 
 
-        <!-- =====================================================
+        {{-- =================================================
              STATS
-        ====================================================== -->
+        ================================================== --}}
 
-        <div class="row g-3 mb-4"
-             id="progress">
+        <div class="row g-3">
 
-
-            <!-- XP -->
 
             <div class="col-6 col-lg-3">
 
                 <div class="glass-card stat-card">
+
 
                     <div class="stat-icon">
 
@@ -2634,17 +2193,17 @@
 
                     </div>
 
+
                 </div>
 
             </div>
 
 
 
-            <!-- LEVEL -->
-
             <div class="col-6 col-lg-3">
 
                 <div class="glass-card stat-card">
+
 
                     <div class="stat-icon">
 
@@ -2657,7 +2216,6 @@
 
                         <div class="stat-number">
 
-                            {{ $labels['level_prefix'] }}
                             {{ $userLevel }}
 
                         </div>
@@ -2671,17 +2229,17 @@
 
                     </div>
 
+
                 </div>
 
             </div>
 
 
 
-            <!-- QUESTS -->
-
             <div class="col-6 col-lg-3">
 
                 <div class="glass-card stat-card">
+
 
                     <div class="stat-icon">
 
@@ -2701,11 +2259,12 @@
 
                         <div class="stat-label">
 
-                            Quests Solved
+                            Completed
 
                         </div>
 
                     </div>
+
 
                 </div>
 
@@ -2713,11 +2272,10 @@
 
 
 
-            <!-- STREAK -->
-
             <div class="col-6 col-lg-3">
 
                 <div class="glass-card stat-card">
+
 
                     <div class="stat-icon">
 
@@ -2730,18 +2288,19 @@
 
                         <div class="stat-number">
 
-                            1 Day
+                            1
 
                         </div>
 
 
                         <div class="stat-label">
 
-                            Streak Active
+                            Day Streak
 
                         </div>
 
                     </div>
+
 
                 </div>
 
@@ -2752,180 +2311,168 @@
 
 
 
-        <!-- =====================================================
-             CHESS PROGRESSION
-        ====================================================== -->
+        {{-- =================================================
+             CHESS SPECIAL AREA
+        ================================================== --}}
 
         @if($isChess)
 
-            <div class="glass-card mb-4">
+            <div class="glass-card mt-4">
 
 
-                <div class="d-flex align-items-center justify-content-between mb-3">
+                <div
+                    class="d-flex align-items-center justify-content-between"
+                >
 
-                    <div class="d-flex align-items-center gap-2">
 
-                        <span style="font-size:1.3rem;">
+                    <div>
 
-                            ♟️
+                        <div
+                            class="fw-bold"
+                            style="
+                                color:var(--secondary);
+                                font-family:var(--font-display);
+                            "
+                        >
 
-                        </span>
+                            ♟ Grandmaster Path
 
-                        <span class="fw-bold"
-                              style="font-family:var(--font-display);">
+                        </div>
 
-                            Grandmaster Path
 
-                        </span>
+                        <div
+                            class="small"
+                            style="color:var(--text-muted);"
+                        >
+
+                            Your chess progression
+
+                        </div>
 
                     </div>
 
 
-                    <span class="badge"
-                          style="
-                            background:var(--secondary);
-                            color:var(--page-bg);
-                          ">
+                    <span
+                        style="
+                            color:var(--secondary);
+                            font-weight:900;
+                        "
+                    >
 
-                        Tier {{ $userLevel }}
+                        Level {{ $userLevel }}
 
                     </span>
 
+
                 </div>
 
 
+                <div
+                    class="d-flex flex-wrap gap-2 mt-3"
+                >
 
-                <div class="rank-tier-list">
 
-
-                    <div class="rank-node">
+                    <span class="interest-pill">
 
                         ♙ Pawn
 
-                    </div>
+                    </span>
 
 
-                    <div class="rank-divider">
-
-                        →
-
-                    </div>
-
-
-                    <div class="rank-node current">
+                    <span class="interest-pill active">
 
                         ♘ {{ $rankTitle }}
 
-                    </div>
+                    </span>
 
 
-                    <div class="rank-divider">
-
-                        →
-
-                    </div>
-
-
-                    <div class="rank-node">
+                    <span class="interest-pill">
 
                         ♗ Bishop
 
-                    </div>
+                    </span>
 
 
-                    <div class="rank-divider">
-
-                        →
-
-                    </div>
-
-
-                    <div class="rank-node">
+                    <span class="interest-pill">
 
                         ♖ Rook
 
-                    </div>
+                    </span>
 
 
-                    <div class="rank-divider">
-
-                        →
-
-                    </div>
-
-
-                    <div class="rank-node">
+                    <span class="interest-pill">
 
                         ♕ Queen
 
-                    </div>
+                    </span>
 
 
-                    <div class="rank-divider">
-
-                        →
-
-                    </div>
-
-
-                    <div class="rank-node">
+                    <span class="interest-pill">
 
                         ♔ King
 
-                    </div>
+                    </span>
 
 
                 </div>
+
 
             </div>
 
         @endif
 
-        <!-- =====================================================
+
+
+        {{-- =================================================
              DAILY QUEST
-        ====================================================== -->
-        
+        ================================================== --}}
 
-        <div class="gambit-card">
-
-
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="daily-quest mt-4">
 
 
-                <div>
+            <div class="row align-items-center">
 
-                    <span class="gambit-badge">
+
+                <div class="col-lg-9">
+
+
+                    <div class="quest-label">
 
                         <i class="bi bi-clock-history me-1"></i>
 
                         {{ $labels['quest_title'] }}
 
-                    </span>
+                    </div>
 
 
-                    <h3 class="gambit-title">
+                    <div class="quest-heading">
 
                         {{ $dailyQuest }}
 
-                    </h3>
+                    </div>
 
 
-                    <p class="gambit-desc mb-0">
+                    <div class="quest-description">
 
                         Complete this personalized AI challenge
-                        to earn XP and continue your learning journey.
+                        and earn XP.
 
-                    </p>
+                    </div>
+
 
                 </div>
 
 
-                <div>
+                <div
+                    class="col-lg-3 text-lg-end mt-3 mt-lg-0"
+                >
 
-                    <a href="#quests"
-                       class="action-btn">
+                    <a
+                        href="#quests"
+                        class="primary-btn"
+                    >
 
-                        Make Move
+                        Start
 
                         <i class="bi bi-arrow-right"></i>
 
@@ -2936,54 +2483,57 @@
 
             </div>
 
+
         </div>
 
 
 
-        <!-- =====================================================
-             QUEST SECTION
-        ====================================================== -->
+        {{-- =================================================
+             QUESTS
+        ================================================== --}}
 
-        <div class="section-header"
-             id="quests">
+        <div
+            class="section-header"
+            id="quests"
+        >
 
 
             <div>
 
-                <h2 class="section-title">
+                <div class="section-title">
 
                     {{ $labels['mission_title'] }}
 
-                </h2>
+                </div>
 
 
                 <div class="section-subtitle">
 
-                    Learning missions generated dynamically by Gemini AI
+                    AI-generated learning quests based on your interests
 
                 </div>
 
             </div>
 
 
-            <span class="badge"
-                  style="
-                    background:var(--surface-alt);
-                    border:1px solid var(--border);
+            <span
+                style="
                     color:var(--secondary);
-                  ">
+                    font-size:.75rem;
+                    font-weight:800;
+                "
+            >
 
-                {{ $tasks->count() }}
-
-                Available Quests
+                {{ $tasks->count() }} Available
 
             </span>
+
 
         </div>
 
 
 
-        <div class="row g-4 mb-4">
+        <div class="row g-4">
 
 
             @forelse($tasks as $task)
@@ -2994,8 +2544,6 @@
 
                     <div class="glass-card quest-card">
 
-
-                        <!-- QUEST CONTENT -->
 
                         <div>
 
@@ -3031,10 +2579,10 @@
 
 
 
-                            <p class="quest-desc">
+                            <p class="quest-description-small">
 
                                 {{ $task->description
-                                    ?? 'Complete this learning objective to earn XP.'
+                                    ?? 'Complete this learning challenge.'
                                 }}
 
                             </p>
@@ -3044,19 +2592,19 @@
 
 
 
-                        <!-- =================================================
-                             QUEST FOOTER
-                        ================================================== -->
-
-                        <div class="d-flex align-items-center justify-content-between pt-3"
-                             style="
+                        <div
+                            class="d-flex align-items-center justify-content-between pt-3"
+                            style="
                                 border-top:
                                     1px solid var(--border);
-                             ">
+                            "
+                        >
 
 
-                            <span class="small text-capitalize"
-                                  style="color:var(--text-muted);">
+                            <span
+                                class="small text-capitalize"
+                                style="color:var(--text-muted);"
+                            >
 
                                 <i class="bi bi-bar-chart me-1"></i>
 
@@ -3066,20 +2614,23 @@
 
 
 
-                            <!-- =================================================
-                                 REAL START QUEST FORM
-                            ================================================== -->
+                            <a
+                                href="{{ route('student.game.play', $task->id) }}"
+                                class="start-btn"
+                            >
 
-                            <a href="{{ route('student.game.play', $task->id) }}"
-                               class="action-btn-outline text-decoration-none">
-                                <span>Start Quest</span>
+                                Start Quest
+
                                 <i class="bi bi-chevron-right"></i>
+
                             </a>
+
 
                         </div>
 
 
                     </div>
+
 
                 </div>
 
@@ -3090,36 +2641,41 @@
                 <div class="col-12">
 
 
-                    <div class="glass-card text-center py-5">
+                    <div
+                        class="glass-card text-center py-5"
+                    >
 
 
-                        <div style="
-                            font-size:3rem;
-                            color:var(--secondary);
-                            margin-bottom:12px;
-                        ">
+                        <div
+                            style="
+                                font-size:3rem;
+                                color:var(--secondary);
+                            "
+                        >
 
                             {{ $themeIcon }}
 
                         </div>
 
 
-                        <h4 class="fw-bold mb-2">
+                        <h4 class="mt-3">
 
-                            No Quests Pending
+                            No Pending Quests
 
                         </h4>
 
 
-                        <p class="text-muted">
+                        <p
+                            style="color:var(--text-muted);"
+                        >
 
-                            You have completed all current
-                            learning objectives.
+                            You have completed all your current quests.
 
                         </p>
 
 
                     </div>
+
 
                 </div>
 
@@ -3131,47 +2687,47 @@
 
 
 
-        <!-- =====================================================
+        {{-- =================================================
              AI TOPICS
-        ====================================================== -->
+        ================================================== --}}
 
-        <div class="section-header"
-             id="topics">
+        <div
+            class="section-header"
+            id="topics"
+        >
 
 
             <div>
 
-                <h2 class="section-title">
+                <div class="section-title">
 
                     AI Recommendations
 
-                </h2>
+                </div>
 
 
                 <div class="section-subtitle">
 
-                    Topics selected based on your interests
+                    Topics recommended from your interests
 
                 </div>
 
             </div>
 
+
         </div>
 
 
 
-        <div class="glass-card mb-4">
+        <div class="glass-card">
 
 
-            <div class="d-flex align-items-center gap-3 mb-3">
+            <div
+                class="d-flex align-items-center gap-3 mb-3"
+            >
 
 
-                <div class="stat-icon"
-                     style="
-                        width:44px;
-                        height:44px;
-                        font-size:1.1rem;
-                     ">
+                <div class="stat-icon">
 
                     <i class="bi bi-stars"></i>
 
@@ -3180,28 +2736,32 @@
 
                 <div>
 
-                    <div class="small text-muted text-uppercase fw-bold">
+                    <div
+                        class="small text-uppercase fw-bold"
+                        style="color:var(--text-muted);"
+                    >
 
-                        Gemini AI Intelligence
+                        Gemini AI
 
                     </div>
 
 
-                    <h5 class="fw-bold mb-0">
+                    <div class="fw-bold">
 
-                        Recommended for Your Learning Style
+                        Recommended Learning Topics
 
-                        ({{ ucfirst($learningStyle) }})
-
-                    </h5>
+                    </div>
 
                 </div>
+
 
             </div>
 
 
 
-            <div class="d-flex flex-wrap gap-2 pt-2">
+            <div
+                class="d-flex flex-wrap gap-2"
+            >
 
 
                 @forelse($recommendedTopics as $topic)
@@ -3209,10 +2769,7 @@
 
                     <span class="topic-chip">
 
-                        <i class="bi bi-lightbulb"
-                           style="color:var(--secondary);">
-
-                        </i>
+                        <i class="bi bi-lightbulb"></i>
 
                         {{ $topic }}
 
@@ -3222,22 +2779,37 @@
                 @empty
 
 
-                    @foreach($preference->interests as $item)
+                    @if($preference && !empty($preference->interests))
+
+
+                        @foreach($preference->interests as $item)
+
+
+                            <span class="topic-chip">
+
+                                <i class="bi bi-lightbulb"></i>
+
+                                {{ $item }} Mastery
+
+                            </span>
+
+
+                        @endforeach
+
+
+                    @else
 
 
                         <span class="topic-chip">
 
-                            <i class="bi bi-lightbulb"
-                               style="color:var(--secondary);">
+                            <i class="bi bi-lightbulb"></i>
 
-                            </i>
-
-                            {{ $item }} Mastery
+                            Personalized Learning
 
                         </span>
 
 
-                    @endforeach
+                    @endif
 
 
                 @endforelse
@@ -3245,62 +2817,49 @@
 
             </div>
 
+
         </div>
 
 
 
-        <!-- =====================================================
+        {{-- =================================================
              FOOTER
-        ====================================================== -->
+        ================================================== --}}
 
-        <footer class="text-center pt-4 pb-2 small"
-                style="
-                    color:var(--text-muted);
-                    border-top:
-                        1px solid var(--border);
-                ">
+        <footer
+            class="text-center mt-5 pt-4 pb-3"
+            style="
+                color:var(--text-muted);
+                border-top:
+                    1px solid var(--border);
+                font-size:.75rem;
+            "
+        >
 
+            {{ $themeIcon }}
 
-            <div>
+            <strong style="color:var(--secondary);">
+                EcoQuest
+            </strong>
 
-                {{ $themeIcon }}
-
-                <strong style="color:var(--secondary);">
-
-                    EcoQuest
-
-                </strong>
-
-                •
-
-                Gamified Learning Realm
-
-            </div>
-
+            • Gamified Learning Realm
 
             <div class="mt-1">
 
-                Powered dynamically by Gemini AI
-
-                •
-
-                Logged in as
-
-                {{ $user->name }}
+                AI Personalized Dashboard
 
             </div>
-
 
         </footer>
 
 
-    </div>
+    </main>
 
 
 
-    <!-- =========================================================
+    {{-- =====================================================
          BOOTSTRAP JS
-    ========================================================== -->
+    ====================================================== --}}
 
     <script src="{{ asset('Asset/Bootstrap-5/js/bootstrap.bundle.min.js') }}"></script>
 

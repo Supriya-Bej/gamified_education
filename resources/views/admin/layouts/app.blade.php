@@ -290,12 +290,21 @@
 
             </a>
 
-            <a href="#"
-                class="sidebar-link">
+            <a href="{{ route('admin.engines.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.engines.*') ? 'active' : '' }}">
 
-                <i class="bi bi-puzzle-fill"></i>
+                <i class="bi bi-cpu"></i>
 
                 <span>Game Engines</span>
+
+            </a>
+
+            <a href="{{ route('admin.game-content.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.game-content.*') ? 'active' : '' }}">
+
+                <i class="bi bi-collection-play"></i>
+
+                <span>Game Content</span>
 
             </a>
 
@@ -331,12 +340,18 @@
                 Rewards
             </div>
 
-            <a href="#"
-                class="sidebar-link">
-
+            <a href="{{ route('admin.rewards.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.rewards.*') ? 'active' : '' }}">
                 <i class="bi bi-stars"></i>
-
                 <span>XP & Rewards</span>
+            </a>
+
+            <a href="{{ route('admin.badges.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.badges.*') ? 'active' : '' }}">
+
+                <i class="bi bi-award-fill"></i>
+
+                <span>Badges & Achievements</span>
 
             </a>
 

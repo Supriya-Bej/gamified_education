@@ -4,14 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>Math Speed Challenge | EcoQuest</title>
 
     <link rel="stylesheet"
-          href="{{ asset('Asset/Bootstrap-5/css/bootstrap.min.css') }}">
+        href="{{ asset('Asset/Bootstrap-5/css/bootstrap.min.css') }}">
 
     <link rel="stylesheet"
-          href="{{ asset('Asset/Bootstrap-5/icons/bootstrap-icons.css') }}">
+        href="{{ asset('Asset/Bootstrap-5/icons/bootstrap-icons.css') }}">
 
     <style>
         * {
@@ -363,204 +364,206 @@
 
 <body>
 
-<div class="game-shell">
+    <div class="game-shell">
 
-    <!-- TOP BAR -->
-    <div class="game-topbar">
+        <!-- TOP BAR -->
+        <div class="game-topbar">
 
-        <div class="brand">
-            <div class="brand-icon">
-                🧮
+            <div class="brand">
+                <div class="brand-icon">
+                    🧮
+                </div>
+
+                <span>EcoQuest</span>
             </div>
 
-            <span>EcoQuest</span>
+            <a href="{{ route('student.dashboard') }}"
+                class="quit-btn">
+                <i class="bi bi-arrow-left"></i>
+                Quit Game
+            </a>
+
         </div>
 
-        <a href="{{ route('student.dashboard') }}"
-           class="quit-btn">
-            <i class="bi bi-arrow-left"></i>
-            Quit Game
-        </a>
 
-    </div>
+        <!-- GAME -->
+        <div class="game-container">
 
+            <div class="game-card">
 
-    <!-- GAME -->
-    <div class="game-container">
+                <!-- GAME HEADER -->
 
-        <div class="game-card">
+                <div class="game-heading">
 
-            <!-- GAME HEADER -->
+                    <div class="game-badge">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        SPEED CHALLENGE
+                    </div>
 
-            <div class="game-heading">
+                    <h1 class="game-title">
+                        Math Speed Challenge
+                    </h1>
 
-                <div class="game-badge">
-                    <i class="bi bi-lightning-charge-fill"></i>
-                    SPEED CHALLENGE
-                </div>
-
-                <h1 class="game-title">
-                    Math Speed Challenge
-                </h1>
-
-                <p class="game-subtitle">
-                    Solve as many problems as you can before the timer runs out.
-                </p>
-
-            </div>
-
-
-            <!-- STATS -->
-
-            <div class="stats-row">
-
-                <div class="stat-box">
-
-                    <span class="stat-label">
-                        Question
-                    </span>
-
-                    <span class="stat-value">
-                        <span id="currentQuestion">1</span>/10
-                    </span>
+                    <p class="game-subtitle">
+                        Solve as many problems as you can before the timer runs out.
+                    </p>
 
                 </div>
 
 
-                <div class="stat-box">
+                <!-- STATS -->
 
-                    <span class="stat-label">
-                        Score
-                    </span>
+                <div class="stats-row">
 
-                    <span class="stat-value">
-                        <span id="score">0</span>
-                    </span>
+                    <div class="stat-box">
 
-                </div>
+                        <span class="stat-label">
+                            Question
+                        </span>
 
+                        <span class="stat-value">
+                            <span id="currentQuestion">1</span>/10
+                        </span>
 
-                <div class="stat-box">
-
-                    <span class="stat-label">
-                        Streak
-                    </span>
-
-                    <span class="stat-value">
-                        🔥 <span id="streak">0</span>
-                    </span>
-
-                </div>
-
-            </div>
+                    </div>
 
 
-            <!-- TIMER -->
+                    <div class="stat-box">
 
-            <div class="timer-wrapper">
+                        <span class="stat-label">
+                            Score
+                        </span>
 
-                <div class="timer-label">
+                        <span class="stat-value">
+                            <span id="score">0</span>
+                        </span>
 
-                    <span>
-                        Time Remaining
-                    </span>
+                    </div>
 
-                    <strong>
-                        <span id="timer">60</span>s
-                    </strong>
 
-                </div>
+                    <div class="stat-box">
 
-                <div class="timer-track">
+                        <span class="stat-label">
+                            Streak
+                        </span>
 
-                    <div
-                        class="timer-bar"
-                        id="timerBar">
+                        <span class="stat-value">
+                            🔥 <span id="streak">0</span>
+                        </span>
+
                     </div>
 
                 </div>
 
-            </div>
 
+                <!-- TIMER -->
 
-            <!-- QUESTION AREA -->
+                <div class="timer-wrapper">
 
-            <div
-                class="question-box"
-                id="gameArea">
+                    <div class="timer-label">
 
-                <div class="question-number">
-                    Question <span id="questionNumber">1</span>
+                        <span>
+                            Time Remaining
+                        </span>
+
+                        <strong>
+                            <span id="timer">60</span>s
+                        </strong>
+
+                    </div>
+
+                    <div class="timer-track">
+
+                        <div
+                            class="timer-bar"
+                            id="timerBar">
+                        </div>
+
+                    </div>
+
                 </div>
+
+
+                <!-- QUESTION AREA -->
 
                 <div
-                    class="question"
-                    id="question">
-                    5 + 7 = ?
+                    class="question-box"
+                    id="gameArea">
+
+                    <div class="question-number">
+                        Question <span id="questionNumber">1</span>
+                    </div>
+
+                    <div
+                        class="question"
+                        id="question">
+                        5 + 7 = ?
+                    </div>
+
+                    <input
+                        type="number"
+                        id="answer"
+                        class="answer-input"
+                        placeholder="Enter your answer"
+                        autocomplete="off">
+
+                    <button
+                        type="button"
+                        class="submit-btn"
+                        id="submitBtn">
+
+                        Submit Answer
+                        <i class="bi bi-arrow-right"></i>
+
+                    </button>
+
+                    <div
+                        id="feedback"
+                        class="feedback">
+                    </div>
+
                 </div>
 
-                <input
-                    type="number"
-                    id="answer"
-                    class="answer-input"
-                    placeholder="Enter your answer"
-                    autocomplete="off">
 
-                <button
-                    type="button"
-                    class="submit-btn"
-                    id="submitBtn">
-
-                    Submit Answer
-                    <i class="bi bi-arrow-right"></i>
-
-                </button>
+                <!-- RESULT -->
 
                 <div
-                    id="feedback"
-                    class="feedback">
+                    class="result-screen"
+                    id="resultScreen">
+
+                    <div class="result-icon">
+                        🏆
+                    </div>
+
+                    <h2 class="result-title">
+                        Challenge Complete!
+                    </h2>
+
+                    <p class="text-white-50">
+                        Your final score
+                    </p>
+
+                    <div
+                        class="final-score"
+                        id="finalScore">
+                        0
+                    </div>
+
+                    <p id="resultMessage">
+                        Great work!
+                    </p>
+
+                    <button
+                        type="button"
+                        class="play-again-btn"
+                        onclick="location.reload()">
+
+                        <i class="bi bi-arrow-repeat"></i>
+                        Play Again
+
+                    </button>
+
                 </div>
-
-            </div>
-
-
-            <!-- RESULT -->
-
-            <div
-                class="result-screen"
-                id="resultScreen">
-
-                <div class="result-icon">
-                    🏆
-                </div>
-
-                <h2 class="result-title">
-                    Challenge Complete!
-                </h2>
-
-                <p class="text-white-50">
-                    Your final score
-                </p>
-
-                <div
-                    class="final-score"
-                    id="finalScore">
-                    0
-                </div>
-
-                <p id="resultMessage">
-                    Great work!
-                </p>
-
-                <button
-                    type="button"
-                    class="play-again-btn"
-                    onclick="location.reload()">
-
-                    <i class="bi bi-arrow-repeat"></i>
-                    Play Again
-
-                </button>
 
             </div>
 
@@ -568,387 +571,460 @@
 
     </div>
 
-</div>
 
-
-<script>
-
-    /*
+    <script>
+        /*
     |--------------------------------------------------------------------------
     | GAME SETTINGS
     |--------------------------------------------------------------------------
     */
 
-    const totalQuestions = 10;
+        const totalQuestions = 10;
 
-    const gameTime = 60;
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | GAME STATE
-    |--------------------------------------------------------------------------
-    */
-
-    let currentQuestionIndex = 0;
-
-    let score = 0;
-
-    let streak = 0;
-
-    let timeLeft = gameTime;
-
-    let timerInterval;
-
-    let currentAnswer;
+        const gameTime = 60;
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | ELEMENTS
-    |--------------------------------------------------------------------------
-    */
+        /*
+        |--------------------------------------------------------------------------
+        | GAME STATE
+        |--------------------------------------------------------------------------
+        */
 
-    const questionElement =
-        document.getElementById('question');
+        let currentQuestionIndex = 0;
 
-    const questionNumberElement =
-        document.getElementById('questionNumber');
+        let score = 0;
 
-    const currentQuestionElement =
-        document.getElementById('currentQuestion');
+        let streak = 0;
 
-    const scoreElement =
-        document.getElementById('score');
+        let timeLeft = gameTime;
 
-    const streakElement =
-        document.getElementById('streak');
+        let timerInterval;
 
-    const answerElement =
-        document.getElementById('answer');
-
-    const feedbackElement =
-        document.getElementById('feedback');
-
-    const timerElement =
-        document.getElementById('timer');
-
-    const timerBar =
-        document.getElementById('timerBar');
-
-    const submitButton =
-        document.getElementById('submitBtn');
-
-    const gameArea =
-        document.getElementById('gameArea');
-
-    const resultScreen =
-        document.getElementById('resultScreen');
-
-    const finalScoreElement =
-        document.getElementById('finalScore');
-
-    const resultMessage =
-        document.getElementById('resultMessage');
+        let currentAnswer;
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | GENERATE QUESTION
-    |--------------------------------------------------------------------------
-    */
+        /*
+        |--------------------------------------------------------------------------
+        | ELEMENTS
+        |--------------------------------------------------------------------------
+        */
 
-    function generateQuestion() {
+        const questionElement =
+            document.getElementById('question');
 
-        const operations = [
-            'addition',
-            'subtraction',
-            'multiplication'
-        ];
+        const questionNumberElement =
+            document.getElementById('questionNumber');
 
-        const operation =
-            operations[
-                Math.floor(
-                    Math.random() * operations.length
-                )
+        const currentQuestionElement =
+            document.getElementById('currentQuestion');
+
+        const scoreElement =
+            document.getElementById('score');
+
+        const streakElement =
+            document.getElementById('streak');
+
+        const answerElement =
+            document.getElementById('answer');
+
+        const feedbackElement =
+            document.getElementById('feedback');
+
+        const timerElement =
+            document.getElementById('timer');
+
+        const timerBar =
+            document.getElementById('timerBar');
+
+        const submitButton =
+            document.getElementById('submitBtn');
+
+        const gameArea =
+            document.getElementById('gameArea');
+
+        const resultScreen =
+            document.getElementById('resultScreen');
+
+        const finalScoreElement =
+            document.getElementById('finalScore');
+
+        const resultMessage =
+            document.getElementById('resultMessage');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | GENERATE QUESTION
+        |--------------------------------------------------------------------------
+        */
+
+        function generateQuestion() {
+
+            const operations = [
+                'addition',
+                'subtraction',
+                'multiplication'
             ];
 
+            const operation =
+                operations[
+                    Math.floor(
+                        Math.random() * operations.length
+                    )
+                ];
 
-        let firstNumber;
 
-        let secondNumber;
+            let firstNumber;
 
+            let secondNumber;
 
-        if (operation === 'addition') {
 
-            firstNumber =
-                Math.floor(Math.random() * 50) + 1;
+            if (operation === 'addition') {
 
-            secondNumber =
-                Math.floor(Math.random() * 50) + 1;
+                firstNumber =
+                    Math.floor(Math.random() * 50) + 1;
 
-            currentAnswer =
-                firstNumber + secondNumber;
+                secondNumber =
+                    Math.floor(Math.random() * 50) + 1;
 
-            questionElement.textContent =
-                `${firstNumber} + ${secondNumber} = ?`;
+                currentAnswer =
+                    firstNumber + secondNumber;
 
-        }
+                questionElement.textContent =
+                    `${firstNumber} + ${secondNumber} = ?`;
 
+            } else if (operation === 'subtraction') {
 
-        else if (operation === 'subtraction') {
+                firstNumber =
+                    Math.floor(Math.random() * 50) + 20;
 
-            firstNumber =
-                Math.floor(Math.random() * 50) + 20;
+                secondNumber =
+                    Math.floor(Math.random() * 20) + 1;
 
-            secondNumber =
-                Math.floor(Math.random() * 20) + 1;
+                currentAnswer =
+                    firstNumber - secondNumber;
 
-            currentAnswer =
-                firstNumber - secondNumber;
+                questionElement.textContent =
+                    `${firstNumber} - ${secondNumber} = ?`;
 
-            questionElement.textContent =
-                `${firstNumber} - ${secondNumber} = ?`;
+            } else {
 
-        }
+                firstNumber =
+                    Math.floor(Math.random() * 10) + 1;
 
+                secondNumber =
+                    Math.floor(Math.random() * 10) + 1;
 
-        else {
+                currentAnswer =
+                    firstNumber * secondNumber;
 
-            firstNumber =
-                Math.floor(Math.random() * 10) + 1;
-
-            secondNumber =
-                Math.floor(Math.random() * 10) + 1;
-
-            currentAnswer =
-                firstNumber * secondNumber;
-
-            questionElement.textContent =
-                `${firstNumber} × ${secondNumber} = ?`;
-
-        }
-
-
-        questionNumberElement.textContent =
-            currentQuestionIndex + 1;
-
-        currentQuestionElement.textContent =
-            currentQuestionIndex + 1;
-
-        answerElement.value = '';
-
-        answerElement.focus();
-
-        feedbackElement.textContent = '';
-
-        feedbackElement.className = 'feedback';
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | SUBMIT ANSWER
-    |--------------------------------------------------------------------------
-    */
-
-    function submitAnswer() {
-
-        const userAnswer =
-            Number(answerElement.value);
-
-
-        if (
-            answerElement.value.trim() === ''
-        ) {
-            feedbackElement.textContent =
-                'Please enter an answer.';
-
-            feedbackElement.className =
-                'feedback wrong';
-
-            return;
-        }
-
-
-        if (userAnswer === currentAnswer) {
-
-            score += 10;
-
-            streak++;
-
-            feedbackElement.textContent =
-                '✓ Correct! +10 points';
-
-            feedbackElement.className =
-                'feedback correct';
-
-        }
-
-        else {
-
-            streak = 0;
-
-            feedbackElement.textContent =
-                `✗ Wrong! Correct answer was ${currentAnswer}`;
-
-            feedbackElement.className =
-                'feedback wrong';
-
-        }
-
-
-        scoreElement.textContent =
-            score;
-
-        streakElement.textContent =
-            streak;
-
-
-        currentQuestionIndex++;
-
-
-        if (
-            currentQuestionIndex >= totalQuestions
-        ) {
-
-            setTimeout(
-                finishGame,
-                700
-            );
-
-            return;
-        }
-
-
-        setTimeout(
-            generateQuestion,
-            700
-        );
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | TIMER
-    |--------------------------------------------------------------------------
-    */
-
-    function startTimer() {
-
-        timerInterval =
-            setInterval(function () {
-
-                timeLeft--;
-
-                timerElement.textContent =
-                    timeLeft;
-
-
-                const percentage =
-                    (timeLeft / gameTime) * 100;
-
-                timerBar.style.width =
-                    percentage + '%';
-
-
-                if (timeLeft <= 0) {
-
-                    clearInterval(timerInterval);
-
-                    finishGame();
-                }
-
-            }, 1000);
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | FINISH GAME
-    |--------------------------------------------------------------------------
-    */
-
-    function finishGame() {
-
-        clearInterval(timerInterval);
-
-        gameArea.style.display =
-            'none';
-
-        resultScreen.style.display =
-            'block';
-
-        finalScoreElement.textContent =
-            score;
-
-
-        if (score >= 80) {
-
-            resultMessage.textContent =
-                '🔥 Amazing! You are a Math Speed Master!';
-
-        }
-
-        else if (score >= 50) {
-
-            resultMessage.textContent =
-                '👏 Great job! Keep practicing!';
-
-        }
-
-        else {
-
-            resultMessage.textContent =
-                '💪 Good attempt! Try again and improve your score!';
-
-        }
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | BUTTON
-    |--------------------------------------------------------------------------
-    */
-
-    submitButton.addEventListener(
-        'click',
-        submitAnswer
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | ENTER KEY
-    |--------------------------------------------------------------------------
-    */
-
-    answerElement.addEventListener(
-        'keydown',
-        function(event) {
-
-            if (event.key === 'Enter') {
-
-                submitAnswer();
+                questionElement.textContent =
+                    `${firstNumber} × ${secondNumber} = ?`;
 
             }
 
+
+            questionNumberElement.textContent =
+                currentQuestionIndex + 1;
+
+            currentQuestionElement.textContent =
+                currentQuestionIndex + 1;
+
+            answerElement.value = '';
+
+            answerElement.focus();
+
+            feedbackElement.textContent = '';
+
+            feedbackElement.className = 'feedback';
         }
-    );
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | START GAME
-    |--------------------------------------------------------------------------
-    */
+        /*
+        |--------------------------------------------------------------------------
+        | SUBMIT ANSWER
+        |--------------------------------------------------------------------------
+        */
 
-    generateQuestion();
+        function submitAnswer() {
 
-    startTimer();
+            const userAnswer =
+                Number(answerElement.value);
 
-</script>
+
+            if (
+                answerElement.value.trim() === ''
+            ) {
+                feedbackElement.textContent =
+                    'Please enter an answer.';
+
+                feedbackElement.className =
+                    'feedback wrong';
+
+                return;
+            }
+
+
+            if (userAnswer === currentAnswer) {
+
+                score += 10;
+
+                streak++;
+
+                feedbackElement.textContent =
+                    '✓ Correct! +10 points';
+
+                feedbackElement.className =
+                    'feedback correct';
+
+            } else {
+
+                streak = 0;
+
+                feedbackElement.textContent =
+                    `✗ Wrong! Correct answer was ${currentAnswer}`;
+
+                feedbackElement.className =
+                    'feedback wrong';
+
+            }
+
+
+            scoreElement.textContent =
+                score;
+
+            streakElement.textContent =
+                streak;
+
+
+            currentQuestionIndex++;
+
+
+            if (
+                currentQuestionIndex >= totalQuestions
+            ) {
+
+                setTimeout(
+                    finishGame,
+                    700
+                );
+
+                return;
+            }
+
+
+            setTimeout(
+                generateQuestion,
+                700
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | TIMER
+        |--------------------------------------------------------------------------
+        */
+
+        function startTimer() {
+
+            timerInterval =
+                setInterval(function() {
+
+                    timeLeft--;
+
+                    timerElement.textContent =
+                        timeLeft;
+
+
+                    const percentage =
+                        (timeLeft / gameTime) * 100;
+
+                    timerBar.style.width =
+                        percentage + '%';
+
+
+                    if (timeLeft <= 0) {
+
+                        clearInterval(timerInterval);
+
+                        finishGame();
+                    }
+
+                }, 1000);
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | FINISH GAME
+        |--------------------------------------------------------------------------
+        */
+
+        function finishGame() {
+
+            clearInterval(timerInterval);
+
+            gameArea.style.display = 'none';
+
+            resultScreen.style.display = 'block';
+
+            finalScoreElement.textContent = score;
+
+
+            if (score >= 80) {
+
+                resultMessage.textContent =
+                    '🔥 Amazing! You are a Math Speed Master!';
+
+            } else if (score >= 50) {
+
+                resultMessage.textContent =
+                    '👏 Great job! Keep practicing!';
+
+            } else {
+
+                resultMessage.textContent =
+                    '💪 Good attempt! Try again and improve your score!';
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | SEND COMPLETION TO LARAVEL
+            |--------------------------------------------------------------------------
+            */
+
+            fetch("{{ route('student.game.complete', $task->id) }}", {
+
+                    method: 'POST',
+
+                    headers: {
+
+                        'Content-Type': 'application/json',
+
+                        'X-CSRF-TOKEN': document.querySelector(
+                            'meta[name="csrf-token"]'
+                        )?.getAttribute('content'),
+
+                        'Accept': 'application/json'
+
+                    },
+
+                    body: JSON.stringify({
+
+                        score: score
+
+                    })
+
+                })
+
+                .then(response => {
+
+                    if (!response.ok) {
+                        throw new Error(
+                            'Quest completion request failed.'
+                        );
+                    }
+
+                    return response.json();
+
+                })
+
+                .then(data => {
+
+                    console.log(
+                        'Quest completion response:',
+                        data
+                    );
+
+
+                    if (data.success) {
+
+                        console.log(
+                            'XP Earned:',
+                            data.xp_earned
+                        );
+
+                        console.log(
+                            'Total XP:',
+                            data.total_xp
+                        );
+
+                        console.log(
+                            'Completed Tasks:',
+                            data.completed_tasks
+                        );
+
+
+                        if (data.badges && data.badges.length > 0) {
+
+                            console.log(
+                                'New badges:',
+                                data.badges
+                            );
+
+                        }
+
+                    }
+
+                })
+
+                .catch(error => {
+
+                    console.error(
+                        'Quest completion error:',
+                        error
+                    );
+
+                });
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | BUTTON
+        |--------------------------------------------------------------------------
+        */
+
+        submitButton.addEventListener(
+            'click',
+            submitAnswer
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | ENTER KEY
+        |--------------------------------------------------------------------------
+        */
+
+        answerElement.addEventListener(
+            'keydown',
+            function(event) {
+
+                if (event.key === 'Enter') {
+
+                    submitAnswer();
+
+                }
+
+            }
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | START GAME
+        |--------------------------------------------------------------------------
+        */
+
+        generateQuestion();
+
+        startTimer();
+    </script>
 
 </body>
+
 </html>

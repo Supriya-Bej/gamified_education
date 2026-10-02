@@ -15,6 +15,11 @@ use App\Http\Controllers\Admin\StudentManagementController;
 use App\Http\Controllers\Admin\GameManagementController;
 use App\Http\Controllers\Admin\LearningTaskManagementController;
 use App\Http\Controllers\AdminGameController;
+use App\Http\Controllers\Admin\GameEngineManagementController;
+use App\Http\Controllers\Admin\GameContentManagementController;
+use App\Http\Controllers\Admin\RewardManagementController;
+use App\Http\Controllers\Admin\BadgeManagementController;
+use App\Http\Controllers\StudentBadgeController;
 use App\Models\Subject;
 use App\Models\Task;
 
@@ -56,6 +61,10 @@ Route::middleware('auth:student')->group(function () {
     // Game complete
     Route::post('/student/game/{task}/complete', [StudentGameController::class, 'complete'])
         ->name('student.game.complete');
+
+    // Badge
+    Route::get('/student/badges', [StudentBadgeController::class, 'index'])
+        ->name('student.badges');
 });
 
 
@@ -116,11 +125,50 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
     Route::delete('/games/{game}', [GameManagementController::class, 'destroy'])
         ->name('admin.games.destroy');
 
+    // Task view
     Route::get('/tasks', [LearningTaskManagementController::class, 'index'])
         ->name('admin.tasks.index');
 
+    // Task show
     Route::get('/tasks/{task}', [LearningTaskManagementController::class, 'show'])
         ->name('admin.tasks.show');
+
+    // Game engine
+    Route::get('/engines', [GameEngineManagementController::class, 'index'])
+        ->name('admin.engines.index');
+
+    Route::get('/engines/{gameType}', [GameEngineManagementController::class, 'show'])
+        ->name('admin.engines.show');
+
+    // Game content
+    Route::get('/game-content', [GameContentManagementController::class, 'index'])
+        ->name('admin.game-content.index');
+
+    Route::get('/game-content/{game}', [GameContentManagementController::class, 'show'])
+        ->name('admin.game-content.show');
+
+    // xp & Rewards
+    Route::get('/rewards', [RewardManagementController::class, 'index'])
+        ->name('admin.rewards.index');
+
+    // Badges Management
+    Route::get('/badges', [BadgeManagementController::class, 'index'])
+        ->name('admin.badges.index');
+
+    Route::get('/badges/create', [BadgeManagementController::class, 'create'])
+        ->name('admin.badges.create');
+
+    Route::post('/badges', [BadgeManagementController::class, 'store'])
+        ->name('admin.badges.store');
+
+    Route::get('/badges/{badge}/edit', [BadgeManagementController::class, 'edit'])
+        ->name('admin.badges.edit');
+
+    Route::put('/badges/{badge}', [BadgeManagementController::class, 'update'])
+        ->name('admin.badges.update');
+
+    Route::delete('/badges/{badge}', [BadgeManagementController::class, 'destroy'])
+        ->name('admin.badges.destroy');
 });
 
 

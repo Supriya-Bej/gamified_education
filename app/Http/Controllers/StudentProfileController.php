@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\StudentPreference;
+use App\Models\StudentBadge;
 
 class StudentProfileController extends Controller
 {
@@ -19,9 +20,30 @@ class StudentProfileController extends Controller
     {
         $user = Auth::guard('student')->user();
 
-        $preference = StudentPreference::where('user_id', $user->id)->first();
+        $preference = StudentPreference::where(
+            'user_id',
+            $user->id
+        )->first();
 
-        return view('student.profile', compact('user', 'preference'));
+        /*
+        |--------------------------------------------------------------------------
+        | Get Earned Badges
+        |--------------------------------------------------------------------------
+        */
+
+        $badges = StudentBadge::with('badge')
+            ->where('user_id', $user->id)
+            ->latest('awarded_at')
+            ->get();
+
+        return view(
+            'student.profile',
+            compact(
+                'user',
+                'preference',
+                'badges'
+            )
+        );
     }
 
 
@@ -41,7 +63,7 @@ class StudentProfileController extends Controller
             'email' => 'required|email|max:255',
 
             'profile_picture' =>
-                'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
 
@@ -118,7 +140,6 @@ class StudentProfileController extends Controller
 
             Storage::disk('public')
                 ->delete($user->profile_picture);
-
         }
 
 

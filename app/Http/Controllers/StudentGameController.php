@@ -6,6 +6,7 @@ use App\Models\Game;
 use App\Models\LearningTask;
 use App\Models\StudentProgress;
 use Illuminate\Support\Facades\Auth;
+use App\Services\BadgeService;
 use Illuminate\Support\Facades\DB;
 
 class StudentGameController extends Controller
@@ -62,23 +63,23 @@ class StudentGameController extends Controller
         $view = match (strtolower(trim($game->game_type))) {
 
             'arithmetic_speed'
-                => 'student.games.math-speed',
+            => 'student.games.math-speed',
 
             'creative_coding'
-                => 'student.games.creative-coding',
+            => 'student.games.creative-coding',
 
             'sorting_challenge'
-                => 'student.games.sorting-challenge',
+            => 'student.games.sorting-challenge',
 
             default
-                => 'student.game',
+            => 'student.game',
         };
 
         return view($view, compact('game', 'task'));
     }
 
 
-    public function complete(LearningTask $task)
+    public function complete(LearningTask $task, BadgeService $badgeService)
     {
         $student = Auth::guard('student')->user();
 
@@ -89,7 +90,6 @@ class StudentGameController extends Controller
             ], 401);
         }
 
-        // Make sure task belongs to logged-in student
         if ($task->user_id !== $student->id) {
             return response()->json([
                 'success' => false,
@@ -97,7 +97,6 @@ class StudentGameController extends Controller
             ], 403);
         }
 
-        // Prevent completing the same quest twice
         if ($task->status === 'completed') {
             return response()->json([
                 'success' => false,
@@ -107,59 +106,10 @@ class StudentGameController extends Controller
 
 
         /*
-        |--------------------------------------------------------------------------
-        | XP CALCULATION
-        |--------------------------------------------------------------------------
-        */
-
-        $xp = (int) ($task->xp ?? 20);
-
-        if ($xp <= 0) {
-            $xp = 20;
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | INTEREST / CATEGORY
-        |--------------------------------------------------------------------------
-        |
-        | Example:
-        |
-        | task category = coding
-        |
-        | subject_xp:
-        | {
-        |     "coding": 40,
-        |     "chess": 20,
-        |     "music": 10
-        | }
-        |
-        | After completing coding task:
-        |
-        | {
-        |     "coding": 60,
-        |     "chess": 20,
-        |     "music": 10
-        | }
-        |
-        |--------------------------------------------------------------------------
-        */
-
-        $interest = strtolower(
-            trim($task->category ?? '')
-        );
-
-        if ($interest === '') {
-            $interest = 'general';
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE PROGRESS
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Update Student Progress
+    |--------------------------------------------------------------------------
+    */
 
         $progress = StudentProgress::firstOrCreate(
             [
@@ -175,75 +125,38 @@ class StudentGameController extends Controller
 
 
         /*
-        |--------------------------------------------------------------------------
-        | EXISTING INTEREST XP
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Add Quest XP
+    |--------------------------------------------------------------------------
+    */
 
-        $subjectXp = $progress->subject_xp;
+        $taskXp = (int) ($task->xp ?? 0);
 
-        if (!is_array($subjectXp)) {
-            $subjectXp = [];
-        }
+        $progress->total_xp += $taskXp;
+
+        $progress->completed_tasks += 1;
 
 
-        $currentInterestXp = (int) (
-            $subjectXp[$interest] ?? 0
+        /*
+    |--------------------------------------------------------------------------
+    | Calculate Level
+    |--------------------------------------------------------------------------
+    */
+
+        $progress->level = max(
+            1,
+            (int) floor($progress->total_xp / 100) + 1
         );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | ADD XP ONLY TO THIS INTEREST
-        |--------------------------------------------------------------------------
-        */
-
-        $subjectXp[$interest] = $currentInterestXp + $xp;
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE PROGRESS
-        |--------------------------------------------------------------------------
-        */
-
-        $progress->total_xp = (int) $progress->total_xp + $xp;
-
-        $progress->completed_tasks =
-            (int) $progress->completed_tasks + 1;
-
-        $progress->subject_xp = $subjectXp;
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | SIMPLE LEVEL CALCULATION
-        |--------------------------------------------------------------------------
-        |
-        | Every 100 total XP = 1 level
-        |
-        | 0-99   => Level 1
-        | 100-199 => Level 2
-        | 200-299 => Level 3
-        |
-        |--------------------------------------------------------------------------
-        */
-
-        $progress->level =
-            max(
-                1,
-                (int) floor($progress->total_xp / 100) + 1
-            );
 
 
         $progress->save();
 
 
         /*
-        |--------------------------------------------------------------------------
-        | MARK TASK COMPLETED
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Mark Quest Completed
+    |--------------------------------------------------------------------------
+    */
 
         $task->update([
             'status' => 'completed',
@@ -251,26 +164,41 @@ class StudentGameController extends Controller
 
 
         /*
-        |--------------------------------------------------------------------------
-        | RESPONSE
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Check Eligible Badges
+    |--------------------------------------------------------------------------
+    */
+
+        $awardedBadges = $badgeService->checkAndAward($student);
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
 
         return response()->json([
             'success' => true,
+
             'message' => 'Quest completed successfully!',
 
-            'xp_earned' => $xp,
-
-            'interest' => $interest,
-
-            'interest_xp' => $subjectXp[$interest],
+            'xp_earned' => $taskXp,
 
             'total_xp' => $progress->total_xp,
 
             'completed_tasks' => $progress->completed_tasks,
 
             'level' => $progress->level,
+
+            'badges' => collect($awardedBadges)->map(function ($badge) {
+                return [
+                    'id' => $badge->id,
+                    'name' => $badge->name,
+                    'description' => $badge->description,
+                    'icon' => $badge->icon,
+                ];
+            })->values(),
         ]);
     }
 }

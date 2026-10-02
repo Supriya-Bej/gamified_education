@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\StudentPreference;
+use App\Models\StudentBadge;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -39,5 +40,10 @@ class UserRegister extends Authenticatable
             TaskCompletion::class,
             'user_id'
         );
+    }
+
+    public function studentBadges()
+    {
+        return $this->hasMany(StudentBadge::class, 'user_id');
     }
 }
