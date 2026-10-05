@@ -7,8 +7,7 @@
 
     <a
         href="{{ route('student.dashboard') }}"
-        class="brand"
-    >
+        class="brand">
 
 
         <div class="brand-icon">
@@ -54,8 +53,7 @@
     <a
         href="{{ route('student.dashboard') }}"
         class="side-link
-        {{ request()->routeIs('student.dashboard') ? 'active' : '' }}"
-    >
+        {{ request()->routeIs('student.dashboard') ? 'active' : '' }}">
 
         <i class="bi bi-grid-1x2-fill"></i>
 
@@ -68,8 +66,7 @@
     <a
         href="{{ route('student.profile') }}"
         class="side-link
-        {{ request()->routeIs('student.profile') ? 'active' : '' }}"
-    >
+        {{ request()->routeIs('student.profile') ? 'active' : '' }}">
 
         <i class="bi bi-person-circle"></i>
 
@@ -82,8 +79,7 @@
     <a
         href="{{ route('student.badges') }}"
         class="side-link
-        {{ request()->routeIs('student.badges') ? 'active' : '' }}"
-    >
+        {{ request()->routeIs('student.badges') ? 'active' : '' }}">
 
         <i class="bi bi-award-fill"></i>
 
@@ -95,8 +91,7 @@
 
     <a
         href="{{ route('student.dashboard') }}#quests"
-        class="side-link"
-    >
+        class="side-link">
 
         <i class="bi bi-trophy-fill"></i>
 
@@ -109,22 +104,17 @@
 
 
     <a
-        href="{{ route('student.dashboard') }}#progress"
-        class="side-link"
-    >
-
+        href="{{ route('student.progress') }}#progress"
+        class="side-link">
         <i class="bi bi-graph-up-arrow"></i>
-
         <span>My Progress</span>
-
     </a>
 
 
 
     <a
         href="{{ route('student.dashboard') }}#topics"
-        class="side-link"
-    >
+        class="side-link">
 
         <i class="bi bi-lightbulb-fill"></i>
 
@@ -195,16 +185,14 @@
 
         <form
             action="{{ route('logout-user') }}"
-            method="POST"
-        >
+            method="POST">
 
             @csrf
 
 
             <button
                 type="submit"
-                class="side-link logout-link"
-            >
+                class="side-link logout-link">
 
                 <i class="bi bi-box-arrow-right"></i>
 

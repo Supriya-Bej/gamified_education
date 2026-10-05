@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\GameContentManagementController;
 use App\Http\Controllers\Admin\RewardManagementController;
 use App\Http\Controllers\Admin\BadgeManagementController;
 use App\Http\Controllers\StudentBadgeController;
+use App\Http\Controllers\StudentProgressController;
 use App\Models\Subject;
 use App\Models\Task;
 
@@ -65,6 +66,10 @@ Route::middleware('auth:student')->group(function () {
     // Badge
     Route::get('/student/badges', [StudentBadgeController::class, 'index'])
         ->name('student.badges');
+
+    // Student Progress
+    Route::get('/student/progress', [StudentProgressController::class, 'index'])
+        ->name('student.progress');
 });
 
 
