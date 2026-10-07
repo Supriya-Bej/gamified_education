@@ -19,8 +19,11 @@ use App\Http\Controllers\Admin\GameEngineManagementController;
 use App\Http\Controllers\Admin\GameContentManagementController;
 use App\Http\Controllers\Admin\RewardManagementController;
 use App\Http\Controllers\Admin\BadgeManagementController;
+use App\Http\Controllers\Admin\LearningMaterialManagementController;
+use App\Http\Controllers\Admin\TopicManagementController;
 use App\Http\Controllers\StudentBadgeController;
 use App\Http\Controllers\StudentProgressController;
+use App\Http\Controllers\StudentLearningMaterialController;
 use App\Models\Subject;
 use App\Models\Task;
 
@@ -70,7 +73,23 @@ Route::middleware('auth:student')->group(function () {
     // Student Progress
     Route::get('/student/progress', [StudentProgressController::class, 'index'])
         ->name('student.progress');
+
+    // View Learning Materials
+    Route::get('/student/learning-materials', [StudentLearningMaterialController::class, 'index'])
+        ->name('student.learning-materials.index');
+
+    Route::get('/student/learning-materials/{learningMaterial}', [StudentLearningMaterialController::class, 'show'])
+        ->name('student.learning-materials.show');
+
+    Route::post(
+        '/student/learning-materials/{learningMaterial}/complete',
+        [StudentLearningMaterialController::class, 'complete']
+    )->name('student.learning-materials.complete');
 });
+// Logout
+Route::post('/student/logout', [UserController::class, 'logoutUser'])->name('logout-user');
+
+
 
 
 // ADMIN AUTHENTICATION
@@ -174,11 +193,50 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
 
     Route::delete('/badges/{badge}', [BadgeManagementController::class, 'destroy'])
         ->name('admin.badges.destroy');
+
+
+    // Learning Content Management
+    Route::get('/learning-materials', [LearningMaterialManagementController::class, 'index'])
+        ->name('admin.learning-materials.index');
+
+    Route::get('/learning-materials/create', [LearningMaterialManagementController::class, 'create'])
+        ->name('admin.learning-materials.create');
+
+    Route::post('/learning-materials', [LearningMaterialManagementController::class, 'store'])
+        ->name('admin.learning-materials.store');
+
+    Route::get('/learning-materials/{learningMaterial}/edit', [LearningMaterialManagementController::class, 'edit'])
+        ->name('admin.learning-materials.edit');
+
+    Route::put('/learning-materials/{learningMaterial}', [LearningMaterialManagementController::class, 'update'])
+        ->name('admin.learning-materials.update');
+
+    Route::delete('/learning-materials/{learningMaterial}', [LearningMaterialManagementController::class, 'destroy'])
+        ->name('admin.learning-materials.destroy');
+
+
+    // Topics Management
+    Route::get('/topics', [TopicManagementController::class, 'index'])
+        ->name('admin.topics.index');
+
+    Route::get('/topics/create', [TopicManagementController::class, 'create'])
+        ->name('admin.topics.create');
+
+    Route::post('/topics', [TopicManagementController::class, 'store'])
+        ->name('admin.topics.store');
+
+    Route::get('/topics/{topic}/edit', [TopicManagementController::class, 'edit'])
+        ->name('admin.topics.edit');
+
+    Route::put('/topics/{topic}', [TopicManagementController::class, 'update'])
+        ->name('admin.topics.update');
+
+    Route::delete('/topics/{topic}', [TopicManagementController::class, 'destroy'])
+        ->name('admin.topics.destroy');
 });
 
 
-// Logout
-Route::post('/student/logout', [UserController::class, 'logoutUser'])->name('logout-user');
+
 
 
 

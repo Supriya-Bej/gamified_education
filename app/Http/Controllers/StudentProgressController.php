@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\LearningTask;
 use App\Models\StudentProgress;
 use App\Models\StudentBadge;
+use App\Models\LearningMaterialProgress;
 use Illuminate\Support\Facades\Auth;
 
 class StudentProgressController extends Controller
@@ -38,6 +39,14 @@ class StudentProgressController extends Controller
             ->latest('awarded_at')
             ->get();
 
+        $completedLearningMaterials = LearningMaterialProgress::with(
+            'learningMaterial'
+        )
+            ->where('user_id', $student->id)
+            ->whereNotNull('completed_at')
+            ->latest('completed_at')
+            ->get();
+
         /*XP Progress*/
         $currentLevel = max(1, (int) $progress->level);
         $currentLevelXp = ($currentLevel - 1) * 100;
@@ -60,6 +69,7 @@ class StudentProgressController extends Controller
                 'progress',
                 'completedTasks',
                 'badges',
+                'completedLearningMaterials',
                 'currentLevel',
                 'currentLevelXp',
                 'nextLevelXp',

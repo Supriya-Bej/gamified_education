@@ -2765,35 +2765,18 @@
 
 
                 @forelse($recommendedTopics as $topic)
-
-
                     <span class="topic-chip">
-
                         <i class="bi bi-lightbulb"></i>
-
                         {{ $topic }}
-
                     </span>
-
-
                 @empty
 
-
                     @if($preference && !empty($preference->interests))
-
-
                         @foreach($preference->interests as $item)
-
-
                             <span class="topic-chip">
-
                                 <i class="bi bi-lightbulb"></i>
-
                                 {{ $item }} Mastery
-
                             </span>
-
-
                         @endforeach
 
 

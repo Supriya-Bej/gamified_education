@@ -1,1039 +1,518 @@
 {{-- =========================================================
-     EcoQuest - Student Progress Page
+     EcoQuest — Student Progress Page (AI Theme)
      ========================================================= --}}
 
 @extends('student.layouts.app')
 
-{{-- Bootstrap Icons --}}
-<link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+@section('title', 'My Progress | EcoQuest')
 
+@section('head')
 <style>
-    /* =====================================================
-           PAGE
-        ===================================================== */
-
+    /* ── Page wrapper ─────────────────────────────────────── */
     .progress-page {
+        padding: 28px 30px 60px;
         min-height: 100vh;
-        background: #f5f7fb;
-        padding: 28px;
+        background: var(--page-bg);
     }
 
-
-    /* =====================================================
-           HEADER
-        ===================================================== */
-
-    .progress-header {
-        background: linear-gradient(135deg,
-                #172554,
-                #2563eb);
-
-        border-radius: 24px;
-        padding: 30px;
-        color: #ffffff;
-
+    /* ── Page hero banner ─────────────────────────────────── */
+    .progress-hero {
         position: relative;
         overflow: hidden;
-
-        box-shadow: 0 15px 35px rgba(37, 99, 235, 0.18);
+        border-radius: 22px;
+        padding: 34px 36px;
+        margin-bottom: 28px;
+        background: linear-gradient(135deg, var(--surface), var(--surface-alt));
+        border: 1px solid var(--border);
     }
 
-    .progress-header::before {
-        content: "";
+    .progress-hero::before {
+        content: '📈';
         position: absolute;
-
-        width: 220px;
-        height: 220px;
-
-        border-radius: 50%;
-
-        background: rgba(255, 255, 255, 0.08);
-
-        right: -70px;
-        top: -100px;
+        right: 30px; top: 10px;
+        font-size: 120px;
+        opacity: 0.05;
+        pointer-events: none;
     }
 
-    .progress-header::after {
-        content: "";
-        position: absolute;
-
-        width: 140px;
-        height: 140px;
-
-        border-radius: 50%;
-
-        background: rgba(255, 255, 255, 0.06);
-
-        right: 100px;
-        bottom: -80px;
-    }
-
-    .progress-header-content {
-        position: relative;
-        z-index: 2;
-    }
-
-    .progress-header h2 {
+    .progress-hero h2 {
+        font-family: var(--font-display);
+        font-size: 1.8rem;
         font-weight: 800;
-        margin-bottom: 8px;
+        color: var(--secondary);
+        margin-bottom: 6px;
     }
 
-    .progress-header p {
+    .progress-hero p {
+        color: var(--text-muted);
+        font-size: 0.9rem;
         margin: 0;
-        color: rgba(255, 255, 255, 0.78);
     }
 
-    .header-level {
+    .hero-level-pill {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-
-        margin-top: 20px;
-
-        padding: 8px 15px;
-
+        padding: 8px 16px;
         border-radius: 50px;
-
-        background: rgba(255, 255, 255, 0.12);
-
-        font-size: 14px;
-        font-weight: 600;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: #000;
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin-top: 18px;
+        box-shadow: 0 4px 14px var(--glow);
     }
 
-
-    /* =====================================================
-           STAT CARDS
-        ===================================================== */
-
-    .stat-card {
-        border: 0;
-        border-radius: 20px;
-
-        background: #ffffff;
-
-        box-shadow: 0 8px 25px rgba(15, 23, 42, 0.06);
-
-        transition:
-            transform 0.25s ease,
-            box-shadow 0.25s ease;
-
-        overflow: hidden;
+    /* ── Stat grid ────────────────────────────────────────── */
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 18px;
+        margin-bottom: 26px;
     }
 
-    .stat-card:hover {
-        transform: translateY(-5px);
-
-        box-shadow: 0 15px 35px rgba(15, 23, 42, 0.10);
-    }
-
-    .stat-card-body {
-        padding: 24px;
-    }
-
-    .stat-icon {
-        width: 52px;
-        height: 52px;
-
-        border-radius: 16px;
-
+    .stat-card-inner {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 22px 20px;
         display: flex;
         align-items: center;
-        justify-content: center;
-
-        font-size: 22px;
+        gap: 16px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .stat-icon.blue {
-        background: #e8f0ff;
-        color: #2563eb;
+    .stat-card-inner:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.3);
     }
 
-    .stat-icon.yellow {
-        background: #fff5d6;
-        color: #e5a700;
-    }
-
-    .stat-icon.green {
-        background: #e7f8ef;
-        color: #16a05d;
-    }
-
-    .stat-icon.purple {
-        background: #f1eaff;
-        color: #7c3aed;
+    .stat-icon-box {
+        width: 52px; height: 52px;
+        border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px var(--glow);
     }
 
     .stat-label {
-        color: #64748b;
-        font-size: 13px;
-        font-weight: 600;
-
-        margin-bottom: 5px;
-    }
-
-    .stat-value {
-        color: #0f172a;
-
-        font-size: 28px;
-        font-weight: 800;
-
-        margin: 0;
-    }
-
-
-    /* =====================================================
-           COMMON CARD
-        ===================================================== */
-
-    .eco-card {
-        border: 0;
-        border-radius: 22px;
-
-        background: #ffffff;
-
-        box-shadow: 0 8px 25px rgba(15, 23, 42, 0.06);
-    }
-
-    .eco-card-header {
-        padding: 23px 25px;
-
-        border-bottom: 1px solid #eef1f6;
-
-        background: transparent;
-    }
-
-    .eco-card-header h5 {
-        font-weight: 750;
-        color: #0f172a;
-
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
         margin-bottom: 4px;
     }
 
-    .eco-card-header p {
-        color: #64748b;
-
-        font-size: 13px;
-
-        margin: 0;
+    .stat-value {
+        font-family: var(--font-display);
+        font-size: 1.7rem;
+        font-weight: 800;
+        color: var(--secondary);
+        line-height: 1;
     }
 
-
-    /* =====================================================
-           LEVEL PROGRESS
-        ===================================================== */
-
+    /* ── Level progress card ──────────────────────────────── */
     .level-card {
-        padding: 27px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 28px;
+        margin-bottom: 26px;
+    }
+
+    .level-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-bottom: 22px;
     }
 
     .level-number {
-        font-size: 34px;
-        font-weight: 850;
-
-        color: #172554;
+        font-family: var(--font-display);
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--secondary);
     }
 
     .level-subtitle {
-        color: #64748b;
-        font-size: 13px;
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        margin-top: 2px;
     }
 
-    .xp-badge {
-        padding: 9px 15px;
-
-        background: #eef4ff;
-        color: #2563eb;
-
+    .xp-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
         border-radius: 50px;
-
-        font-size: 13px;
+        font-size: 0.82rem;
         font-weight: 700;
+        color: #000;
+        box-shadow: 0 4px 12px var(--glow);
     }
 
-    .xp-progress {
-        height: 15px;
-
-        background: #e9eef7;
-
+    .xp-track {
+        height: 14px;
+        background: var(--surface-alt);
         border-radius: 50px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
 
+    .xp-fill {
+        height: 100%;
+        border-radius: 50px;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        box-shadow: 0 0 8px var(--glow);
+        transition: width 0.8s ease;
+    }
+
+    .xp-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    /* ── Section card ─────────────────────────────────────── */
+    .section-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        margin-bottom: 26px;
         overflow: hidden;
     }
 
-    .xp-progress-bar {
-        height: 100%;
-
-        border-radius: 50px;
-
-        background: linear-gradient(90deg,
-                #2563eb,
-                #60a5fa);
-
-        transition: width 0.6s ease;
-    }
-
-    .level-labels {
+    .section-card-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
         display: flex;
-        justify-content: space-between;
-
-        margin-top: 9px;
-
-        font-size: 12px;
-        color: #94a3b8;
+        align-items: center;
+        gap: 12px;
     }
 
+    .section-card-header h5 {
+        font-family: var(--font-display);
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--secondary);
+        margin: 0;
+    }
 
-    /* =====================================================
-           QUEST LIST
-        ===================================================== */
+    .section-card-header p {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin: 3px 0 0;
+    }
 
+    .section-icon {
+        width: 40px; height: 40px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        flex-shrink: 0;
+    }
+
+    /* ── Quest items ──────────────────────────────────────── */
     .quest-item {
         display: flex;
-
         align-items: center;
         justify-content: space-between;
-
-        gap: 15px;
-
-        padding: 17px 0;
-
-        border-bottom: 1px solid #edf0f5;
+        gap: 14px;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
     }
 
-    .quest-item:last-child {
-        border-bottom: 0;
-    }
+    .quest-item:last-child { border-bottom: 0; }
 
-    .quest-left {
-        display: flex;
-        align-items: center;
-
-        min-width: 0;
-    }
+    .quest-left { display: flex; align-items: center; min-width: 0; }
 
     .quest-check {
-        width: 44px;
-        height: 44px;
-
+        width: 40px; height: 40px;
         flex-shrink: 0;
-
-        border-radius: 14px;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        background: #e8f8ef;
-        color: #16a05d;
-
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(34,197,94,0.12);
+        color: #4ade80;
+        font-size: 1rem;
         margin-right: 13px;
     }
 
     .quest-title {
-        color: #172033;
-
+        color: var(--text-main);
         font-weight: 700;
-        font-size: 14px;
-
-        margin-bottom: 4px;
+        font-size: 0.88rem;
+        margin-bottom: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .quest-meta {
-        color: #94a3b8;
-
-        font-size: 12px;
+        color: var(--text-muted);
+        font-size: 0.72rem;
     }
 
-    .quest-xp {
+    .xp-tag {
         flex-shrink: 0;
-
-        padding: 7px 11px;
-
+        padding: 5px 12px;
         border-radius: 50px;
-
-        background: #fff5d6;
-        color: #a56c00;
-
-        font-size: 12px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        font-size: 0.72rem;
         font-weight: 700;
+        color: #000;
     }
 
-
-    /* =====================================================
-           BADGES
-        ===================================================== */
-
-    .badge-item {
+    /* ── Badge items ──────────────────────────────────────── */
+    .badge-row {
         display: flex;
         align-items: center;
-
-        padding: 16px 0;
-
-        border-bottom: 1px solid #edf0f5;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
     }
 
-    .badge-item:last-child {
-        border-bottom: 0;
-    }
+    .badge-row:last-child { border-bottom: 0; }
 
-    .badge-icon {
-        width: 50px;
-        height: 50px;
-
+    .badge-emoji {
+        width: 48px; height: 48px;
         flex-shrink: 0;
-
-        border-radius: 16px;
-
-        background: #fff6db;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        font-size: 27px;
-
-        margin-right: 13px;
+        border-radius: 14px;
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem;
+        margin-right: 14px;
     }
 
     .badge-name {
-        color: #172033;
-
-        font-size: 14px;
-        font-weight: 750;
-
+        color: var(--text-main);
+        font-size: 0.88rem;
+        font-weight: 700;
         margin-bottom: 3px;
     }
 
-    .badge-date {
-        color: #94a3b8;
+    .badge-date { color: var(--text-muted); font-size: 0.72rem; }
 
-        font-size: 12px;
-    }
-
-
-    /* =====================================================
-           EMPTY STATE
-        ===================================================== */
-
+    /* ── Empty state ──────────────────────────────────────── */
     .empty-state {
         text-align: center;
-
-        padding: 45px 20px;
+        padding: 48px 20px;
     }
 
-    .empty-icon {
-        width: 70px;
-        height: 70px;
-
-        margin: 0 auto 16px;
-
-        border-radius: 22px;
-
-        background: #f1f5f9;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        font-size: 32px;
+    .empty-state-icon {
+        font-size: 3.5rem;
+        margin-bottom: 14px;
+        opacity: 0.6;
     }
 
     .empty-state h6 {
-        font-weight: 750;
-        color: #172033;
+        color: var(--text-main);
+        font-weight: 800;
+        margin-bottom: 8px;
     }
 
     .empty-state p {
-        color: #94a3b8;
-        font-size: 13px;
+        color: var(--text-muted);
+        font-size: 0.82rem;
     }
 
-
-    /* =====================================================
-           BUTTON
-        ===================================================== */
-
-    .view-badges-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-
-        padding: 9px 15px;
-
-        border-radius: 10px;
-
-        font-size: 13px;
-        font-weight: 650;
-    }
-
-
-    /* =====================================================
-           RESPONSIVE
-        ===================================================== */
-
+    /* ── Responsive ───────────────────────────────────────── */
     @media (max-width: 768px) {
-
-        .progress-page {
-            padding: 18px;
-        }
-
-        .progress-header {
-            padding: 24px;
-            border-radius: 20px;
-        }
-
-        .progress-header h2 {
-            font-size: 24px;
-        }
-
-        .stat-value {
-            font-size: 24px;
-        }
-
-        .level-card {
-            padding: 21px;
-        }
-
-        .quest-item {
-            align-items: flex-start;
-        }
-
-        .quest-xp {
-            font-size: 11px;
-        }
-
-    }
-
-    @media (max-width: 480px) {
-
-        .progress-page {
-            padding: 13px;
-        }
-
-        .progress-header {
-            padding: 20px;
-        }
-
-        .progress-header h2 {
-            font-size: 21px;
-        }
-
-        .stat-card-body {
-            padding: 20px;
-        }
-
-        .quest-item {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .quest-xp {
-            margin-left: 57px;
-        }
-
+        .progress-page { padding: 18px 16px 40px; }
+        .progress-hero { padding: 24px 20px; border-radius: 18px; }
+        .progress-hero h2 { font-size: 1.4rem; }
+        .level-number { font-size: 1.6rem; }
+        .quest-item { flex-wrap: wrap; }
     }
 </style>
-
-
-
-{{-- =========================================================
-     PAGE CONTENT
-     ========================================================= --}}
+@endsection
 
 @section('content')
+<div class="progress-page" id="progress">
 
-<div class="progress-page">
-
-    {{-- =====================================================
-         HERO HEADER
-    ===================================================== --}}
-
-    <div class="progress-header mb-4">
-
-        <div class="progress-header-content">
-
-            <h2>
-                <i class="bi bi-graph-up-arrow me-2"></i>
-                My Progress
-            </h2>
-
-            <p>
-                Track your EcoQuest journey, level up and unlock achievements.
-            </p>
-
-            <div class="header-level">
-
-                <i class="bi bi-lightning-charge-fill"></i>
-
-                Level {{ $currentLevel }}
-
-                <span class="opacity-50">•</span>
-
-                {{ $progress->total_xp }} XP
-
+    {{-- ── TOPBAR ────────────────────────────────────────────────────── --}}
+    <div class="theme-topbar mb-0" style="margin: -28px -30px 28px; padding: 18px 30px;">
+        <div>
+            <div class="theme-topbar-title">
+                <i class="bi bi-graph-up-arrow me-2" style="color: var(--secondary);"></i>
+                {{ $labels['mission_title'] ?? 'My Progress' }}
             </div>
-
+            <div class="theme-topbar-subtitle">
+                Track your journey and level up, {{ $student->name }}
+            </div>
         </div>
 
+        <a href="{{ route('student.dashboard') }}" class="btn-theme text-decoration-none d-inline-flex align-items-center gap-2">
+            <i class="bi bi-grid-1x2-fill"></i> Dashboard
+        </a>
+    </div>
+
+    {{-- ── HERO ──────────────────────────────────────────────────────── --}}
+    <div class="progress-hero">
+        <h2>
+            {{ $themeIcon ?? '📈' }}
+            {{ $labels['exp_label'] ?? 'XP Progress' }}
+        </h2>
+        <p>{{ $aiProfile['tagline'] ?? 'Track your quest journey, level up and unlock achievements.' }}</p>
+
+        <div class="hero-level-pill">
+            <i class="bi bi-lightning-charge-fill"></i>
+            Level {{ $currentLevel }}
+            <span style="opacity:0.5;">•</span>
+            {{ $progress->total_xp ?? 0 }} XP
+        </div>
     </div>
 
 
-    {{-- =====================================================
-         STAT CARDS
-    ===================================================== --}}
-
-    <div class="row g-4 mb-4">
+    {{-- ── STAT GRID ─────────────────────────────────────────────────── --}}
+    <div class="stat-grid">
 
         {{-- Total XP --}}
-        <div class="col-12 col-sm-6 col-xl-3">
-
-            <div class="stat-card h-100">
-
-                <div class="stat-card-body">
-
-                    <div class="d-flex justify-content-between align-items-center">
-
-                        <div>
-
-                            <div class="stat-label">
-                                Total XP
-                            </div>
-
-                            <h3 class="stat-value">
-                                {{ $progress->total_xp }}
-                            </h3>
-
-                        </div>
-
-                        <div class="stat-icon blue">
-
-                            <i class="bi bi-star-fill"></i>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
+        <div class="stat-card-inner">
+            <div class="stat-icon-box">⚡</div>
+            <div>
+                <div class="stat-label">{{ $labels['exp_label'] ?? 'Total XP' }}</div>
+                <div class="stat-value">{{ $progress->total_xp ?? 0 }}</div>
             </div>
-
         </div>
-
 
         {{-- Level --}}
-        <div class="col-12 col-sm-6 col-xl-3">
-
-            <div class="stat-card h-100">
-
-                <div class="stat-card-body">
-
-                    <div class="d-flex justify-content-between align-items-center">
-
-                        <div>
-
-                            <div class="stat-label">
-                                Current Level
-                            </div>
-
-                            <h3 class="stat-value">
-                                {{ $currentLevel }}
-                            </h3>
-
-                        </div>
-
-                        <div class="stat-icon yellow">
-
-                            <i class="bi bi-lightning-fill"></i>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
+        <div class="stat-card-inner">
+            <div class="stat-icon-box">🏆</div>
+            <div>
+                <div class="stat-label">Current Level</div>
+                <div class="stat-value">{{ $currentLevel }}</div>
             </div>
-
         </div>
 
-
-        {{-- Completed --}}
-        <div class="col-12 col-sm-6 col-xl-3">
-
-            <div class="stat-card h-100">
-
-                <div class="stat-card-body">
-
-                    <div class="d-flex justify-content-between align-items-center">
-
-                        <div>
-
-                            <div class="stat-label">
-                                Completed Quests
-                            </div>
-
-                            <h3 class="stat-value">
-                                {{ $progress->completed_tasks }}
-                            </h3>
-
-                        </div>
-
-                        <div class="stat-icon green">
-
-                            <i class="bi bi-check-circle-fill"></i>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
+        {{-- Quests --}}
+        <div class="stat-card-inner">
+            <div class="stat-icon-box">✅</div>
+            <div>
+                <div class="stat-label">{{ $labels['mission_title'] ?? 'Completed Quests' }}</div>
+                <div class="stat-value">{{ $progress->completed_tasks ?? 0 }}</div>
             </div>
-
         </div>
-
 
         {{-- Badges --}}
-        <div class="col-12 col-sm-6 col-xl-3">
-
-            <div class="stat-card h-100">
-
-                <div class="stat-card-body">
-
-                    <div class="d-flex justify-content-between align-items-center">
-
-                        <div>
-
-                            <div class="stat-label">
-                                Badges Earned
-                            </div>
-
-                            <h3 class="stat-value">
-                                {{ $badges->count() }}
-                            </h3>
-
-                        </div>
-
-                        <div class="stat-icon purple">
-
-                            <i class="bi bi-award-fill"></i>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
+        <div class="stat-card-inner">
+            <div class="stat-icon-box">🎖️</div>
+            <div>
+                <div class="stat-label">Badges Earned</div>
+                <div class="stat-value">{{ $badges->count() }}</div>
             </div>
-
         </div>
 
     </div>
 
 
-    {{-- =====================================================
-         LEVEL PROGRESS
-    ===================================================== --}}
+    {{-- ── LEVEL PROGRESS ────────────────────────────────────────────── --}}
+    <div class="level-card">
+        <div class="level-card-header">
+            <div>
+                <div class="level-number">Level {{ $currentLevel }}</div>
+                <div class="level-subtitle">
+                    Keep completing quests to reach Level {{ $currentLevel + 1 }}
+                </div>
+            </div>
+            <div class="xp-pill">
+                <i class="bi bi-star-fill"></i>
+                {{ $xpIntoLevel }} / {{ $xpNeededForLevel }} XP
+            </div>
+        </div>
 
-    <div class="eco-card mb-4">
+        <div class="xp-track">
+            <div class="xp-fill" style="width: {{ $xpPercentage }}%;"></div>
+        </div>
 
-        <div class="level-card">
+        <div class="xp-labels">
+            <span>Level {{ $currentLevel }}</span>
+            <span>{{ round($xpPercentage) }}% Complete</span>
+            <span>Level {{ $currentLevel + 1 }}</span>
+        </div>
+    </div>
 
-            <div class="d-flex justify-content-between
-                        align-items-center flex-wrap gap-3 mb-4">
 
+    {{-- ── COMPLETED QUESTS ──────────────────────────────────────────── --}}
+    <div class="section-card">
+        <div class="section-card-header">
+            <div class="section-icon">🗡️</div>
+            <div>
+                <h5>{{ $labels['mission_title'] ?? 'Completed Quests' }}</h5>
+                <p>Quests you have already conquered</p>
+            </div>
+        </div>
+
+        @forelse($completedTasks as $task)
+            <div class="quest-item">
+                <div class="quest-left">
+                    <div class="quest-check">
+                        <i class="bi bi-check-lg"></i>
+                    </div>
+                    <div style="min-width:0;">
+                        <div class="quest-title">{{ $task->title }}</div>
+                        <div class="quest-meta">
+                            {{ ucfirst($task->difficulty ?? 'beginner') }}
+                            @if($task->completed_at)
+                                &nbsp;•&nbsp;
+                                {{ \Carbon\Carbon::parse($task->completed_at)->format('M d, Y') }}
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                <div class="xp-tag">+{{ $task->xp ?? 0 }} XP</div>
+            </div>
+        @empty
+            <div class="empty-state">
+                <div class="empty-state-icon">🗡️</div>
+                <h6>No quests completed yet</h6>
+                <p>Head to the dashboard and start your first quest!</p>
+                <a href="{{ route('student.dashboard') }}" class="btn-theme text-decoration-none d-inline-flex align-items-center gap-2 mt-2">
+                    <i class="bi bi-arrow-left"></i> Go to Dashboard
+                </a>
+            </div>
+        @endforelse
+    </div>
+
+
+    {{-- ── BADGES ────────────────────────────────────────────────────── --}}
+    <div class="section-card">
+        <div class="section-card-header">
+            <div class="section-icon">🏅</div>
+            <div>
+                <h5>Badges Earned</h5>
+                <p>Achievements unlocked on your journey</p>
+            </div>
+        </div>
+
+        @forelse($badges as $badge)
+            <div class="badge-row">
+                <div class="badge-emoji">
+                    {{ $badge->icon ?? '🏅' }}
+                </div>
                 <div>
-
-                    <div class="level-number">
-
-                        Level {{ $currentLevel }}
-
+                    <div class="badge-name">{{ $badge->name }}</div>
+                    <div class="badge-date">
+                        {{ \Carbon\Carbon::parse($badge->pivot->earned_at ?? $badge->created_at)->format('M d, Y') }}
                     </div>
-
-                    <div class="level-subtitle">
-
-                        Keep completing quests to reach Level
-                        {{ $currentLevel + 1 }}
-
-                    </div>
-
                 </div>
-
-                <div class="xp-badge">
-
-                    <i class="bi bi-star-fill me-1"></i>
-
-                    {{ $xpIntoLevel }} / {{ $xpNeededForLevel }} XP
-
-                </div>
-
             </div>
-
-
-            <div class="xp-progress">
-
-                <div class="xp-progress-bar"
-                    style="width: {{ $xpPercentage }}%;">
-
-                </div>
-
+        @empty
+            <div class="empty-state">
+                <div class="empty-state-icon">🏅</div>
+                <h6>No badges yet</h6>
+                <p>Complete quests and challenges to earn badges!</p>
             </div>
-
-
-            <div class="level-labels">
-
-                <span>
-                    Level {{ $currentLevel }}
-                </span>
-
-                <span>
-                    {{ round($xpPercentage) }}% Complete
-                </span>
-
-                <span>
-                    Level {{ $currentLevel + 1 }}
-                </span>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    {{-- =====================================================
-         LOWER CONTENT
-    ===================================================== --}}
-
-    <div class="row g-4">
-
-
-        {{-- =================================================
-             COMPLETED QUESTS
-        ================================================= --}}
-
-        <div class="col-12 col-xl-8">
-
-            <div class="eco-card h-100">
-
-                <div class="eco-card-header">
-
-                    <h5>
-
-                        <i class="bi bi-check2-circle text-success me-2"></i>
-
-                        Completed Quests
-
-                    </h5>
-
-                    <p>
-                        Your recently completed learning activities.
-                    </p>
-
-                </div>
-
-
-                <div class="px-4 pb-3">
-
-                    @forelse($completedTasks as $task)
-
-                    <div class="quest-item">
-
-                        <div class="quest-left">
-
-                            <div class="quest-check">
-
-                                <i class="bi bi-check-lg"></i>
-
-                            </div>
-
-                            <div class="min-w-0">
-
-                                <div class="quest-title">
-
-                                    {{ $task->title }}
-
-                                </div>
-
-                                <div class="quest-meta">
-
-                                    {{ ucfirst($task->category ?? 'General') }}
-
-                                    @if($task->updated_at)
-
-                                    <span class="mx-1">•</span>
-
-                                    {{ $task->updated_at->format('d M Y') }}
-
-                                    @endif
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="quest-xp">
-
-                            <i class="bi bi-star-fill me-1"></i>
-
-                            +{{ $task->xp }} XP
-
-                        </div>
-
-                    </div>
-
-                    @empty
-
-                    <div class="empty-state">
-
-                        <div class="empty-icon">
-                            🎯
-                        </div>
-
-                        <h6>
-                            No quests completed yet
-                        </h6>
-
-                        <p class="mb-0">
-                            Complete your first quest to start building
-                            your progress.
-                        </p>
-
-                    </div>
-
-                    @endforelse
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- =================================================
-             ACHIEVEMENTS
-        ================================================= --}}
-
-        <div class="col-12 col-xl-4">
-
-            <div class="eco-card h-100">
-
-                <div class="eco-card-header">
-
-                    <h5>
-
-                        <i class="bi bi-award-fill text-warning me-2"></i>
-
-                        Achievements
-
-                    </h5>
-
-                    <p>
-                        Your earned badges.
-                    </p>
-
-                </div>
-
-
-                <div class="px-4 pb-3">
-
-                    @forelse($badges->take(5) as $studentBadge)
-
-                    @php
-
-                    $badge = $studentBadge->badge;
-
-                    @endphp
-
-
-                    <div class="badge-item">
-
-                        <div class="badge-icon">
-
-                            {{ $badge->icon ?? '🏆' }}
-
-                        </div>
-
-
-                        <div>
-
-                            <div class="badge-name">
-
-                                {{ $badge->name }}
-
-                            </div>
-
-                            <div class="badge-date">
-
-                                <i class="bi bi-calendar3 me-1"></i>
-
-                                Earned
-                                {{ $studentBadge->awarded_at?->format('d M Y') }}
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    @empty
-
-                    <div class="empty-state">
-
-                        <div class="empty-icon">
-                            🏆
-                        </div>
-
-                        <h6>
-                            No badges yet
-                        </h6>
-
-                        <p class="mb-0">
-                            Complete quests and unlock achievements.
-                        </p>
-
-                    </div>
-
-                    @endforelse
-
-
-                    @if($badges->count() > 5)
-
-                    <div class="text-center pt-3">
-
-                        <a href="{{ route('student.badges') }}"
-                            class="btn btn-outline-primary view-badges-btn">
-
-                            View All Badges
-
-                            <i class="bi bi-arrow-right"></i>
-
-                        </a>
-
-                    </div>
-
-                    @endif
-
-                </div>
-
-            </div>
-
-        </div>
-
+        @endforelse
     </div>
 
 </div>
-
-@endsection
-
-
-{{-- =========================================================
-     Bootstrap JS
-     ========================================================= --}}
-
-@section('scripts')
-
-
 @endsection

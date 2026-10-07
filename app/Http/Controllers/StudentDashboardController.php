@@ -4,15 +4,30 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Services\GeminiService;
+
 use App\Models\LearningTask;
 use App\Models\StudentProgress;
 use App\Models\Game;
 
+use App\Services\GeminiService;
+use App\Services\StudentThemeService;
+
 class StudentDashboardController extends Controller
 {
-    public function index(Request $request, GeminiService $gemini)
-    {
+    /**
+     * Student Dashboard
+     */
+    public function index(
+        Request $request,
+        GeminiService $gemini,
+        StudentThemeService $themeService
+    ) {
+        /*
+        |--------------------------------------------------------------------------
+        | GET LOGGED-IN STUDENT
+        |--------------------------------------------------------------------------
+        */
+
         $user = Auth::guard('student')->user();
 
         /*
@@ -20,6 +35,7 @@ class StudentDashboardController extends Controller
         | CHECK LOGIN
         |--------------------------------------------------------------------------
         */
+
         if (!$user) {
             return redirect()
                 ->route('login')
@@ -28,20 +44,43 @@ class StudentDashboardController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | GET STUDENT PREFERENCES & PROGRESS
+        | GET STUDENT PREFERENCE
         |--------------------------------------------------------------------------
         */
+
         $preference = $user->preferences;
+
+        /*
+        |--------------------------------------------------------------------------
+        | PREFERENCE NOT FOUND
+        |--------------------------------------------------------------------------
+        */
 
         if (!$preference) {
             return redirect()
                 ->route('login')
-                ->with('error', 'Student preferences not found.');
+                ->with(
+                    'error',
+                    'Student preferences not found.'
+                );
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | GET STUDENT PROGRESS
+        |--------------------------------------------------------------------------
+        */
 
         $progress = $user->progress;
 
+        /*
+        |--------------------------------------------------------------------------
+        | CREATE PROGRESS IF NOT EXISTS
+        |--------------------------------------------------------------------------
+        */
+
         if (!$progress) {
+
             $progress = StudentProgress::create([
                 'user_id' => $user->id,
                 'total_xp' => 0,
@@ -52,48 +91,98 @@ class StudentDashboardController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | GET INTERESTS
+        | GET STUDENT INTERESTS
         |--------------------------------------------------------------------------
         */
-        $interests = is_array($preference->interests)
-            ? $preference->interests
-            : [];
 
-        if (empty($interests) && !empty($preference->interests)) {
-            $interests = [$preference->interests];
+        $interests = [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | INTERESTS STORED AS ARRAY
+        |--------------------------------------------------------------------------
+        */
+
+        if (is_array($preference->interests)) {
+
+            $interests = array_values(
+                array_filter(
+                    $preference->interests,
+                    function ($interest) {
+                        return is_string($interest)
+                            && trim($interest) !== '';
+                    }
+                )
+            );
         }
 
         /*
         |--------------------------------------------------------------------------
-        | CHECK CHESS INTEREST
+        | INTEREST STORED AS STRING
         |--------------------------------------------------------------------------
         */
-        $hasChessInterest = false;
 
-        foreach ($interests as $item) {
-            if (stripos($item, 'chess') !== false) {
-                $hasChessInterest = true;
-                break;
-            }
+        if (
+            empty($interests) &&
+            is_string($preference->interests) &&
+            trim($preference->interests) !== ''
+        ) {
+
+            $interests = [
+                trim($preference->interests)
+            ];
         }
 
         /*
         |--------------------------------------------------------------------------
         | AI PERSONALIZED PROFILE
         |--------------------------------------------------------------------------
+        |
+        | Gemini creates the student's personalized profile.
+        |
+        | We are NOT removing this.
+        |
         */
-        $aiProfile = $preference->ai_profile;
+
+        $aiProfile = is_array($preference->ai_profile)
+            ? $preference->ai_profile
+            : [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | GENERATE AI PROFILE IF REQUIRED
+        |--------------------------------------------------------------------------
+        */
 
         if (
-            !$aiProfile ||
+            empty($aiProfile) ||
             !isset($aiProfile['visual_theme']) ||
             !isset($aiProfile['rank_title'])
         ) {
+
             $aiProfile = $gemini->generateProfile(
                 $interests,
-                $preference->learning_goal ?? 'Master key skills',
-                $preference->experience_level ?? 'beginner'
+                $preference->learning_goal
+                    ?? 'Master key skills',
+                $preference->experience_level
+                    ?? 'beginner'
             );
+
+            /*
+            |--------------------------------------------------------------------------
+            | SAFETY CHECK
+            |--------------------------------------------------------------------------
+            */
+
+            if (!is_array($aiProfile)) {
+                $aiProfile = [];
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | SAVE AI PROFILE
+            |--------------------------------------------------------------------------
+            */
 
             $preference->update([
                 'ai_profile' => $aiProfile,
@@ -102,114 +191,68 @@ class StudentDashboardController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | THEME RESOLUTION
+        | RESOLVE STUDENT THEME
         |--------------------------------------------------------------------------
+        |
+        | StudentThemeService handles:
+        |
+        | 1. Dashboard focus
+        | 2. Session-selected theme
+        | 3. Student interest
+        | 4. AI visual theme
+        | 5. General fallback
+        |
         */
-        $themes = config('learning_themes');
 
-        $themeAliases = [
-            'chess' => 'chess',
-
-            'coding' => 'technology',
-            'programming' => 'technology',
-            'computer' => 'technology',
-            'computers' => 'technology',
-            'software' => 'technology',
-            'technology' => 'technology',
-            'web development' => 'technology',
-
-            'singing' => 'music',
-            'song' => 'music',
-            'songs' => 'music',
-            'music' => 'music',
-            'guitar' => 'music',
-            'piano' => 'music',
-
-            'football' => 'sports',
-            'cricket' => 'sports',
-            'basketball' => 'sports',
-            'sports' => 'sports',
-
-            'math' => 'mathematics',
-            'mathematics' => 'mathematics',
-
-            'science' => 'science',
-
-            'drawing' => 'creative',
-            'painting' => 'creative',
-            'art' => 'creative',
-            'art & design' => 'creative',
-
-            'reading' => 'reading',
-            'books' => 'reading',
-
-            'puzzles' => 'chess',
-
-            'business' => 'business',
-            'gaming' => 'gaming',
-
-            'gk' => 'general',
-            'general knowledge' => 'general',
-
-            'environment' => 'science',
-        ];
-
-        $mapInterestToTheme = function ($interestName) use (
-            $themeAliases,
-            $themes
-        ) {
-            $clean = strtolower(trim($interestName));
-
-            if (isset($themeAliases[$clean])) {
-                $clean = $themeAliases[$clean];
-            }
-
-            return isset($themes[$clean])
-                ? $clean
-                : 'general';
-        };
-
-        /*
-        |--------------------------------------------------------------------------
-        | DETERMINE ACTIVE THEME
-        |--------------------------------------------------------------------------
-        */
-        $activeFocus = $request->query('focus');
-
-        if ($activeFocus) {
-
-            $themeKey = $mapInterestToTheme($activeFocus);
-        } elseif (count($interests) === 1) {
-
-            $themeKey = $mapInterestToTheme($interests[0]);
-        } else {
-
-            if ($hasChessInterest) {
-
-                $themeKey = 'chess';
-            } else {
-
-                $themeKey = $mapInterestToTheme(
-                    $aiProfile['visual_theme'] ?? 'general'
-                );
-            }
-        }
-
-        if (!isset($themes[$themeKey])) {
-            $themeKey = 'general';
-        }
-
-        $themeConfig = config(
-            'learning_themes.' . $themeKey
+        $themeData = $themeService->getTheme(
+            $user,
+            $request->query('focus')
         );
 
         /*
         |--------------------------------------------------------------------------
-        | GET EXISTING PENDING TASKS
+        | THEME DATA
         |--------------------------------------------------------------------------
         */
-        $tasks = LearningTask::where('user_id', $user->id)
-            ->where('status', 'pending')
+
+        $themeKey = $themeData['themeKey']
+            ?? 'general';
+
+        $themeConfig = $themeData['themeConfig']
+            ?? config(
+                'learning_themes.general',
+                []
+            );
+
+        $theme = $themeData['theme']
+            ?? 'General';
+
+        $themeIcon = $themeData['themeIcon']
+            ?? '✦';
+
+        $rankTitle = $themeData['rankTitle']
+            ?? 'Explorer';
+
+        $difficulty = $themeData['difficulty']
+            ?? 'beginner';
+
+        $labels = $themeData['labels']
+            ?? [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | GET PENDING LEARNING TASKS
+        |--------------------------------------------------------------------------
+        */
+
+        $tasks = LearningTask::where(
+            'user_id',
+            $user->id
+        )
+            ->where(
+                'status',
+                'pending'
+            )
             ->get();
 
         /*
@@ -217,12 +260,15 @@ class StudentDashboardController extends Controller
         | GENERATE AI TASKS IF NONE EXIST
         |--------------------------------------------------------------------------
         */
+
         if ($tasks->isEmpty()) {
 
             $generatedData = $gemini->generateTasks(
                 $interests,
-                $preference->learning_goal ?? 'Practice and learn',
-                $preference->experience_level ?? 'beginner',
+                $preference->learning_goal
+                    ?? 'Practice and learn',
+                $preference->experience_level
+                    ?? 'beginner',
                 4
             );
 
@@ -231,31 +277,39 @@ class StudentDashboardController extends Controller
             | CHECK GEMINI RESPONSE
             |--------------------------------------------------------------------------
             */
+
             if (
-                $generatedData &&
+                is_array($generatedData) &&
                 isset($generatedData['tasks']) &&
                 is_array($generatedData['tasks'])
             ) {
 
-                foreach ($generatedData['tasks'] as $task) {
+                foreach (
+                    $generatedData['tasks']
+                    as $task
+                ) {
 
                     /*
                     |--------------------------------------------------------------------------
-                    | GET GAME TYPE FROM AI
+                    | GAME TYPE
                     |--------------------------------------------------------------------------
                     */
+
                     $gameType = strtolower(
-                        trim($task['game_type'] ?? '')
+                        trim(
+                            $task['game_type'] ?? ''
+                        )
                     );
 
                     /*
                     |--------------------------------------------------------------------------
-                    | FIND EXACT PLAYABLE GAME
+                    | FIND PLAYABLE GAME
                     |--------------------------------------------------------------------------
                     */
+
                     $game = null;
 
-                    if (!empty($gameType)) {
+                    if ($gameType !== '') {
 
                         $game = Game::whereRaw(
                             'LOWER(game_type) = ?',
@@ -268,31 +322,67 @@ class StudentDashboardController extends Controller
                     | CREATE LEARNING TASK
                     |--------------------------------------------------------------------------
                     */
+
                     LearningTask::create([
+
                         'user_id' => $user->id,
 
-                        // Exact matching game if available
+                        /*
+                        | Exact game ID if available
+                        */
+
                         'game_id' => $game?->id,
 
-                        // Always store the AI requested game type
-                        'game_type' => !empty($gameType)
+                        /*
+                        | Store AI requested game type
+                        */
+
+                        'game_type' => $gameType !== ''
                             ? $gameType
                             : null,
+
+                        /*
+                        | Task title
+                        */
 
                         'title' => $task['title']
                             ?? 'Learning Quest',
 
-                        'description' => $task['description']
+                        /*
+                        | Description
+                        */
+
+                        'description' =>
+                        $task['description']
                             ?? null,
 
-                        'category' => $task['category']
+                        /*
+                        | Category
+                        */
+
+                        'category' =>
+                        $task['category']
                             ?? 'Quest',
 
-                        'difficulty' => $task['difficulty']
+                        /*
+                        | Difficulty
+                        */
+
+                        'difficulty' =>
+                        $task['difficulty']
                             ?? 'beginner',
 
-                        'xp' => $task['xp']
+                        /*
+                        | XP
+                        */
+
+                        'xp' =>
+                        $task['xp']
                             ?? 20,
+
+                        /*
+                        | New tasks are pending
+                        */
 
                         'status' => 'pending',
                     ]);
@@ -304,28 +394,110 @@ class StudentDashboardController extends Controller
         |--------------------------------------------------------------------------
         | LOAD TASKS AGAIN
         |--------------------------------------------------------------------------
+        |
+        | After AI task generation we fetch the latest tasks again.
+        |
         */
-        $tasks = LearningTask::where('user_id', $user->id)
-            ->where('status', 'pending')
+
+        $tasks = LearningTask::where(
+            'user_id',
+            $user->id
+        )
+            ->where(
+                'status',
+                'pending'
+            )
             ->latest()
             ->get();
 
         /*
         |--------------------------------------------------------------------------
-        | RENDER DASHBOARD
+        | DASHBOARD CONTENT
+        |--------------------------------------------------------------------------
+        |
+        | These values are used by the existing dashboard Blade.
+        |
+        */
+
+        $userXp = $progress->total_xp ?? 0;
+
+        $userLevel = $progress->level ?? 1;
+
+        $completedTasks =
+            $progress->completed_tasks ?? 0;
+
+        /*
+        |--------------------------------------------------------------------------
+        | AI DASHBOARD CONTENT
         |--------------------------------------------------------------------------
         */
+
+        $dashboardTitle =
+            $aiProfile['dashboard_title']
+            ?? 'Your Learning Journey';
+
+        $tagline =
+            $aiProfile['tagline']
+            ?? 'Learn. Play. Grow.';
+
+        $motto =
+            $aiProfile['motto']
+            ?? 'Keep learning and keep growing.';
+
+        $welcomeMessage =
+            $aiProfile['welcome_message']
+            ?? 'Welcome back! Ready for your next challenge?';
+
+        $dailyQuest =
+            $aiProfile['daily_quest']
+            ?? 'Complete one learning challenge today.';
+
+        $recommendedTopics =
+            $aiProfile['recommended_topics']
+            ?? [];
+
+        $learningStyle =
+            $aiProfile['learning_style']
+            ?? 'Interactive';
+
+        /*
+        |--------------------------------------------------------------------------
+        | DASHBOARD VIEW
+        |--------------------------------------------------------------------------
+        */
+
         return view(
             'student.dashboard',
             compact(
                 'user',
                 'preference',
                 'aiProfile',
+
                 'tasks',
+
                 'themeKey',
                 'themeConfig',
+                'theme',
+                'themeIcon',
+
+                'rankTitle',
+                'difficulty',
+                'labels',
+
                 'progress',
-                'interests'
+                'interests',
+
+                'userXp',
+                'userLevel',
+                'completedTasks',
+
+                'dashboardTitle',
+                'tagline',
+                'motto',
+                'welcomeMessage',
+                'dailyQuest',
+                'recommendedTopics',
+                'learningStyle'
             )
         );
     }

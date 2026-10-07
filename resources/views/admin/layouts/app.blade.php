@@ -324,6 +324,22 @@
 
             </a>
 
+            <a href="{{ route('admin.learning-materials.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.learning-materials.*') ? 'active' : '' }}">
+
+                <i class="bi bi-journal-text"></i>
+                <span>Learning Materials</span>
+
+            </a>
+
+            <a href="{{ route('admin.topics.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.topics.*') ? 'active' : '' }}">
+
+                <i class="bi bi-bookmarks-fill"></i>
+                <span>Topics</span>
+
+            </a>
+
             <a href="#"
                 class="sidebar-link">
 
