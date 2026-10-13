@@ -6,11 +6,12 @@ use App\Models\LearningTask;
 use App\Models\StudentProgress;
 use App\Models\StudentBadge;
 use App\Models\LearningMaterialProgress;
+use App\Services\BadgeService;
 use Illuminate\Support\Facades\Auth;
 
 class StudentProgressController extends Controller
 {
-    public function index()
+    public function index(BadgeService $badgeService)
     {
         $student = Auth::guard('student')->user();
 
@@ -27,11 +28,22 @@ class StudentProgressController extends Controller
             ]
         );
 
-        /*Completed Quests*/
-        $completedTasks = LearningTask::where('user_id', $student->id)
+        // Complete task count
+        $completedQuestCount = \App\Models\LearningTask::where(
+            'user_id',
+            $student->id
+        )
             ->where('status', 'completed')
-            ->latest('updated_at')
-            ->get();
+            ->count();
+
+        /*Completed Quests*/
+        $completedTasks = LearningTask::query()
+            ->where('user_id', $student->id)
+            ->where('status', 'completed')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->paginate(8, ['*'], 'completed_page')
+            ->withQueryString();
 
         /*Earned Badges*/
         $badges = StudentBadge::with('badge')
@@ -43,8 +55,17 @@ class StudentProgressController extends Controller
             'learningMaterial'
         )
             ->where('user_id', $student->id)
-            ->whereNotNull('completed_at')
-            ->latest('completed_at')
+            ->whereHas('learningMaterial', fn ($query) => $query->where('is_published', true))
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->paginate(8, ['*'], 'materials_page')
+            ->withQueryString();
+
+        $badgeService->checkAndAward($student);
+
+        $badges = StudentBadge::with('badge')
+            ->where('user_id', $student->id)
+            ->latest('awarded_at')
             ->get();
 
         /*XP Progress*/
@@ -75,7 +96,8 @@ class StudentProgressController extends Controller
                 'nextLevelXp',
                 'xpIntoLevel',
                 'xpNeededForLevel',
-                'xpPercentage'
+                'xpPercentage',
+                'completedQuestCount',
             )
         );
     }

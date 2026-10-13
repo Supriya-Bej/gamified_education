@@ -1,5 +1,112 @@
 @extends('student.layouts.app')
 
+@section('title', 'Learning Materials | EcoQuest')
+
+@section('head')
+<style>
+    .materials-pagination {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-top: 30px;
+        padding: 18px 20px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: linear-gradient(145deg, var(--surface), var(--surface-alt));
+    }
+
+    .materials-pagination-summary {
+        color: var(--text-muted);
+        font-size: 0.86rem;
+        line-height: 1.5;
+    }
+
+    .materials-pagination-summary strong {
+        color: var(--text-main);
+        font-weight: 800;
+    }
+
+    .materials-pagination .pagination {
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 0;
+    }
+
+    .materials-pagination .page-link {
+        min-width: 40px;
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-color: var(--border);
+        border-radius: 12px !important;
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--text-muted);
+        font-size: 0.84rem;
+        font-weight: 800;
+        transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    }
+
+    .materials-pagination .page-link:hover {
+        transform: translateY(-1px);
+        border-color: var(--secondary);
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text-main);
+    }
+
+    .materials-pagination .page-link:focus-visible {
+        outline: 3px solid var(--secondary);
+        outline-offset: 3px;
+        box-shadow: none;
+    }
+
+    .materials-pagination .page-item.active .page-link {
+        border-color: transparent;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: #fff;
+        box-shadow: 0 5px 16px var(--glow);
+    }
+
+    .materials-pagination .page-item.disabled .page-link {
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text-muted);
+        opacity: 0.55;
+    }
+
+    @media (max-width: 767px) {
+        .materials-pagination {
+            align-items: stretch;
+            padding: 16px;
+        }
+
+        .materials-pagination > nav {
+            width: 100%;
+        }
+
+        .materials-pagination .pagination {
+            justify-content: center;
+        }
+
+        .materials-pagination .page-link {
+            min-width: 38px;
+            min-height: 38px;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .materials-pagination .page-link {
+            transition: none;
+        }
+
+        .materials-pagination .page-link:hover {
+            transform: none;
+        }
+    }
+</style>
+@endsection
+
 @section('content')
 
 <div class="container-fluid py-4">
@@ -86,6 +193,10 @@
     <div class="row g-4">
 
         @foreach($materials as $material)
+        @php
+            $isUnlocked = in_array((int) $material->id, $unlockedMaterialIds, true);
+            $progress = $materialProgress->get($material->id);
+        @endphp
 
         <div class="col-md-6 col-xl-4 material-card"
             data-topic="{{ strtolower($material->topic) }}">
@@ -156,16 +267,24 @@
 
 
                     {{-- Read Button --}}
-                    <a href="{{ route(
-                                'student.learning-materials.show',
-                                $material
-                            ) }}"
-                        class="btn btn-outline-primary w-100">
-
-                        <i class="bi bi-book-open me-1"></i>
-                        Start Learning
-
-                    </a>
+                    @if($isUnlocked)
+                        <a href="{{ route('student.learning-materials.show', $material) }}"
+                            class="btn btn-outline-primary w-100">
+                            <i class="bi {{ $progress?->completed_at ? 'bi-patch-question' : 'bi-book-open' }} me-1"></i>
+                            {{ $progress?->completed_at ? 'Continue to quiz' : 'Start Learning' }}
+                        </a>
+                        @if($progress?->quiz_completed_at)
+                            <div class="small text-success text-center mt-2">
+                                <i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i>
+                                Quiz passed — level complete
+                            </div>
+                        @endif
+                    @else
+                        <button type="button" class="btn btn-outline-secondary w-100" disabled>
+                            <i class="bi bi-lock-fill me-1" aria-hidden="true"></i>
+                            Locked — pass the previous lesson quiz
+                        </button>
+                    @endif
 
                 </div>
 
@@ -179,10 +298,18 @@
 
 
     {{-- Pagination --}}
-    <div class="mt-4">
+    <div class="materials-pagination">
+        <p class="materials-pagination-summary mb-0" role="status" aria-live="polite">
+            Showing
+            <strong>{{ number_format($materials->firstItem()) }}–{{ number_format($materials->lastItem()) }}</strong>
+            of
+            <strong>{{ number_format($materials->total()) }}</strong>
+            {{ \Illuminate\Support\Str::plural('learning material', $materials->total()) }}
+        </p>
 
-        {{ $materials->links() }}
-
+        @if($materials->hasPages())
+            {{ $materials->links() }}
+        @endif
     </div>
 
     @else

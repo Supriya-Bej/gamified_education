@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\StudentBadge;
 use App\Models\StudentPreference;
+use App\Services\BadgeService;
 use Illuminate\Support\Facades\Auth;
 
 class StudentBadgeController extends Controller
 {
-    public function index()
+    public function index(BadgeService $badgeService)
     {
         $student = Auth::guard('student')->user();
 
@@ -17,6 +18,8 @@ class StudentBadgeController extends Controller
                 ->route('login')
                 ->with('error', 'Please login first.');
         }
+
+        $badgeService->checkAndAward($student);
 
         // Get student's preference / interests
         $preference = StudentPreference::where(

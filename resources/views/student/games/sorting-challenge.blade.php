@@ -362,6 +362,18 @@
 
 <body>
 
+    @php
+        $sortingItems = array_values(array_filter(
+            data_get($task->game_data, 'items', []),
+            'is_array'
+        ));
+        $sortingCategories = collect($sortingItems)
+            ->pluck('correct_category')
+            ->filter(fn ($category) => is_string($category) && trim($category) !== '')
+            ->unique()
+            ->values();
+    @endphp
+
     <div class="game-wrapper">
 
         <!-- TOP BAR -->
@@ -386,7 +398,7 @@
                 <div class="stat">
                     <small>ITEMS</small>
                     <strong>
-                        <span id="completed">0</span>/9
+                        <span id="completed">0</span>/<span id="totalItemCount">{{ count($sortingItems) }}</span>
                     </strong>
                 </div>
 
@@ -435,103 +447,16 @@
 
                     <div class="items-container" id="itemsContainer">
 
-                        <div class="item"
-                            draggable="true"
-                            data-type="recyclable"
-                            data-name="Plastic Bottle">
-
-                            <div class="item-icon">🧴</div>
-                            <div class="item-name">Plastic Bottle</div>
-
-                        </div>
-
-
-                        <div class="item"
-                            draggable="true"
-                            data-type="organic"
-                            data-name="Banana Peel">
-
-                            <div class="item-icon">🍌</div>
-                            <div class="item-name">Banana Peel</div>
-
-                        </div>
-
-
-                        <div class="item"
-                            draggable="true"
-                            data-type="general"
-                            data-name="Chip Packet">
-
-                            <div class="item-icon">🥔</div>
-                            <div class="item-name">Chip Packet</div>
-
-                        </div>
-
-
-                        <div class="item"
-                            draggable="true"
-                            data-type="recyclable"
-                            data-name="Newspaper">
-
-                            <div class="item-icon">📰</div>
-                            <div class="item-name">Newspaper</div>
-
-                        </div>
-
-
-                        <div class="item"
-                            draggable="true"
-                            data-type="organic"
-                            data-name="Apple Core">
-
-                            <div class="item-icon">🍎</div>
-                            <div class="item-name">Apple Core</div>
-
-                        </div>
-
-
-                        <div class="item"
-                            draggable="true"
-                            data-type="general"
-                            data-name="Used Tissue">
-
-                            <div class="item-icon">🧻</div>
-                            <div class="item-name">Used Tissue</div>
-
-                        </div>
-
-
-                        <div class="item"
-                            draggable="true"
-                            data-type="recyclable"
-                            data-name="Glass Jar">
-
-                            <div class="item-icon">🫙</div>
-                            <div class="item-name">Glass Jar</div>
-
-                        </div>
-
-
-                        <div class="item"
-                            draggable="true"
-                            data-type="organic"
-                            data-name="Vegetable Waste">
-
-                            <div class="item-icon">🥬</div>
-                            <div class="item-name">Vegetable Waste</div>
-
-                        </div>
-
-
-                        <div class="item"
-                            draggable="true"
-                            data-type="general"
-                            data-name="Broken Sponge">
-
-                            <div class="item-icon">🧽</div>
-                            <div class="item-name">Broken Sponge</div>
-
-                        </div>
+                        @foreach($sortingItems as $index => $item)
+                            <div class="item"
+                                draggable="true"
+                                data-item-index="{{ $index }}"
+                                data-correct-category="{{ $item['correct_category'] }}"
+                                data-name="{{ $item['label'] }}">
+                                <div class="item-icon">♻️</div>
+                                <div class="item-name">{{ $item['label'] }}</div>
+                            </div>
+                        @endforeach
 
                     </div>
 
@@ -546,55 +471,14 @@
 
                 <div class="bins">
 
-                    <!-- ORGANIC -->
-                    <div class="bin"
-                        data-bin="organic">
-
-                        <div class="bin-icon">🌱</div>
-
-                        <h4>Organic</h4>
-
-                        <p>
-                            Food & biodegradable waste
-                        </p>
-
-                        <div class="bin-items"></div>
-
-                    </div>
-
-
-                    <!-- RECYCLABLE -->
-                    <div class="bin"
-                        data-bin="recyclable">
-
-                        <div class="bin-icon">♻️</div>
-
-                        <h4>Recyclable</h4>
-
-                        <p>
-                            Materials that can be recycled
-                        </p>
-
-                        <div class="bin-items"></div>
-
-                    </div>
-
-
-                    <!-- GENERAL -->
-                    <div class="bin"
-                        data-bin="general">
-
-                        <div class="bin-icon">🗑️</div>
-
-                        <h4>General Waste</h4>
-
-                        <p>
-                            Waste that cannot be recycled
-                        </p>
-
-                        <div class="bin-items"></div>
-
-                    </div>
+                    @foreach($sortingCategories as $category)
+                        <div class="bin" data-bin="{{ $category }}">
+                            <div class="bin-icon">📦</div>
+                            <h4>{{ $category }}</h4>
+                            <p>Choose the correct category for each item.</p>
+                            <div class="bin-items"></div>
+                        </div>
+                    @endforeach
 
                 </div>
 
@@ -628,7 +512,7 @@
                 <h2>Mission Complete!</h2>
 
                 <p class="text-secondary">
-                    You successfully completed the Sorting Challenge.
+                    <span id="completionMessage">Checking your answers...</span>
                 </p>
 
                 <div class="result-score">
@@ -645,7 +529,7 @@
 
                     Quest Reward:
                     <strong>
-                        +{{ $task->xp ?? 20 }} XP
+                        <span id="xpEarned">0</span> XP
                     </strong>
 
                 </div>
@@ -693,7 +577,9 @@
         let streak = 0;
         let completed = 0;
 
-        const totalItems = 9;
+        const totalItems = {{ count($sortingItems) }};
+        const submittedAnswers = Array(totalItems).fill('');
+        let completionSent = false;
 
         let draggedItem = null;
 
@@ -773,7 +659,7 @@
 
         function checkAnswer(bin, item) {
 
-            const correctType = item.dataset.type;
+            const correctType = item.dataset.correctCategory;
 
             const selectedBin = bin.dataset.bin;
 
@@ -789,6 +675,7 @@
                 streak += 1;
 
                 completed += 1;
+                submittedAnswers[Number(item.dataset.itemIndex)] = selectedBin;
 
 
                 document.getElementById('score').innerText = score;
@@ -799,13 +686,8 @@
 
 
                 const placedItem = document.createElement('div');
-
                 placedItem.className = 'placed-item';
-
-                placedItem.innerHTML =
-                    item.querySelector('.item-icon').innerText +
-                    ' ' +
-                    item.dataset.name;
+                placedItem.textContent = '♻️ ' + item.dataset.name;
 
 
                 bin.querySelector('.bin-items')
@@ -865,6 +747,10 @@
         */
 
         async function showResult() {
+            if (completionSent) {
+                return;
+            }
+            completionSent = true;
 
             document.getElementById('gameArea').style.display = 'none';
 
@@ -892,7 +778,7 @@
                         },
 
                         body: JSON.stringify({
-                            score: score
+                            answers: submittedAnswers
                         })
                     }
                 );
@@ -901,23 +787,24 @@
                 const data = await response.json();
 
 
-                if (data.success) {
-
-                    console.log("Quest completed successfully.");
-
-                } else {
-
-                    console.log(data.message);
-
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Could not verify your answers.');
                 }
 
+                document.getElementById('completionMessage').textContent = data.passed
+                    ? `All ${data.correct_answers} items are sorted correctly.`
+                    : `${data.correct_answers} of ${data.total_questions} items are correct. No XP was awarded; retry the quest.`;
+                if (data.passed && Array.isArray(data.badges) && data.badges.length > 0) {
+                    const badgeNames = data.badges
+                        .map((badge) => `${badge.icon ? `${badge.icon} ` : ''}${badge.name}`)
+                        .join(', ');
+                    document.getElementById('completionMessage').textContent +=
+                        ` New badge${data.badges.length === 1 ? '' : 's'} earned: ${badgeNames}.`;
+                }
+                document.getElementById('xpEarned').textContent = data.xp_earned;
+
             } catch (error) {
-
-                console.error(
-                    "Could not save quest completion:",
-                    error
-                );
-
+                document.getElementById('completionMessage').textContent = error.message;
             }
 
         }

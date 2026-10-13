@@ -2,30 +2,25 @@
 
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminDashboardController;
-use App\Http\Controllers\QuestController;
-use App\Models\TaskCompletion;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\StudentDashboardController;
-use App\Http\Controllers\StudentProfileController;
-use App\Http\Controllers\StudentGameController;
-use App\Http\Controllers\Admin\StudentManagementController;
-use App\Http\Controllers\Admin\GameManagementController;
-use App\Http\Controllers\Admin\LearningTaskManagementController;
-use App\Http\Controllers\AdminGameController;
-use App\Http\Controllers\Admin\GameEngineManagementController;
-use App\Http\Controllers\Admin\GameContentManagementController;
-use App\Http\Controllers\Admin\RewardManagementController;
 use App\Http\Controllers\Admin\BadgeManagementController;
+use App\Http\Controllers\Admin\GameContentManagementController;
+use App\Http\Controllers\Admin\GameEngineManagementController;
+use App\Http\Controllers\Admin\GameManagementController;
 use App\Http\Controllers\Admin\LearningMaterialManagementController;
+use App\Http\Controllers\Admin\LearningTaskManagementController;
+use App\Http\Controllers\Admin\RewardManagementController;
+use App\Http\Controllers\Admin\StudentManagementController;
 use App\Http\Controllers\Admin\TopicManagementController;
+use App\Http\Controllers\AdminGameController;
 use App\Http\Controllers\StudentBadgeController;
-use App\Http\Controllers\StudentProgressController;
+use App\Http\Controllers\StudentDashboardController;
+use App\Http\Controllers\StudentGameController;
 use App\Http\Controllers\StudentLearningMaterialController;
-use App\Models\Subject;
+use App\Http\Controllers\StudentProfileController;
+use App\Http\Controllers\StudentProgressController;
+use App\Http\Controllers\UserController;
 use App\Models\Task;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('user.index');
@@ -45,6 +40,10 @@ Route::middleware('auth:student')->group(function () {
     // Dashboard
     Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])
         ->name('student.dashboard');
+
+    Route::post('/student/ai-recommendations/chat', [StudentDashboardController::class, 'chat'])
+        ->middleware('throttle:12,1')
+        ->name('student.ai-recommendations.chat');
 
     // Profile
     Route::get('/student/profile', [StudentProfileController::class, 'edit'])
@@ -84,13 +83,20 @@ Route::middleware('auth:student')->group(function () {
     Route::post(
         '/student/learning-materials/{learningMaterial}/complete',
         [StudentLearningMaterialController::class, 'complete']
-    )->name('student.learning-materials.complete');
+    )->middleware('throttle:6,1')->name('student.learning-materials.complete');
+
+    Route::post(
+        '/student/learning-materials/{learningMaterial}/quiz/generate',
+        [StudentLearningMaterialController::class, 'generateQuiz']
+    )->middleware('throttle:6,1')->name('student.learning-materials.quiz.generate');
+
+    Route::post(
+        '/student/learning-materials/{learningMaterial}/quiz',
+        [StudentLearningMaterialController::class, 'submitQuiz']
+    )->name('student.learning-materials.quiz.submit');
 });
 // Logout
 Route::post('/student/logout', [UserController::class, 'logoutUser'])->name('logout-user');
-
-
-
 
 // ADMIN AUTHENTICATION
 Route::get('/admin/login', [AdminAuthController::class, 'showLogin'])
@@ -101,7 +107,6 @@ Route::post('/admin/login', [AdminAuthController::class, 'login'])
 
 Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
     ->name('admin.logout');
-
 
 // ===============================
 // ADMIN PANEL
@@ -133,7 +138,7 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
     Route::get('/games/create', [GameManagementController::class, 'create'])
         ->name('admin.games.create');
 
-    // 
+    //
     Route::post('/games', [GameManagementController::class, 'store'])
         ->name('admin.games.store');
 
@@ -194,7 +199,6 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
     Route::delete('/badges/{badge}', [BadgeManagementController::class, 'destroy'])
         ->name('admin.badges.destroy');
 
-
     // Learning Content Management
     Route::get('/learning-materials', [LearningMaterialManagementController::class, 'index'])
         ->name('admin.learning-materials.index');
@@ -213,7 +217,6 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
 
     Route::delete('/learning-materials/{learningMaterial}', [LearningMaterialManagementController::class, 'destroy'])
         ->name('admin.learning-materials.destroy');
-
 
     // Topics Management
     Route::get('/topics', [TopicManagementController::class, 'index'])
@@ -235,12 +238,7 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         ->name('admin.topics.destroy');
 });
 
-
-
-
-
-
-// Admin 
+// Admin
 // Route::prefix('admin')->group(function () {
 
 //     Route::get('/games', [AdminGameController::class, 'index'])

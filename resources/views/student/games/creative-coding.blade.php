@@ -414,26 +414,38 @@
                         Practice
                     </h2>
 
+
                     <p class="text-secondary">
-                        Your goal is to create a simple repeating visual
-                        pattern. Write JavaScript below and click
-                        <strong>Run Code</strong>.
+                        {{ data_get($task->game_data, 'instructions',
+        'Write JavaScript to create a visual pattern, then run your code.') }}
                     </p>
 
-                    <textarea id="codeInput"
-                        class="code-area">const canvas = document.getElementById("previewCanvas");
+                    @php($codingChallenges = data_get($task->game_data, 'challenges', []))
+                    @if (is_array($codingChallenges) && count($codingChallenges) > 0)
+                        <ul class="text-secondary">
+                            @foreach ($codingChallenges as $challenge)
+                                @if (is_string($challenge) && trim($challenge) !== '')
+                                    <li>{{ $challenge }}</li>
+                                @endif
+                            @endforeach
+                        </ul>
+                    @endif
+
+                    <textarea id="codeInput" class="code-area">{{ data_get($task->game_data, 'starter_code',
+'const canvas = document.getElementById("previewCanvas");
 const ctx = canvas.getContext("2d");
 
 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 for (let i = 0; i < 8; i++) {
     ctx.fillRect(30 + i * 35, 80, 25, 25);
-}</textarea>
+}') }}</textarea>
 
 
                     <div class="d-flex gap-2 mt-3 flex-wrap">
 
                         <button class="challenge-btn run-btn"
+                            id="runCodeButton"
                             onclick="runCode()">
 
                             <i class="bi bi-play-fill"></i>
@@ -442,6 +454,7 @@ for (let i = 0; i < 8; i++) {
                         </button>
 
                         <button class="challenge-btn reset-btn"
+                            id="resetCodeButton"
                             onclick="resetGame()">
 
                             <i class="bi bi-arrow-counterclockwise"></i>
@@ -477,12 +490,12 @@ for (let i = 0; i < 8; i++) {
                     <div id="resultBox"
                         class="result-box">
 
-                        <div class="xp-box">
-                            +{{ $task->xp }} XP
+                        <div class="xp-box" id="xpAward">
+                            Checking your code...
                         </div>
 
-                        <div class="mt-2">
-                            🎉 Pattern generated successfully!
+                        <div class="mt-2" id="completionMessage" role="status" aria-live="polite">
+                            Your code ran. Checking the quest requirements...
                         </div>
 
                         <div class="progress-track mt-3">
@@ -492,7 +505,7 @@ for (let i = 0; i < 8; i++) {
                         </div>
 
                         <div class="mt-3 text-secondary">
-                            You completed the creative coding challenge.
+                                    Keep editing and running your code until the quest is marked complete.
                         </div>
 
                     </div>
@@ -528,20 +541,19 @@ for (let i = 0; i < 8; i++) {
 
 
     <script>
-        const originalCode =
-            `const canvas = document.getElementById("previewCanvas");
-const ctx = canvas.getContext("2d");
+        let completionSubmitted = false;
+        let completionRequestInProgress = false;
+        let questCompleted = false;
 
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-for (let i = 0; i < 8; i++) {
-    ctx.fillRect(30 + i * 35, 80, 25, 25);
-}`;
+        const codeInput = document.getElementById('codeInput');
+        const originalCode = codeInput.value;
 
         function runCode() {
+            if (questCompleted || completionRequestInProgress) {
+                return;
+            }
 
-            const code =
-                document.getElementById('codeInput').value;
+            const code = codeInput.value;
 
             const canvas =
                 document.getElementById('previewCanvas');
@@ -555,6 +567,8 @@ for (let i = 0; i < 8; i++) {
                 canvas.width,
                 canvas.height
             );
+            document.getElementById('resultBox').style.display = 'none';
+            document.getElementById('progressFill').style.width = '0%';
 
             try {
 
@@ -562,12 +576,19 @@ for (let i = 0; i < 8; i++) {
                  * Run student's code.
                  */
 
-                const execute =
-                    new Function(
-                        'canvas',
-                        'ctx',
-                        code
-                    );
+                const aliases = [];
+                if (!/\b(?:const|let|var)\s+canvas\b/.test(code)) {
+                    aliases.push('const canvas = gameCanvas;');
+                }
+                if (!/\b(?:const|let|var)\s+ctx\b/.test(code)) {
+                    aliases.push('const ctx = gameContext;');
+                }
+
+                const execute = new Function(
+                    'gameCanvas',
+                    'gameContext',
+                    `${aliases.join('\n')}\n${code}`
+                );
 
                 execute(canvas, ctx);
 
@@ -578,8 +599,7 @@ for (let i = 0; i < 8; i++) {
                 document.getElementById('resultBox')
                     .style.display = 'block';
 
-                document.getElementById('progressFill')
-                    .style.width = '100%';
+                submitCodeForCompletion(code);
 
             } catch (error) {
 
@@ -592,11 +612,64 @@ for (let i = 0; i < 8; i++) {
 
         }
 
+        async function submitCodeForCompletion(code) {
+            if (completionSubmitted || completionRequestInProgress) return;
+            completionRequestInProgress = true;
+            document.getElementById('runCodeButton').disabled = true;
+
+            const message = document.getElementById('completionMessage');
+            const xpAward = document.getElementById('xpAward');
+            message.textContent = 'Checking your code...';
+
+            try {
+                const response = await fetch(@json(route('student.game.complete', $task->id)), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': @json(csrf_token()),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ code })
+                });
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Could not verify your coding challenge.');
+                }
+
+                if (data.passed) {
+                    completionSubmitted = true;
+                    questCompleted = true;
+                    xpAward.textContent = `+${data.xp_earned} XP`;
+                    message.textContent = 'Your code draws on the canvas. Quest completed!';
+                    if (Array.isArray(data.badges) && data.badges.length > 0) {
+                        const badgeNames = data.badges
+                            .map((badge) => `${badge.icon ? `${badge.icon} ` : ''}${badge.name}`)
+                            .join(', ');
+                        message.textContent += ` New badge${data.badges.length === 1 ? '' : 's'} earned: ${badgeNames}.`;
+                    }
+                    document.getElementById('progressFill').style.width = '100%';
+                    document.getElementById('resetCodeButton').disabled = true;
+                } else {
+                    xpAward.textContent = 'No XP awarded';
+                    message.textContent = 'Your code ran, but it needs a canvas drawing command. Update your code and run it again to finish the quest.';
+                }
+            } catch (error) {
+                xpAward.textContent = 'XP not awarded';
+                message.textContent = `${error.message} You can update your code and retry.`;
+            } finally {
+                completionRequestInProgress = false;
+                document.getElementById('runCodeButton').disabled = questCompleted;
+            }
+        }
+
 
         function resetGame() {
-
-            document.getElementById('codeInput').value =
-                originalCode;
+            if (questCompleted || completionRequestInProgress) {
+                return;
+            }
+            codeInput.value = originalCode;
+            completionSubmitted = false;
 
             const canvas =
                 document.getElementById('previewCanvas');
@@ -613,9 +686,9 @@ for (let i = 0; i < 8; i++) {
 
             document.getElementById('resultBox')
                 .style.display = 'none';
-
-            document.getElementById('progressFill')
-                .style.width = '0%';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('xpAward').textContent = 'Ready to check your code';
+            document.getElementById('completionMessage').textContent = 'Run your code to check the quest requirements.';
 
         }
     </script>

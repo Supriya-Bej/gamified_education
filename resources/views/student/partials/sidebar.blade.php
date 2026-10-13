@@ -1,4 +1,4 @@
-<aside class="sidebar">
+<aside id="studentSidebar" class="sidebar">
 
 
     {{-- =====================================================
@@ -110,6 +110,15 @@
         <span>My Progress</span>
     </a>
 
+    <a
+        href="{{ route('student.learning-materials.index') }}"
+        class="side-link {{ request()->routeIs('student.learning-materials.*') ? 'active' : '' }}">
+
+        <i class="bi bi-book-half"></i>
+
+        <span>Learning Materials</span>
+
+    </a>
 
 
     <a

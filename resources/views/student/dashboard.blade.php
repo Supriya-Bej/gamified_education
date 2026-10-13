@@ -238,6 +238,13 @@
             $aiProfile['recommended_topics']
             ?? [];
 
+        $recommendedTopics = is_array($recommendedTopics)
+            ? array_values(array_filter(
+                $recommendedTopics,
+                fn ($topic) => is_string($topic) && trim($topic) !== ''
+            ))
+            : [];
+
 
         $learningStyle =
             $aiProfile['learning_style']
@@ -377,128 +384,6 @@
 
         a {
             text-decoration: none;
-        }
-
-
-        /* =====================================================
-           CHESS BACKGROUND
-        ====================================================== */
-
-        .chess-grid-bg {
-
-            position: fixed;
-
-            inset: 0;
-
-            pointer-events: none;
-
-            z-index: 0;
-
-            opacity: .045;
-
-            background-image:
-
-                linear-gradient(
-                    45deg,
-                    var(--secondary) 25%,
-                    transparent 25%
-                ),
-
-                linear-gradient(
-                    -45deg,
-                    var(--secondary) 25%,
-                    transparent 25%
-                ),
-
-                linear-gradient(
-                    45deg,
-                    transparent 75%,
-                    var(--secondary) 75%
-                ),
-
-                linear-gradient(
-                    -45deg,
-                    transparent 75%,
-                    var(--secondary) 75%
-                );
-
-            background-size: 60px 60px;
-
-            background-position:
-                0 0,
-                0 30px,
-                30px -30px,
-                -30px 0;
-
-        }
-
-
-        /* =====================================================
-           FLOATING CHESS PIECES
-        ====================================================== */
-
-        .floating-piece {
-
-            position: fixed;
-
-            pointer-events: none;
-
-            z-index: 0;
-
-            color: var(--secondary);
-
-            opacity: .05;
-
-            user-select: none;
-
-        }
-
-
-        .piece-1 {
-
-            top: 8%;
-
-            right: 5%;
-
-            font-size: 8rem;
-
-            transform: rotate(12deg);
-
-        }
-
-
-        .piece-2 {
-
-            bottom: 10%;
-
-            left: 20%;
-
-            font-size: 7rem;
-
-            transform: rotate(-12deg);
-
-        }
-
-
-        .piece-3 {
-
-            top: 48%;
-
-            right: 20%;
-
-            font-size: 5rem;
-
-        }
-
-
-        .piece-4 {
-
-            bottom: 25%;
-
-            right: 5%;
-
-            font-size: 8rem;
-
         }
 
 
@@ -1558,6 +1443,49 @@
 
         }
 
+        .dashboard-menu-toggle {
+
+            display: none;
+
+            flex: 0 0 auto;
+
+            align-items: center;
+
+            justify-content: center;
+
+            width: 42px;
+
+            height: 42px;
+
+            border: 1px solid var(--border);
+
+            border-radius: 12px;
+
+            background: var(--surface);
+
+            color: var(--text-main);
+
+            font-size: 1.1rem;
+
+        }
+
+
+        .dashboard-menu-toggle:hover,
+        .dashboard-menu-toggle:focus-visible {
+
+            border-color: var(--secondary);
+
+            color: var(--secondary);
+
+        }
+
+
+        .sidebar-backdrop {
+
+            display: none;
+
+        }
+
 
         /* =====================================================
            TOPICS
@@ -1604,7 +1532,50 @@
 
             .sidebar {
 
-                display: none;
+                display: flex;
+
+                width: min(290px, 86vw);
+
+                transform: translateX(-105%);
+
+                transition: transform .25s ease;
+
+                box-shadow: 14px 0 40px rgba(0, 0, 0, .35);
+
+                z-index: 1101;
+
+            }
+
+
+            .sidebar.is-open {
+
+                transform: translateX(0);
+
+            }
+
+
+            .sidebar-backdrop.is-visible {
+
+                display: block;
+
+                position: fixed;
+
+                inset: 0;
+
+                z-index: 1100;
+
+                border: 0;
+
+                background: rgba(0, 0, 0, .58);
+
+                backdrop-filter: blur(2px);
+
+            }
+
+
+            .dashboard-menu-toggle {
+
+                display: inline-flex;
 
             }
 
@@ -1641,6 +1612,37 @@
                 align-items: flex-start;
 
                 flex-direction: column;
+
+            }
+
+
+            .hero .row {
+
+                row-gap: 18px;
+
+            }
+
+
+            .topbar {
+
+                gap: 10px;
+
+                margin-bottom: 22px;
+
+            }
+
+
+            .topbar > div:first-child {
+
+                min-width: 0;
+
+            }
+
+
+            .top-title,
+            .top-subtitle {
+
+                overflow-wrap: anywhere;
 
             }
 
@@ -1688,6 +1690,9 @@
 
         }
 
+
+
+
     </style>
 
 </head>
@@ -1695,25 +1700,12 @@
 
 <body>
 
-
-    {{-- =====================================================
-         CHESS BACKGROUND
-    ====================================================== --}}
-
-    @if($isChess)
-
-        <div class="chess-grid-bg"></div>
-
-        <div class="floating-piece piece-1">♚</div>
-
-        <div class="floating-piece piece-2">♞</div>
-
-        <div class="floating-piece piece-3">♝</div>
-
-        <div class="floating-piece piece-4">♜</div>
-
-    @endif
-
+    <button
+        type="button"
+        class="sidebar-backdrop"
+        aria-label="Close navigation menu"
+        data-dashboard-sidebar-close
+    ></button>
 
 
     {{-- =====================================================
@@ -1738,18 +1730,33 @@
         <div class="topbar">
 
 
-            <div>
+            <div class="d-flex align-items-center gap-3">
 
-                <div class="top-title">
+                <button
+                    type="button"
+                    class="dashboard-menu-toggle"
+                    aria-label="Open navigation menu"
+                    aria-controls="studentSidebar"
+                    aria-expanded="false"
+                    data-dashboard-sidebar-toggle
+                >
+                    <i class="bi bi-list" aria-hidden="true"></i>
+                </button>
 
-                    {{ $dashboardTitle }}
+                <div>
 
-                </div>
+                    <div class="top-title">
+
+                        {{ $dashboardTitle }}
+
+                    </div>
 
 
-                <div class="top-subtitle">
+                    <div class="top-subtitle">
 
-                    {{ $tagline }}
+                        {{ $tagline }}
+
+                    </div>
 
                 </div>
 
@@ -1907,7 +1914,6 @@
                 </ul>
 
             </div>
-
 
         </div>
 
@@ -2288,14 +2294,14 @@
 
                         <div class="stat-number">
 
-                            1
+                            {{ $tasks->count() }}
 
                         </div>
 
 
                         <div class="stat-label">
 
-                            Day Streak
+                            Available Quests
 
                         </div>
 
@@ -2447,15 +2453,14 @@
 
                     <div class="quest-heading">
 
-                        {{ $dailyQuest }}
+                        {{ $dailyMissionTitle }}
 
                     </div>
 
 
                     <div class="quest-description">
 
-                        Complete this personalized AI challenge
-                        and earn XP.
+                        {{ $dailyMissionDescription }}
 
                     </div>
 
@@ -2468,11 +2473,11 @@
                 >
 
                     <a
-                        href="#quests"
+                        href="{{ $dailyMissionUrl }}"
                         class="primary-btn"
                     >
 
-                        Start
+                        {{ $dailyMissionAction }}
 
                         <i class="bi bi-arrow-right"></i>
 
@@ -2658,20 +2663,28 @@
                         </div>
 
 
-                        <h4 class="mt-3">
-
-                            No Pending Quests
-
-                        </h4>
-
-
-                        <p
-                            style="color:var(--text-muted);"
-                        >
-
-                            You have completed all your current quests.
-
-                        </p>
+                        @if ($questGenerationFailed)
+                            <h4 class="mt-3">No new quests could be loaded</h4>
+                            <p style="color:var(--text-muted);">
+                                We couldn’t get a new interest-matched quest right now. Check your connection and try again.
+                            </p>
+                            <a href="{{ route('student.dashboard') }}" class="start-btn">
+                                Try again <i class="bi bi-arrow-clockwise"></i>
+                            </a>
+                        @elseif ($playableGames->isEmpty())
+                            <h4 class="mt-3">No playable games for these interests yet</h4>
+                            <p style="color:var(--text-muted);">
+                                There isn’t an enabled game for your registered interests right now.
+                            </p>
+                        @else
+                            <h4 class="mt-3">Preparing your next quests</h4>
+                            <p style="color:var(--text-muted);">
+                                Your completed quests are saved. New interest-matched quests will appear here when they are ready.
+                            </p>
+                            <a href="{{ route('student.dashboard') }}" class="start-btn">
+                                Check for new quests <i class="bi bi-arrow-clockwise"></i>
+                            </a>
+                        @endif
 
 
                     </div>
@@ -2714,6 +2727,11 @@
 
             </div>
 
+            <a href="{{ route('student.learning-materials.index') }}" class="start-btn">
+                <i class="bi bi-book-half"></i>
+                Browse Learning Materials
+            </a>
+
 
         </div>
 
@@ -2753,17 +2771,11 @@
                     </div>
 
                 </div>
-
-
             </div>
-
-
 
             <div
                 class="d-flex flex-wrap gap-2"
             >
-
-
                 @forelse($recommendedTopics as $topic)
                     <span class="topic-chip">
                         <i class="bi bi-lightbulb"></i>
@@ -2771,17 +2783,15 @@
                     </span>
                 @empty
 
-                    @if($preference && !empty($preference->interests))
-                        @foreach($preference->interests as $item)
+                    @if(!empty($interests))
+                        @foreach($interests as $item)
                             <span class="topic-chip">
                                 <i class="bi bi-lightbulb"></i>
                                 {{ $item }} Mastery
                             </span>
                         @endforeach
 
-
                     @else
-
 
                         <span class="topic-chip">
 
@@ -2799,6 +2809,47 @@
 
 
             </div>
+
+            <hr class="my-4" style="border-color:var(--border);">
+
+            <div class="fw-bold mb-2">
+                <i class="bi bi-chat-dots me-2"></i>
+                Ask your learning assistant
+            </div>
+            <p class="small mb-3" style="color:var(--text-muted);">
+                Get help exploring your recommended topics and choosing what to learn next.
+            </p>
+            <div
+                id="recommendationChatMessages"
+                class="d-flex flex-column gap-2 mb-3"
+                aria-live="polite"
+                aria-label="Learning assistant conversation"
+                style="max-height:260px;overflow-y:auto;"
+            >
+                <div class="topic-chip align-self-start">
+                    Hi! Ask me about your recommended topics or learning interests.
+                </div>
+            </div>
+            <form id="recommendationChatForm" class="d-flex gap-2">
+                @csrf
+                <label class="visually-hidden" for="recommendationChatInput">
+                    Message the learning assistant
+                </label>
+                <input
+                    id="recommendationChatInput"
+                    class="form-control"
+                    type="text"
+                    maxlength="1000"
+                    placeholder="Ask a learning question..."
+                    autocomplete="off"
+                    required
+                >
+                <button id="recommendationChatSend" class="btn btn-primary" type="submit">
+                    Send
+                </button>
+            </form>
+            <div id="recommendationChatStatus" class="small mt-2" role="status" style="color:var(--text-muted);"></div>
+            <div id="recommendationChatError" class="small mt-2" role="status" style="color:#fca5a5;"></div>
 
 
         </div>
@@ -2846,6 +2897,106 @@
 
     <script src="{{ asset('Asset/Bootstrap-5/js/bootstrap.bundle.min.js') }}"></script>
 
+    <script>
+        (() => {
+            const sidebar = document.getElementById('studentSidebar');
+            const toggle = document.querySelector('[data-dashboard-sidebar-toggle]');
+            const backdrop = document.querySelector('[data-dashboard-sidebar-close]');
+
+            if (!sidebar || !toggle || !backdrop) return;
+
+            function setMenuOpen(isOpen) {
+                sidebar.classList.toggle('is-open', isOpen);
+                backdrop.classList.toggle('is-visible', isOpen);
+                toggle.setAttribute('aria-expanded', String(isOpen));
+                toggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+                document.body.style.overflow = isOpen ? 'hidden' : '';
+
+                if (isOpen) {
+                    sidebar.querySelector('a, button')?.focus();
+                } else {
+                    toggle.focus();
+                }
+            }
+
+            toggle.addEventListener('click', () => {
+                setMenuOpen(toggle.getAttribute('aria-expanded') !== 'true');
+            });
+            backdrop.addEventListener('click', () => setMenuOpen(false));
+            sidebar.addEventListener('click', (event) => {
+                if (event.target.closest('a')) setMenuOpen(false);
+            });
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+                    setMenuOpen(false);
+                }
+            });
+        })();
+
+        (() => {
+            const form = document.getElementById('recommendationChatForm');
+            const input = document.getElementById('recommendationChatInput');
+            const messagesElement = document.getElementById('recommendationChatMessages');
+            const sendButton = document.getElementById('recommendationChatSend');
+            const statusElement = document.getElementById('recommendationChatStatus');
+            const errorElement = document.getElementById('recommendationChatError');
+            const history = [];
+
+            function appendMessage(role, content) {
+                const message = document.createElement('div');
+                message.className = 'topic-chip align-self-' + (role === 'user' ? 'end' : 'start');
+                message.textContent = content;
+                messagesElement.appendChild(message);
+                messagesElement.scrollTop = messagesElement.scrollHeight;
+            }
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const message = input.value.trim();
+                if (!message) return;
+
+                errorElement.textContent = '';
+                statusElement.textContent = 'Sending your question…';
+                appendMessage('user', message);
+                input.value = '';
+                sendButton.disabled = true;
+                sendButton.setAttribute('aria-busy', 'true');
+
+                try {
+                    const response = await fetch(@json(route('student.ai-recommendations.chat')), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ message, history })
+                    });
+                    const data = await response.json();
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.message || 'The learning assistant could not reply.');
+                    }
+
+                    appendMessage('assistant', data.reply);
+                    statusElement.textContent = data.mode === 'offline'
+                        ? 'Gemini is unreachable right now; the built-in learning helper is answering.'
+                        : '';
+                    history.push(
+                        { role: 'user', content: message },
+                        { role: 'assistant', content: data.reply }
+                    );
+                    if (history.length > 8) history.splice(0, history.length - 8);
+                } catch (error) {
+                    errorElement.textContent = error.message || 'The learning assistant could not reply. Please try again.';
+                    statusElement.textContent = '';
+                } finally {
+                    sendButton.disabled = false;
+                    sendButton.removeAttribute('aria-busy');
+                    input.focus();
+                }
+            });
+        })();
+    </script>
 
 </body>
 

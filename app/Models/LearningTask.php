@@ -20,6 +20,7 @@ class LearningTask extends Model
         'difficulty',
         'xp',
         'status',
+        'game_data',
     ];
     // public function game()
     // {
@@ -33,5 +34,11 @@ class LearningTask extends Model
     public function game()
     {
         return $this->belongsTo(Game::class, 'game_id');
+    }
+    protected function casts(): array
+    {
+        return [
+            'game_data' => 'array',
+        ];
     }
 }

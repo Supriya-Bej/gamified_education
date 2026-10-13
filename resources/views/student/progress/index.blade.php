@@ -29,7 +29,8 @@
     .progress-hero::before {
         content: '📈';
         position: absolute;
-        right: 30px; top: 10px;
+        right: 30px;
+        top: 10px;
         font-size: 120px;
         opacity: 0.05;
         pointer-events: none;
@@ -84,13 +85,16 @@
 
     .stat-card-inner:hover {
         transform: translateY(-4px);
-        box-shadow: 0 12px 28px rgba(0,0,0,0.3);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
     }
 
     .stat-icon-box {
-        width: 52px; height: 52px;
+        width: 52px;
+        height: 52px;
         border-radius: 16px;
-        display: flex; align-items: center; justify-content: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 1.4rem;
         background: linear-gradient(135deg, var(--primary), var(--secondary));
         flex-shrink: 0;
@@ -213,9 +217,12 @@
     }
 
     .section-icon {
-        width: 40px; height: 40px;
+        width: 40px;
+        height: 40px;
         border-radius: 12px;
-        display: flex; align-items: center; justify-content: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 1.1rem;
         background: linear-gradient(135deg, var(--primary), var(--secondary));
         flex-shrink: 0;
@@ -231,16 +238,25 @@
         border-bottom: 1px solid var(--border);
     }
 
-    .quest-item:last-child { border-bottom: 0; }
+    .quest-item:last-child {
+        border-bottom: 0;
+    }
 
-    .quest-left { display: flex; align-items: center; min-width: 0; }
+    .quest-left {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+    }
 
     .quest-check {
-        width: 40px; height: 40px;
+        width: 40px;
+        height: 40px;
         flex-shrink: 0;
         border-radius: 12px;
-        display: flex; align-items: center; justify-content: center;
-        background: rgba(34,197,94,0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(34, 197, 94, 0.12);
         color: #4ade80;
         font-size: 1rem;
         margin-right: 13px;
@@ -279,15 +295,20 @@
         border-bottom: 1px solid var(--border);
     }
 
-    .badge-row:last-child { border-bottom: 0; }
+    .badge-row:last-child {
+        border-bottom: 0;
+    }
 
     .badge-emoji {
-        width: 48px; height: 48px;
+        width: 48px;
+        height: 48px;
         flex-shrink: 0;
         border-radius: 14px;
         background: var(--surface-alt);
         border: 1px solid var(--border);
-        display: flex; align-items: center; justify-content: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 1.5rem;
         margin-right: 14px;
     }
@@ -299,7 +320,10 @@
         margin-bottom: 3px;
     }
 
-    .badge-date { color: var(--text-muted); font-size: 0.72rem; }
+    .badge-date {
+        color: var(--text-muted);
+        font-size: 0.72rem;
+    }
 
     /* ── Empty state ──────────────────────────────────────── */
     .empty-state {
@@ -326,11 +350,26 @@
 
     /* ── Responsive ───────────────────────────────────────── */
     @media (max-width: 768px) {
-        .progress-page { padding: 18px 16px 40px; }
-        .progress-hero { padding: 24px 20px; border-radius: 18px; }
-        .progress-hero h2 { font-size: 1.4rem; }
-        .level-number { font-size: 1.6rem; }
-        .quest-item { flex-wrap: wrap; }
+        .progress-page {
+            padding: 18px 16px 40px;
+        }
+
+        .progress-hero {
+            padding: 24px 20px;
+            border-radius: 18px;
+        }
+
+        .progress-hero h2 {
+            font-size: 1.4rem;
+        }
+
+        .level-number {
+            font-size: 1.6rem;
+        }
+
+        .quest-item {
+            flex-wrap: wrap;
+        }
     }
 </style>
 @endsection
@@ -346,7 +385,7 @@
                 {{ $labels['mission_title'] ?? 'My Progress' }}
             </div>
             <div class="theme-topbar-subtitle">
-                Track your journey and level up, {{ $student->name }}
+                Track your journey and level up, {{ Auth::user()->name }}
             </div>
         </div>
 
@@ -398,7 +437,7 @@
             <div class="stat-icon-box">✅</div>
             <div>
                 <div class="stat-label">{{ $labels['mission_title'] ?? 'Completed Quests' }}</div>
-                <div class="stat-value">{{ $progress->completed_tasks ?? 0 }}</div>
+                <div class="stat-value">{{ $completedQuestCount }}</div>
             </div>
         </div>
 
@@ -452,34 +491,96 @@
         </div>
 
         @forelse($completedTasks as $task)
-            <div class="quest-item">
-                <div class="quest-left">
-                    <div class="quest-check">
-                        <i class="bi bi-check-lg"></i>
-                    </div>
-                    <div style="min-width:0;">
-                        <div class="quest-title">{{ $task->title }}</div>
-                        <div class="quest-meta">
-                            {{ ucfirst($task->difficulty ?? 'beginner') }}
-                            @if($task->completed_at)
-                                &nbsp;•&nbsp;
-                                {{ \Carbon\Carbon::parse($task->completed_at)->format('M d, Y') }}
-                            @endif
-                        </div>
+        <div class="quest-item">
+            <div class="quest-left">
+                <div class="quest-check">
+                    <i class="bi bi-check-lg"></i>
+                </div>
+                <div style="min-width:0;">
+                    <div class="quest-title">{{ $task->title }}</div>
+                    <div class="quest-meta">
+                        {{ ucfirst($task->difficulty ?? 'beginner') }}
+                        &nbsp;•&nbsp;
+                        {{ $task->updated_at?->format('M d, Y') ?? 'Completed' }}
                     </div>
                 </div>
-                <div class="xp-tag">+{{ $task->xp ?? 0 }} XP</div>
             </div>
+            <div class="xp-tag">+{{ $task->xp ?? 0 }} XP</div>
+        </div>
+        @empty
+        <div class="empty-state">
+            <div class="empty-state-icon">🗡️</div>
+            <h6>No quests completed yet</h6>
+            <p>Head to the dashboard and start your first quest!</p>
+            <a href="{{ route('student.dashboard') }}" class="btn-theme text-decoration-none d-inline-flex align-items-center gap-2 mt-2">
+                <i class="bi bi-arrow-left"></i> Go to Dashboard
+            </a>
+        </div>
+        @endforelse
+
+        @if($completedTasks->hasPages())
+            <div class="px-4 py-3">
+                {{ $completedTasks->links() }}
+            </div>
+        @endif
+    </div>
+
+
+    {{-- ── LEARNING MATERIAL HISTORY ───────────────────────────────── --}}
+    <div class="section-card">
+        <div class="section-card-header">
+            <div class="section-icon">📚</div>
+            <div>
+                <h5>Learning Materials</h5>
+                <p>Lessons you have started or completed</p>
+            </div>
+        </div>
+
+        @forelse($completedLearningMaterials as $materialProgress)
+            @if($materialProgress->learningMaterial)
+                @php
+                    $material = $materialProgress->learningMaterial;
+                    $lessonStatus = $materialProgress->quiz_completed_at
+                        ? 'Level complete'
+                        : ($materialProgress->completed_at ? 'Quiz pending' : 'In progress');
+                @endphp
+                <div class="quest-item">
+                    <div class="quest-left">
+                        <div class="quest-check" style="{{ $materialProgress->quiz_completed_at ? '' : 'background:rgba(56,189,248,.12);color:#38bdf8;' }}">
+                            <i class="bi {{ $materialProgress->quiz_completed_at ? 'bi-check-lg' : ($materialProgress->completed_at ? 'bi-patch-question' : 'bi-book-half') }}"></i>
+                        </div>
+                        <div style="min-width:0;">
+                            <div class="quest-title">{{ $material->title }}</div>
+                            <div class="quest-meta">
+                                {{ $lessonStatus }}
+                                &nbsp;•&nbsp; {{ $material->topic }}
+                                &nbsp;•&nbsp;
+                                {{ ($materialProgress->completed_at ?? $materialProgress->started_at ?? $materialProgress->updated_at)?->format('M d, Y') }}
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ route('student.learning-materials.show', $material) }}"
+                       class="xp-tag text-decoration-none">
+                        {{ $materialProgress->quiz_completed_at ? 'Review' : ($materialProgress->completed_at ? 'Take quiz' : 'Continue') }}
+                    </a>
+                </div>
+            @endif
         @empty
             <div class="empty-state">
-                <div class="empty-state-icon">🗡️</div>
-                <h6>No quests completed yet</h6>
-                <p>Head to the dashboard and start your first quest!</p>
-                <a href="{{ route('student.dashboard') }}" class="btn-theme text-decoration-none d-inline-flex align-items-center gap-2 mt-2">
-                    <i class="bi bi-arrow-left"></i> Go to Dashboard
+                <div class="empty-state-icon">📚</div>
+                <h6>No learning materials started yet</h6>
+                <p>Open a lesson to track your learning progress here.</p>
+                <a href="{{ route('student.learning-materials.index') }}" class="btn-theme text-decoration-none d-inline-flex align-items-center gap-2 mt-2">
+                    <i class="bi bi-book"></i> Browse Learning Materials
                 </a>
             </div>
         @endforelse
+
+        @if($completedLearningMaterials->hasPages())
+            <div class="px-4 py-3">
+                {{ $completedLearningMaterials->links() }}
+            </div>
+        @endif
     </div>
 
 
@@ -494,23 +595,23 @@
         </div>
 
         @forelse($badges as $badge)
-            <div class="badge-row">
-                <div class="badge-emoji">
-                    {{ $badge->icon ?? '🏅' }}
-                </div>
-                <div>
-                    <div class="badge-name">{{ $badge->name }}</div>
-                    <div class="badge-date">
-                        {{ \Carbon\Carbon::parse($badge->pivot->earned_at ?? $badge->created_at)->format('M d, Y') }}
-                    </div>
+        <div class="badge-row">
+            <div class="badge-emoji">
+                {{ $badge->badge?->icon ?? '🏅' }}
+            </div>
+            <div>
+                <div class="badge-name">{{ $badge->badge?->name ?? 'Badge' }}</div>
+                <div class="badge-date">
+                    {{ $badge->awarded_at?->format('M d, Y') ?? $badge->created_at?->format('M d, Y') }}
                 </div>
             </div>
+        </div>
         @empty
-            <div class="empty-state">
-                <div class="empty-state-icon">🏅</div>
-                <h6>No badges yet</h6>
-                <p>Complete quests and challenges to earn badges!</p>
-            </div>
+        <div class="empty-state">
+            <div class="empty-state-icon">🏅</div>
+            <h6>No badges yet</h6>
+            <p>Complete quests and challenges to earn badges!</p>
+        </div>
         @endforelse
     </div>
 

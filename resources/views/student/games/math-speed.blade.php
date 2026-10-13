@@ -422,7 +422,7 @@
                         </span>
 
                         <span class="stat-value">
-                            <span id="currentQuestion">1</span>/10
+                            <span id="currentQuestion">1</span>/<span id="totalQuestions">0</span>
                         </span>
 
                     </div>
@@ -473,23 +473,17 @@
                     </div>
 
                     <div class="timer-track">
-
                         <div
                             class="timer-bar"
                             id="timerBar">
                         </div>
-
                     </div>
-
                 </div>
 
 
                 <!-- QUESTION AREA -->
 
-                <div
-                    class="question-box"
-                    id="gameArea">
-
+                <div class="question-box" id="gameArea">
                     <div class="question-number">
                         Question <span id="questionNumber">1</span>
                     </div>
@@ -579,7 +573,9 @@
     |--------------------------------------------------------------------------
     */
 
-        const totalQuestions = 10;
+        const taskQuestions = @json(data_get($task->game_data, 'questions', []));
+
+        const totalQuestions = taskQuestions.length;
 
         const gameTime = 60;
 
@@ -601,6 +597,9 @@
         let timerInterval;
 
         let currentAnswer;
+
+        const submittedAnswers = Array(totalQuestions).fill('');
+        let completionSent = false;
 
 
         /*
@@ -660,68 +659,9 @@
 
         function generateQuestion() {
 
-            const operations = [
-                'addition',
-                'subtraction',
-                'multiplication'
-            ];
-
-            const operation =
-                operations[
-                    Math.floor(
-                        Math.random() * operations.length
-                    )
-                ];
-
-
-            let firstNumber;
-
-            let secondNumber;
-
-
-            if (operation === 'addition') {
-
-                firstNumber =
-                    Math.floor(Math.random() * 50) + 1;
-
-                secondNumber =
-                    Math.floor(Math.random() * 50) + 1;
-
-                currentAnswer =
-                    firstNumber + secondNumber;
-
-                questionElement.textContent =
-                    `${firstNumber} + ${secondNumber} = ?`;
-
-            } else if (operation === 'subtraction') {
-
-                firstNumber =
-                    Math.floor(Math.random() * 50) + 20;
-
-                secondNumber =
-                    Math.floor(Math.random() * 20) + 1;
-
-                currentAnswer =
-                    firstNumber - secondNumber;
-
-                questionElement.textContent =
-                    `${firstNumber} - ${secondNumber} = ?`;
-
-            } else {
-
-                firstNumber =
-                    Math.floor(Math.random() * 10) + 1;
-
-                secondNumber =
-                    Math.floor(Math.random() * 10) + 1;
-
-                currentAnswer =
-                    firstNumber * secondNumber;
-
-                questionElement.textContent =
-                    `${firstNumber} × ${secondNumber} = ?`;
-
-            }
+            const question = taskQuestions[currentQuestionIndex];
+            currentAnswer = String(question.answer).trim();
+            questionElement.textContent = question.question;
 
 
             questionNumberElement.textContent =
@@ -729,6 +669,8 @@
 
             currentQuestionElement.textContent =
                 currentQuestionIndex + 1;
+            document.getElementById('totalQuestions').textContent =
+                totalQuestions;
 
             answerElement.value = '';
 
@@ -748,8 +690,7 @@
 
         function submitAnswer() {
 
-            const userAnswer =
-                Number(answerElement.value);
+            const userAnswer = answerElement.value.trim();
 
 
             if (
@@ -765,7 +706,9 @@
             }
 
 
-            if (userAnswer === currentAnswer) {
+            submittedAnswers[currentQuestionIndex] = userAnswer;
+
+            if (userAnswer === String(currentAnswer).trim()) {
 
                 score += 10;
 
@@ -862,6 +805,10 @@
         */
 
         function finishGame() {
+            if (completionSent) {
+                return;
+            }
+            completionSent = true;
 
             clearInterval(timerInterval);
 
@@ -913,9 +860,7 @@
                     },
 
                     body: JSON.stringify({
-
-                        score: score
-
+                        answers: submittedAnswers
                     })
 
                 })
@@ -941,30 +886,15 @@
 
 
                     if (data.success) {
+                        resultMessage.textContent = data.passed
+                            ? `All ${data.correct_answers} answers are correct. You earned ${data.xp_earned} XP!`
+                            : `You answered ${data.correct_answers} of ${data.total_questions} correctly. No XP was awarded; retry the quest.`;
 
-                        console.log(
-                            'XP Earned:',
-                            data.xp_earned
-                        );
-
-                        console.log(
-                            'Total XP:',
-                            data.total_xp
-                        );
-
-                        console.log(
-                            'Completed Tasks:',
-                            data.completed_tasks
-                        );
-
-
-                        if (data.badges && data.badges.length > 0) {
-
-                            console.log(
-                                'New badges:',
-                                data.badges
-                            );
-
+                        if (data.passed && Array.isArray(data.badges) && data.badges.length > 0) {
+                            const badgeNames = data.badges
+                                .map((badge) => `${badge.icon ? `${badge.icon} ` : ''}${badge.name}`)
+                                .join(', ');
+                            resultMessage.textContent += ` New badge${data.badges.length === 1 ? '' : 's'} earned: ${badgeNames}.`;
                         }
 
                     }

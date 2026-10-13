@@ -226,17 +226,17 @@
                         {{ $badge->icon ?? '🏅' }}
                     </div>
 
-                    <div class="badge-name">{{ $badge->name }}</div>
+                    <div class="badge-name">{{ $badge->badge?->name ?? 'Badge' }}</div>
 
                     <div class="badge-desc">
-                        {{ $badge->description ?? 'A special achievement badge.' }}
+                        {{ $badge->badge?->description ?? 'A special achievement badge.' }}
                     </div>
 
                     <div class="earned-tag">
                         <i class="bi bi-check-circle-fill"></i>
                         Earned {{
                             \Carbon\Carbon::parse(
-                                $badge->pivot->earned_at ?? $badge->created_at
+                                $badge->awarded_at ?? $badge->created_at
                             )->format('M d, Y')
                         }}
                     </div>

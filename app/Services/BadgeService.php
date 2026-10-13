@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Badge;
+use App\Models\LearningTask;
 use App\Models\StudentBadge;
 use App\Models\StudentProgress;
 use App\Models\UserRegister;
@@ -21,41 +22,32 @@ class BadgeService
         }
 
         $badges = Badge::where('is_active', true)->get();
+        $completedTaskCount = LearningTask::query()
+            ->where('user_id', $student->id)
+            ->where('status', 'completed')
+            ->count();
 
         $awardedBadges = [];
 
         foreach ($badges as $badge) {
+            $eligible = match ($badge->requirement_type) {
+                'total_xp' => $progress->total_xp >= $badge->requirement_value,
+                'completed_tasks' => $completedTaskCount >= $badge->requirement_value,
+                default => false,
+            };
 
-            // Check whether the student already has this badge.
-            $alreadyAwarded = StudentBadge::where('user_id', $student->id)
-                ->where('badge_id', $badge->id)
-                ->exists();
-
-            if ($alreadyAwarded) {
-                continue;
-            }
-
-            $eligible = false;
-
-            // Check badge requirement.
-            if ($badge->requirement_type === 'total_xp') {
-
-                $eligible = $progress->total_xp >= $badge->requirement_value;
-
-            } elseif ($badge->requirement_type === 'completed_tasks') {
-
-                $eligible = $progress->completed_tasks >= $badge->requirement_value;
-            }
-
-            // Award badge.
             if ($eligible) {
+                $studentBadge = StudentBadge::firstOrCreate(
+                    [
+                        'user_id' => $student->id,
+                        'badge_id' => $badge->id,
+                    ],
+                    ['awarded_at' => now()]
+                );
 
-                $studentBadge = StudentBadge::create([
-                    'user_id' => $student->id,
-                    'badge_id' => $badge->id,
-                    'awarded_at' => now(),
-                ]);
-
+                if (! $studentBadge->wasRecentlyCreated) {
+                    continue;
+                }
                 $awardedBadges[] = $badge;
             }
         }
