@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Game;
-
 use Illuminate\Database\Eloquent\Model;
 
 class LearningTask extends Model
@@ -20,8 +18,13 @@ class LearningTask extends Model
         'difficulty',
         'xp',
         'status',
+        'review_status',
+        'review_note',
+        'reviewed_by',
+        'reviewed_at',
         'game_data',
     ];
+
     // public function game()
     // {
     //     return $this->belongsTo(Game::class);
@@ -35,10 +38,17 @@ class LearningTask extends Model
     {
         return $this->belongsTo(Game::class, 'game_id');
     }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(UserRegister::class, 'reviewed_by');
+    }
+
     protected function casts(): array
     {
         return [
             'game_data' => 'array',
+            'reviewed_at' => 'datetime',
         ];
     }
 }

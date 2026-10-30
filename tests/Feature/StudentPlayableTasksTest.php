@@ -5,9 +5,12 @@ namespace Tests\Feature;
 use App\Http\Controllers\StudentLearningMaterialController;
 use App\Models\Badge;
 use App\Models\Game;
+use App\Models\LeaderboardXpAdjustment;
 use App\Models\LearningMaterial;
 use App\Models\LearningMaterialProgress;
 use App\Models\LearningTask;
+use App\Models\ProjectChallenge;
+use App\Models\ProjectChallengeSubmission;
 use App\Models\StudentBadge;
 use App\Models\StudentPreference;
 use App\Models\StudentProgress;
@@ -36,6 +39,36 @@ class StudentPlayableTasksTest extends TestCase
         config(['services.gemini.api_key' => 'feature-test-key']);
         $this->createTestSchema();
         $this->seed(GameEngineSeeder::class);
+    }
+
+    private function projectChallengeResponse(): array
+    {
+        return [
+            'candidates' => [
+                [
+                    'content' => [
+                        'parts' => [[
+                            'text' => json_encode([
+                                'interest' => 'Coding',
+                                'title' => 'Build a practical portfolio website',
+                                'project_brief' => 'Design and build a responsive portfolio that presents a student’s work.',
+                                'objectives' => [
+                                    'Create a responsive page layout.',
+                                    'Present at least three projects clearly.',
+                                    'Check the page on desktop and mobile.',
+                                ],
+                                'deliverables' => [
+                                    'A public project repository.',
+                                    'A deployed portfolio link.',
+                                ],
+                                'difficulty' => 'beginner',
+                                'xp' => 45,
+                            ], JSON_THROW_ON_ERROR),
+                        ]],
+                    ],
+                ],
+            ],
+        ];
     }
 
     public function test_gemini_catalog_only_contains_playable_games_matching_interests(): void
@@ -82,6 +115,145 @@ class StudentPlayableTasksTest extends TestCase
             && ! str_contains($request['contents'][0]['parts'][0]['text'], 'Math Speed Challenge')
             && ! str_contains($request['contents'][0]['parts'][0]['text'], 'Sorting Challenge')
         );
+    }
+
+    public function test_every_registration_interest_has_an_enabled_playable_game_and_fallback_quest(): void
+    {
+        Http::fake([
+            '*' => Http::response([], 503),
+        ]);
+
+        $interestGameTypes = [
+            'Math' => 'arithmetic_speed',
+            'Science' => 'science_quiz',
+            'Coding' => 'creative_coding',
+            'Chess' => 'chess_tactics',
+            'Sports' => 'sports_quiz',
+            'Art' => 'art_color_theory',
+            'Music' => 'music_note_rhythm',
+            'Reading' => 'reading_quiz',
+            'Puzzles' => 'puzzles_quiz',
+            'Technology' => 'technology_quiz',
+            'GK' => 'general_knowledge_quiz',
+            'Environment' => 'sorting_challenge',
+        ];
+        $gemini = app(GeminiService::class);
+
+        foreach ($interestGameTypes as $interest => $gameType) {
+            $games = $gemini->getPlayableGamesForInterests([$interest]);
+            $this->assertTrue(
+                $games->contains(fn (Game $game) => $game->game_type === $gameType),
+                "No playable game is configured for the registration interest {$interest}."
+            );
+        }
+
+        $generated = $gemini->generateTasks(
+            array_keys($interestGameTypes),
+            'Explore every selected interest',
+            'beginner',
+            count($interestGameTypes)
+        );
+
+        $this->assertEqualsCanonicalizing(
+            array_values($interestGameTypes),
+            array_column($generated['tasks'], 'game_type')
+        );
+        $this->assertTrue(collect($generated['tasks'])->every(
+            fn (array $task) => $gemini->isValidGameData($task['game_type'], $task['game_data'])
+        ));
+    }
+
+    public function test_knowledge_quiz_engines_render_and_grade_quests_for_each_new_interest(): void
+    {
+        $student = $this->studentWithInterests([
+            'Science',
+            'Sports',
+            'Reading',
+            'Puzzles',
+            'Technology',
+            'GK',
+        ]);
+        $quizEngines = [
+            'science_quiz',
+            'sports_quiz',
+            'reading_quiz',
+            'puzzles_quiz',
+            'technology_quiz',
+            'general_knowledge_quiz',
+        ];
+
+        foreach ($quizEngines as $gameType) {
+            $game = Game::query()->where('game_type', $gameType)->firstOrFail();
+            $task = LearningTask::create([
+                'user_id' => $student->id,
+                'game_id' => $game->id,
+                'game_type' => $gameType,
+                'title' => 'Test '.$game->name,
+                'description' => 'Answer this interest-based quiz.',
+                'category' => $game->category,
+                'difficulty' => 'beginner',
+                'xp' => 20,
+                'status' => 'pending',
+                'game_data' => [
+                    'instructions' => 'Choose the correct answer.',
+                    'questions' => [[
+                        'question' => 'Which star is closest to Earth?',
+                        'answer' => 'The Sun',
+                        'options' => ['Sirius', 'The Sun', 'Polaris'],
+                    ]],
+                ],
+            ]);
+
+            $this->actingAs($student, 'student')
+                ->get(route('student.game.play', $task))
+                ->assertOk()
+                ->assertSee($game->name)
+                ->assertSee('Which star is closest to Earth?');
+
+            $this->postJson(route('student.game.complete', $task), [
+                'answers' => ['The Sun'],
+            ])->assertOk()->assertJson([
+                'passed' => true,
+                'xp_earned' => 20,
+            ]);
+        }
+    }
+
+    public function test_admin_add_game_creates_an_engine_linked_library_entry(): void
+    {
+        $admin = UserRegister::create([
+            'name' => 'Game Library Admin',
+            'email' => 'game-library-admin@example.test',
+            'password' => 'password',
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.games.create'))
+            ->assertOk()
+            ->assertSee('General Knowledge Quiz')
+            ->assertSee('Sports Quiz');
+
+        $this->post(route('admin.games.store'), [
+            'name' => 'Sports Rules Practice',
+            'description' => 'Practice sports rules.',
+            'category' => 'sports',
+            'difficulty' => 'beginner',
+            'game_type' => 'sports_quiz',
+        ])->assertRedirect(route('admin.games.index'));
+
+        $game = Game::query()
+            ->where('name', 'Sports Rules Practice')
+            ->firstOrFail();
+        $this->assertSame('sports_quiz', $game->game_type);
+        $this->assertSame('sports', $game->category);
+        $this->assertNotNull($game->subject_id);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.games.index'))
+            ->assertOk()
+            ->assertSee('Game added successfully.')
+            ->assertSee('Sports Rules Practice');
     }
 
     public function test_art_and_music_games_render_and_are_graded_by_the_server(): void
@@ -159,6 +331,14 @@ class StudentPlayableTasksTest extends TestCase
             ->assertOk()
             ->assertSee($this->artTask()['title'])
             ->assertSee($this->musicTask()['title'])
+            ->assertSee('Start Quest')
+            ->assertSee('2 Available');
+
+        $this->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee($this->artTask()['title'])
+            ->assertSee($this->musicTask()['title'])
+            ->assertSee('Start Quest')
             ->assertSee('2 Available');
 
         $this->assertEqualsCanonicalizing(
@@ -202,6 +382,11 @@ class StudentPlayableTasksTest extends TestCase
             ->get(route('student.dashboard'))
             ->assertOk()
             ->assertSee('Pixel Garden - Round 2')
+            ->assertSee('Knight Fork Finder - Round 2');
+
+        $this->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee('Pixel Garden - Round 2')
             ->assertSee('Knight Fork Finder - Round 2')
             ->assertDontSee($this->codingTask()['title'])
             ->assertDontSee($this->chessTask()['title']);
@@ -226,7 +411,7 @@ class StudentPlayableTasksTest extends TestCase
                 ->get(route('student.game.play', $task))
                 ->assertOk();
         }
-        Http::assertSentCount(1);
+        Http::assertSentCount(3);
     }
 
     public function test_fallback_challenge_content_rotates_across_distinct_rounds_for_the_same_game_engine(): void
@@ -309,6 +494,7 @@ class StudentPlayableTasksTest extends TestCase
             ->assertDontSee('dashboard-expedition')
             ->assertDontSee('ECOQUEST FIELD GUIDE')
             ->assertSee('2 Available')
+            ->assertSee('Start Quest')
             ->assertSee('Available Quests')
             ->assertDontSee('Day Streak');
 
@@ -335,7 +521,7 @@ class StudentPlayableTasksTest extends TestCase
             ->assertOk();
 
         $this->assertSame(2, LearningTask::query()->where('user_id', $student->id)->count());
-        Http::assertSentCount(1);
+        Http::assertSentCount(3);
     }
 
     public function test_completed_quests_are_hidden_and_replaced_with_a_new_challenge(): void
@@ -393,6 +579,10 @@ class StudentPlayableTasksTest extends TestCase
         $this->actingAs($student, 'student')
             ->get(route('student.dashboard'))
             ->assertOk()
+            ->assertSee($newTask['title']);
+
+        $this->get(route('student.dashboard'))
+            ->assertOk()
             ->assertSee($newTask['title'])
             ->assertDontSee($repeatedTask['title'])
             ->assertSee('1 Available')
@@ -429,7 +619,7 @@ class StudentPlayableTasksTest extends TestCase
             ->assertOk()
             ->assertSee($newTask['title'])
             ->assertDontSee($repeatedTask['title']);
-        Http::assertSentCount(1);
+        Http::assertSentCount(4);
     }
 
     public function test_invalid_pending_task_does_not_block_a_valid_interest_matched_quest(): void
@@ -461,6 +651,10 @@ class StudentPlayableTasksTest extends TestCase
         $this->actingAs($student, 'student')
             ->get(route('student.dashboard'))
             ->assertOk()
+            ->assertSee($this->codingTask()['title']);
+
+        $this->get(route('student.dashboard'))
+            ->assertOk()
             ->assertSee('Build a chessboard pattern')
             ->assertSee('1 Available');
 
@@ -483,7 +677,7 @@ class StudentPlayableTasksTest extends TestCase
                 ->where('title', $this->codingTask()['title'])
                 ->count()
         );
-        Http::assertSentCount(1);
+        Http::assertSentCount(4);
     }
 
     public function test_students_can_find_published_learning_materials_but_not_unpublished_materials(): void
@@ -731,7 +925,7 @@ class StudentPlayableTasksTest extends TestCase
         }
     }
 
-    public function test_dashboard_daily_mission_links_to_the_next_interest_lesson_or_quiz(): void
+    public function test_daily_mission_uses_an_auto_approved_game_quest(): void
     {
         Http::fake([
             '*' => Http::response([], 503),
@@ -752,29 +946,144 @@ class StudentPlayableTasksTest extends TestCase
             'is_published' => true,
         ]);
 
-        $this->actingAs($student, 'student')
-            ->get(route('student.dashboard'))
+        $response = $this->actingAs($student, 'student')
+            ->get(route('student.dashboard'));
+        $task = LearningTask::query()->where('user_id', $student->id)->firstOrFail();
+
+        $response
             ->assertOk()
             ->assertSee('Daily Mission')
-            ->assertSee('Start lesson: Color and Contrast')
-            ->assertSee('Start lesson')
-            ->assertSee(route('student.learning-materials.show', $lesson));
-
-        LearningMaterialProgress::create([
-            'user_id' => $student->id,
-            'learning_material_id' => $lesson->id,
-            'started_at' => now(),
-            'completed_at' => now(),
-        ]);
-
-        $this->get(route('student.dashboard'))
-            ->assertOk()
-            ->assertSee('Take the quiz: Color and Contrast')
-            ->assertSee('Continue to quiz');
+            ->assertSee($task->title);
+        $this->assertSame('approved', $task->review_status);
 
         while (ob_get_level() > 1) {
             ob_end_clean();
         }
+    }
+
+    public function test_project_challenges_are_separate_from_game_quests_and_admin_reviews_submissions_for_xp(): void
+    {
+        Http::fake([
+            '*' => Http::response($this->projectChallengeResponse()),
+        ]);
+        $student = $this->studentWithInterests(['Coding', 'Art']);
+
+        $this->actingAs($student, 'student')
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee('Project Challenges')
+            ->assertSee('Your project challenge is under admin review')
+            ->assertSee('Build a practical portfolio website')
+            ->assertSee('This project challenge is waiting for admin approval.')
+            ->assertSee('Waiting for admin approval');
+
+        $challenge = ProjectChallenge::query()
+            ->where('user_id', $student->id)
+            ->latest()
+            ->firstOrFail();
+        $this->assertSame('Coding', $challenge->interest);
+        $this->assertSame('pending_review', $challenge->review_status);
+        $this->assertSame(0, ProjectChallengeSubmission::query()->count());
+        $this->assertSame(0, LearningTask::query()->where('title', $challenge->title)->count());
+
+        $admin = UserRegister::create([
+            'name' => 'Project Reviewer',
+            'email' => 'project-reviewer@example.test',
+            'password' => 'password',
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.project-challenges.index'))
+            ->assertOk()
+            ->assertSee($challenge->title)
+            ->assertSee('Needs review');
+        $this->put(route('admin.project-challenges.review', $challenge), [
+            'decision' => 'approve',
+            'interest' => 'Coding',
+            'title' => 'Build a practical portfolio website',
+            'project_brief' => 'Design and build a responsive portfolio that presents a student’s work.',
+            'objectives' => [
+                'Create a responsive page layout.',
+                'Present at least three projects clearly.',
+                'Check the page on desktop and mobile.',
+            ],
+            'deliverables' => [
+                'A public project repository.',
+                'A deployed portfolio link.',
+            ],
+            'difficulty' => 'beginner',
+            'xp' => 45,
+            'review_note' => 'Practical and suitable for the student.',
+        ])->assertRedirect(route('admin.project-challenges.show', $challenge));
+        $this->assertSame('approved', $challenge->fresh()->review_status);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.project-challenges.index'))
+            ->assertOk()
+            ->assertSee($challenge->title)
+            ->assertSee('Approved');
+
+        $this->actingAs($student, 'student')
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee('Build a practical portfolio website')
+            ->assertSee('Start challenge');
+
+        $this->actingAs($student, 'student')
+            ->get(route('student.project-challenges.show', $challenge))
+            ->assertOk()
+            ->assertSee('Project brief')
+            ->assertSee('Submit your project');
+        $this->post(route('student.project-challenges.submit', $challenge), [
+            'project_url' => 'https://github.com/student/portfolio',
+            'reflection' => 'I built a responsive portfolio with three project cards and checked the layout on mobile.',
+        ])->assertRedirect(route('student.project-challenges.show', $challenge));
+
+        $submission = ProjectChallengeSubmission::query()->firstOrFail();
+        $this->actingAs($admin, 'admin')
+            ->put(route('admin.project-challenges.submissions.review', [$challenge, $submission]), [
+                'decision' => 'request_revision',
+                'review_note' => 'Please add a mobile screenshot to the repository.',
+            ])
+            ->assertRedirect(route('admin.project-challenges.show', $challenge));
+        $this->assertSame('revision_requested', $submission->fresh()->status);
+
+        $this->actingAs($student, 'student')
+            ->get(route('student.project-challenges.show', $challenge))
+            ->assertOk()
+            ->assertSee('Please add a mobile screenshot to the repository.');
+        $this->post(route('student.project-challenges.submit', $challenge), [
+            'project_url' => 'https://github.com/student/portfolio-v2',
+            'reflection' => 'I added the mobile screenshot and updated the readme to explain how the responsive layout works.',
+        ])->assertRedirect(route('student.project-challenges.show', $challenge));
+
+        $submission = ProjectChallengeSubmission::query()->orderByDesc('id')->firstOrFail();
+        $this->actingAs($admin, 'admin')
+            ->put(route('admin.project-challenges.submissions.review', [$challenge, $submission]), [
+                'decision' => 'accept',
+                'review_note' => 'The submitted project meets the objectives.',
+            ])
+            ->assertRedirect(route('admin.project-challenges.show', $challenge));
+        $this->assertSame('accepted', $submission->fresh()->status);
+        $this->assertSame(2, ProjectChallengeSubmission::query()->where('project_challenge_id', $challenge->id)->count());
+        $this->assertSame(45, (int) StudentProgress::query()->where('user_id', $student->id)->value('total_xp'));
+        $this->assertNotNull($challenge->fresh()->xp_awarded_at);
+
+        $this->actingAs($student, 'student')
+            ->get(route('student.project-challenges.show', $challenge))
+            ->assertOk()
+            ->assertSee('Your project has been accepted.');
+
+        $this->actingAs($student, 'student')
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee('Project challenge is not available yet');
+        $this->assertSame(1, ProjectChallenge::query()->where('user_id', $student->id)->count());
+        Http::assertSent(fn (ClientRequest $request) => str_contains(
+            $request->body(),
+            'Build a practical portfolio website'
+        ));
     }
 
     public function test_progress_page_paginates_completed_quests_and_shows_started_materials(): void
@@ -964,7 +1273,7 @@ class StudentPlayableTasksTest extends TestCase
             ->assertOk();
 
         $this->assertSame(2, LearningTask::query()->where('user_id', $student->id)->count());
-        Http::assertSentCount(1);
+        Http::assertSentCount(3);
     }
 
     public function test_dashboard_generates_fresh_quests_after_all_current_quests_are_completed(): void
@@ -1011,6 +1320,11 @@ class StudentPlayableTasksTest extends TestCase
             ->assertSee($freshCodingTask['title'])
             ->assertSee($freshChessTask['title']);
 
+        $this->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee($freshCodingTask['title'])
+            ->assertSee($freshChessTask['title']);
+
         $this->assertSame(2, LearningTask::query()
             ->where('user_id', $student->id)
             ->where('status', 'pending')
@@ -1025,7 +1339,7 @@ class StudentPlayableTasksTest extends TestCase
             ->assertOk();
 
         $this->assertSame(4, LearningTask::query()->where('user_id', $student->id)->count());
-        Http::assertSentCount(1);
+        Http::assertSentCount(4);
     }
 
     public function test_dashboard_generates_interest_matched_fallback_quests_when_gemini_is_unavailable(): void
@@ -1043,6 +1357,11 @@ class StudentPlayableTasksTest extends TestCase
             ->assertSee('Forcing Moves - Round 1')
             ->assertDontSee('No new quests could be loaded')
             ->assertDontSee('Try again');
+
+        $this->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee('Circle Orbit - Round 1')
+            ->assertSee('Forcing Moves - Round 1');
 
         $this->assertEqualsCanonicalizing(
             ['creative_coding', 'chess_tactics'],
@@ -1417,6 +1736,170 @@ class StudentPlayableTasksTest extends TestCase
         Http::assertSentCount(2);
     }
 
+    public function test_dashboard_shows_top_xp_ranking_and_the_students_position(): void
+    {
+        $initialOutputBufferLevel = ob_get_level();
+        Http::fake([
+            '*' => Http::response([], 503),
+        ]);
+
+        $student = $this->studentWithInterests(['Coding']);
+        StudentProgress::create([
+            'user_id' => $student->id,
+            'total_xp' => 25,
+            'level' => 1,
+            'completed_tasks' => 0,
+        ]);
+
+        $leader = UserRegister::create([
+            'name' => 'Leaderboard Leader',
+            'email' => 'leader@example.test',
+            'password' => 'password',
+            'role' => 'student',
+        ]);
+        StudentProgress::create([
+            'user_id' => $leader->id,
+            'total_xp' => 100,
+            'level' => 1,
+            'completed_tasks' => 0,
+        ]);
+
+        $this->actingAs($student, 'student')
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee(route('student.leaderboard'))
+            ->assertDontSee('Leaderboard Leader');
+
+        $this->get(route('student.leaderboard'))
+            ->assertOk()
+            ->assertSee('Leaderboard Leader')
+            ->assertSee('Your rank')
+            ->assertSee('#2')
+            ->assertSee('You');
+
+        while (ob_get_level() > $initialOutputBufferLevel) {
+            ob_end_clean();
+        }
+    }
+
+    public function test_admin_xp_corrections_require_a_reason_and_are_audited(): void
+    {
+        $admin = UserRegister::create([
+            'name' => 'Leaderboard Admin',
+            'email' => 'admin@example.test',
+            'password' => 'password',
+            'role' => 'admin',
+        ]);
+        $student = UserRegister::create([
+            'name' => 'Ranked Student',
+            'email' => 'ranked@example.test',
+            'password' => 'password',
+            'role' => 'student',
+        ]);
+        UserRegister::create([
+            'name' => 'Other Student',
+            'email' => 'other@example.test',
+            'password' => 'password',
+            'role' => 'student',
+        ]);
+        StudentProgress::create([
+            'user_id' => $student->id,
+            'total_xp' => 150,
+            'level' => 4,
+            'completed_tasks' => 8,
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.leaderboard.index', ['search' => 'ranked@']))
+            ->assertOk()
+            ->assertSee('Ranked Student')
+            ->assertSee('ranked@example.test')
+            ->assertDontSee('Other Student');
+
+        $this->post(route('admin.leaderboard.xp.adjust', $student), [
+            'xp_change' => 100,
+            'reason' => 'Verified missing quest reward',
+            'search' => 'ranked@',
+        ])->assertRedirect(route('admin.leaderboard.index', ['search' => 'ranked@']));
+
+        $this->assertSame(250, (int) $student->progress()->value('total_xp'));
+        $this->assertSame(4, (int) $student->progress()->value('level'));
+        $this->assertSame(8, (int) $student->progress()->value('completed_tasks'));
+
+        $this->post(route('admin.leaderboard.xp.adjust', $student), [
+            'xp_change' => -251,
+            'reason' => 'Invalid over-adjustment',
+        ])->assertSessionHasErrors('xp_change');
+        $this->assertSame(250, (int) $student->progress()->value('total_xp'));
+
+        $this->post(route('admin.leaderboard.xp.adjust', $student), [
+            'xp_change' => 10,
+        ])->assertSessionHasErrors('reason');
+
+        $this->post(route('admin.leaderboard.xp.adjust', $student), [
+            'xp_change' => 0,
+            'reason' => 'No-op',
+        ])->assertSessionHasErrors('xp_change');
+
+        $this->post(route('admin.leaderboard.xp.adjust', $student), [
+            'xp_change' => -50,
+            'reason' => 'Remove duplicated quest reward',
+        ])->assertRedirect(route('admin.leaderboard.index'));
+
+        $this->assertSame(200, (int) $student->progress()->value('total_xp'));
+        $this->assertSame(2, LeaderboardXpAdjustment::count());
+        $this->assertDatabaseHas('leaderboard_xp_adjustments', [
+            'user_id' => $student->id,
+            'admin_id' => $admin->id,
+            'xp_change' => 100,
+            'reason' => 'Verified missing quest reward',
+        ]);
+        $this->assertDatabaseHas('leaderboard_xp_adjustments', [
+            'user_id' => $student->id,
+            'admin_id' => $admin->id,
+            'xp_change' => -50,
+            'reason' => 'Remove duplicated quest reward',
+        ]);
+
+        $this->get(route('admin.leaderboard.index'))
+            ->assertOk()
+            ->assertSee('XP adjustment history')
+            ->assertSee('Verified missing quest reward')
+            ->assertSee('Remove duplicated quest reward');
+    }
+
+    public function test_ai_generated_game_quests_are_playable_without_admin_approval(): void
+    {
+        Http::fake([
+            '*' => Http::response($this->geminiResponse([$this->codingTask()])),
+        ]);
+
+        $student = $this->studentWithInterests(['Coding']);
+
+        $this->actingAs($student, 'student')
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee($this->codingTask()['title'])
+            ->assertSee('Start Quest')
+            ->assertDontSee('Awaiting approval');
+
+        $task = LearningTask::query()
+            ->where('user_id', $student->id)
+            ->firstOrFail();
+        $this->assertSame('approved', $task->review_status);
+
+        $this->get(route('student.game.play', $task))
+            ->assertOk()
+            ->assertSee($this->codingTask()['game_data']['instructions']);
+        $this->postJson(route('student.game.complete', $task), [
+            'code' => 'ctx.fillRect(10, 10, 20, 20);',
+        ])->assertOk()->assertJson([
+            'passed' => true,
+            'xp_earned' => $this->codingTask()['xp'],
+            'total_xp' => $this->codingTask()['xp'],
+        ]);
+    }
+
     private function studentWithInterests(array $interests): UserRegister
     {
         $student = UserRegister::create([
@@ -1461,7 +1944,7 @@ class StudentPlayableTasksTest extends TestCase
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('category')->nullable();
-            $table->string('game_type')->nullable()->unique();
+            $table->string('game_type')->nullable();
             $table->string('difficulty')->default('beginner');
             $table->timestamps();
         });
@@ -1544,6 +2027,15 @@ class StudentPlayableTasksTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::create('leaderboard_xp_adjustments', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('admin_id')->nullable();
+            $table->integer('xp_change');
+            $table->string('reason', 500);
+            $table->timestamps();
+        });
+
         Schema::create('learning_tasks', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
@@ -1555,7 +2047,42 @@ class StudentPlayableTasksTest extends TestCase
             $table->string('difficulty')->default('beginner');
             $table->integer('xp')->default(10);
             $table->enum('status', ['pending', 'completed', 'superseded'])->default('pending');
+            $table->string('review_status', 20)->default('approved');
+            $table->text('review_note')->nullable();
+            $table->unsignedBigInteger('reviewed_by')->nullable();
+            $table->timestamp('reviewed_at')->nullable();
             $table->json('game_data')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('project_challenges', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('interest');
+            $table->string('title');
+            $table->text('project_brief');
+            $table->json('objectives');
+            $table->json('deliverables');
+            $table->string('difficulty');
+            $table->unsignedSmallInteger('xp');
+            $table->string('review_status')->default('pending_review');
+            $table->text('review_note')->nullable();
+            $table->unsignedBigInteger('reviewed_by')->nullable();
+            $table->timestamp('reviewed_at')->nullable();
+            $table->timestamp('xp_awarded_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('project_challenge_submissions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('project_challenge_id');
+            $table->unsignedBigInteger('user_id');
+            $table->string('project_url', 2048);
+            $table->text('reflection');
+            $table->string('status')->default('submitted');
+            $table->text('review_note')->nullable();
+            $table->unsignedBigInteger('reviewed_by')->nullable();
+            $table->timestamp('reviewed_at')->nullable();
             $table->timestamps();
         });
 

@@ -87,7 +87,7 @@
 
     </a>
 
-
+    <!-- 
 
     <a
         href="{{ route('student.dashboard') }}#quests"
@@ -99,7 +99,7 @@
             {{ $labels['mission_title'] ?? 'Learning Quests' }}
         </span>
 
-    </a>
+    </a> -->
 
 
 
@@ -108,6 +108,16 @@
         class="side-link">
         <i class="bi bi-graph-up-arrow"></i>
         <span>My Progress</span>
+    </a>
+
+    <a
+        href="{{ route('student.leaderboard') }}"
+        class="side-link {{ request()->routeIs('student.leaderboard') ? 'active' : '' }}">
+
+        <i class="bi bi-trophy-fill"></i>
+
+        <span>Leaderboard</span>
+
     </a>
 
     <a

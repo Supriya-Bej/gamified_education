@@ -100,16 +100,29 @@ class UserController extends Controller
     }
 
     // Logout
+    // public function logoutUser(Request $request)
+    // {
+    //     Auth::guard('student')->logout();
+
+    //     $request->session()->invalidate();
+    //     $request->session()->regenerateToken();
+
+    //     return redirect()->route('login')->with('success', 'You have been logged out successfully.');
+    // }
+
     public function logoutUser(Request $request)
     {
         Auth::guard('student')->logout();
 
-        $request->session()->invalidate();
+        // Keep admin session active
+        $request->session()->regenerate();
+
         $request->session()->regenerateToken();
 
-        return redirect()->route('login')->with('success', 'You have been logged out successfully.');
+        return redirect()
+            ->route('login')
+            ->with('success', 'You have been logged out successfully.');
     }
-
     // public function dashboard(AIService $aiService)
     // {
     //     //user() eta student guard use kore je user login kora ache take khuje ber kore

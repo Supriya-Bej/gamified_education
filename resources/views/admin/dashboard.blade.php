@@ -484,6 +484,10 @@
                         <i class="bi bi-award" aria-hidden="true"></i>
                         <span>Badges & achievements</span>
                     </a>
+                    <a class="admin-command-action" href="{{ route('admin.leaderboard.index') }}">
+                        <i class="bi bi-trophy" aria-hidden="true"></i>
+                        <span>Manage leaderboard</span>
+                    </a>
                 </nav>
             </div>
         </div>

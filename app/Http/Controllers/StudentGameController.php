@@ -29,6 +29,12 @@ class StudentGameController extends Controller
             abort(403, 'You are not allowed to access this quest.');
         }
 
+        if ($task->review_status !== 'approved') {
+            return redirect()
+                ->route('student.dashboard')
+                ->with('error', 'This game quest is not approved yet.');
+        }
+
         if ($task->status !== 'pending') {
             return redirect()
                 ->route('student.dashboard')
@@ -104,6 +110,13 @@ class StudentGameController extends Controller
             ], 403);
         }
 
+        if ($task->review_status !== 'approved') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This game quest is not approved yet.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'answers' => ['sometimes', 'required', 'array', 'max:100'],
             'answers.*' => ['nullable', 'string', 'max:500'],
@@ -161,6 +174,15 @@ class StudentGameController extends Controller
                 ];
             }
 
+            if ($lockedTask->review_status !== 'approved') {
+                return [
+                    'not_approved' => true,
+                    'already_completed' => false,
+                    'xp_earned' => 0,
+                    'progress' => null,
+                ];
+            }
+
             if (! $passed) {
                 return [
                     'already_completed' => false,
@@ -209,6 +231,13 @@ class StudentGameController extends Controller
                 'success' => false,
                 'message' => 'This quest is already completed.',
             ], 409);
+        }
+
+        if ($result['not_approved'] ?? false) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This challenge is not approved yet.',
+            ], 403);
         }
 
         if (! $passed) {
@@ -321,7 +350,16 @@ class StudentGameController extends Controller
             return [(int) round($correct / count($puzzles) * 100), $correct, count($puzzles)];
         }
 
-        if (in_array($task->game_type, ['art_color_theory', 'music_note_rhythm'], true)) {
+        if (in_array($task->game_type, [
+            'art_color_theory',
+            'music_note_rhythm',
+            'science_quiz',
+            'sports_quiz',
+            'reading_quiz',
+            'puzzles_quiz',
+            'technology_quiz',
+            'general_knowledge_quiz',
+        ], true)) {
             $questions = $gameData['questions'] ?? [];
             abort_unless(is_array($questions) && $questions !== [], 422, 'This quest has no questions.');
             abort_unless(count($answers) === count($questions), 422, 'Submit an answer for every question.');

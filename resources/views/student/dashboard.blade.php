@@ -1945,7 +1945,6 @@
                     </div>
 
 
-
                     <h1 class="hero-title">
 
                         Welcome,
@@ -2315,8 +2314,6 @@
 
         </div>
 
-
-
         {{-- =================================================
              CHESS SPECIAL AREA
         ================================================== --}}
@@ -2472,16 +2469,20 @@
                     class="col-lg-3 text-lg-end mt-3 mt-lg-0"
                 >
 
-                    <a
-                        href="{{ $dailyMissionUrl }}"
-                        class="primary-btn"
-                    >
+                    @if ($dailyMissionUrl)
+                        <a
+                            href="{{ $dailyMissionUrl }}"
+                            class="primary-btn"
+                        >
 
-                        {{ $dailyMissionAction }}
+                            {{ $dailyMissionAction }}
 
-                        <i class="bi bi-arrow-right"></i>
+                            <i class="bi bi-arrow-right"></i>
 
-                    </a>
+                        </a>
+                    @elseif ($projectChallenge?->review_status === 'pending_review')
+                        <span class="badge text-bg-warning">Waiting for admin approval</span>
+                    @endif
 
                 </div>
 
@@ -2530,18 +2531,28 @@
             >
 
                 {{ $tasks->count() }} Available
+                @if ($pendingReviewCount > 0)
+                    · {{ $pendingReviewCount }} Awaiting approval
+                @endif
 
             </span>
 
 
         </div>
 
+        @if ($pendingReviewCount > 0)
+            <div class="alert alert-warning mt-3 mb-0" role="status">
+                <strong>Your quests are being reviewed.</strong>
+                You can see them below, but they will be playable after an admin approves them.
+            </div>
+        @endif
+
 
 
         <div class="row g-4">
 
 
-            @forelse($tasks as $task)
+            @forelse($learningQuests as $task)
 
 
                 <div class="col-md-6 col-xl-4">
@@ -2570,6 +2581,9 @@
                                     +{{ $task->xp ?? 20 }} XP
 
                                 </span>
+                                @if ($task->review_status === 'pending_review')
+                                    <span class="badge text-bg-warning">Awaiting approval</span>
+                                @endif
 
 
                             </div>
@@ -2619,16 +2633,20 @@
 
 
 
-                            <a
-                                href="{{ route('student.game.play', $task->id) }}"
-                                class="start-btn"
-                            >
+                            @if ($task->review_status === 'approved')
+                                <a
+                                    href="{{ route('student.game.play', $task->id) }}"
+                                    class="start-btn"
+                                >
 
-                                Start Quest
+                                    Start Quest
 
-                                <i class="bi bi-chevron-right"></i>
+                                    <i class="bi bi-chevron-right"></i>
 
-                            </a>
+                                </a>
+                            @else
+                                <span class="small text-warning-emphasis">Admin review in progress</span>
+                            @endif
 
 
                         </div>
@@ -2663,7 +2681,12 @@
                         </div>
 
 
-                        @if ($questGenerationFailed)
+                        @if ($pendingReviewCount > 0)
+                            <h4 class="mt-3">Your quests are being reviewed</h4>
+                            <p style="color:var(--text-muted);">
+                                Your game-based quests will appear here after an admin approves them.
+                            </p>
+                        @elseif ($questGenerationFailed)
                             <h4 class="mt-3">No new quests could be loaded</h4>
                             <p style="color:var(--text-muted);">
                                 We couldn’t get a new interest-matched quest right now. Check your connection and try again.
@@ -2699,6 +2722,106 @@
         </div>
 
 
+        <!-- <div class="section-header" id="project-challenges">
+            <div>
+                <div class="section-title">Project Challenges</div>
+                <div class="section-subtitle">
+                    Real-world projects created for your interests and reviewed by an admin
+                </div>
+            </div>
+        </div> 
+
+        @if ($projectChallenge)
+            @php
+                $latestProjectSubmission = $projectChallenge->submissions->first();
+            @endphp
+            @if ($projectChallenge->review_status === 'pending_review')
+                <div class="glass-card text-center py-4 mb-5">
+                    <h3 class="h4">Your project challenge is under admin review</h3>
+                    <p class="mb-0" style="color:var(--text-muted);">
+                        The project brief will appear here after it has been approved.
+                    </p>
+                </div>
+            @else
+            <div class="glass-card mb-5">
+                <div class="quest-top mb-3">
+                    <span class="quest-category">{{ $projectChallenge->interest }} project</span>
+                    <span class="quest-xp">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        +{{ $projectChallenge->xp }} XP after approval
+                    </span>
+                </div>
+                <h3 class="quest-title">{{ $projectChallenge->title }}</h3>
+                <p class="quest-description-small">{{ $projectChallenge->project_brief }}</p>
+                <div class="row g-4 mt-2">
+                    <div class="col-md-6">
+                        <h5 class="fw-bold">Project goals</h5>
+                        <ul>
+                            @foreach ($projectChallenge->objectives as $objective)
+                                <li class="mb-2">{{ $objective }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="fw-bold">What to deliver</h5>
+                        <ul>
+                            @foreach ($projectChallenge->deliverables as $deliverable)
+                                <li class="mb-2">{{ $deliverable }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pt-3 border-top">
+                    <span class="small text-capitalize" style="color:var(--text-muted);">
+                        {{ $projectChallenge->difficulty }} ·
+                        @if ($projectChallenge->review_status === 'pending_review')
+                            Waiting for admin approval
+                        @elseif ($latestProjectSubmission?->status === 'submitted')
+                            Submission under review
+                        @elseif ($latestProjectSubmission?->status === 'revision_requested')
+                            Changes requested
+                        @else
+                            Ready to start
+                        @endif
+                    </span>
+                    @if ($projectChallenge->review_status === 'approved')
+                        <a href="{{ route('student.project-challenges.show', $projectChallenge) }}" class="start-btn">
+                            {{ $latestProjectSubmission?->status === 'revision_requested' ? 'Update submission' : ($latestProjectSubmission ? 'View submission' : 'View project brief') }}
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    @endif
+                </div>
+                @if ($projectChallenge->review_status === 'pending_review')
+                    <p class="small mt-3 mb-0" style="color:var(--text-muted);">
+                        Your project brief is being checked before it is published. This is separate from your game quests.
+                    </p>
+                @elseif ($latestProjectSubmission?->status === 'revision_requested')
+                    <p class="small mt-3 mb-0" style="color:var(--text-muted);">
+                        Admin feedback: {{ $latestProjectSubmission->review_note }}
+                    </p>
+                @elseif ($latestProjectSubmission?->status === 'submitted')
+                    <p class="small mt-3 mb-0" style="color:var(--text-muted);">
+                        Your project link is waiting for an admin to review it.
+                    </p>
+                @endif
+            </div>
+            @endif
+        @elseif ($projectChallengeGenerationFailed)
+            <div class="glass-card text-center py-4 mb-5">
+                <h4>Project challenge is not available yet</h4>
+                <p style="color:var(--text-muted);">
+                    We could not generate a project challenge right now. Please try again later.
+                </p>
+            </div>
+        @else
+            <div class="glass-card text-center py-4 mb-5">
+                <h4>Your project challenge is being prepared</h4>
+                <p class="mb-0" style="color:var(--text-muted);">
+                    An AI-generated project based on your interests will appear here after admin review.
+                </p>
+            </div>
+        @endif
+-->
 
         {{-- =================================================
              AI TOPICS

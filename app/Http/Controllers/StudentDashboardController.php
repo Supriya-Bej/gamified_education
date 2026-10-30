@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Game;
 use App\Models\LearningMaterialProgress;
 use App\Models\LearningTask;
+use App\Models\ProjectChallenge;
 use App\Models\StudentProgress;
 use App\Models\UserRegister;
 use App\Services\GeminiService;
@@ -311,7 +312,11 @@ class StudentDashboardController extends Controller
             'playable_games_count' => $playableGames->count(),
         ]);
 
-        $coveredCategories = $tasks
+        $coveredCategories = LearningTask::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->whereIn('review_status', ['pending_review', 'approved'])
+            ->whereIn('game_id', $playableGameIds)
             ->pluck('category')
             ->map(fn ($category) => strtolower(trim((string) $category)))
             ->unique()
@@ -417,6 +422,7 @@ class StudentDashboardController extends Controller
                     'xp' => $xp,
                     'game_data' => $gameData,
                     'status' => 'pending',
+                    'review_status' => 'approved',
                 ];
             }
 
@@ -434,6 +440,7 @@ class StudentDashboardController extends Controller
                 $coveredGameIds = LearningTask::query()
                     ->where('user_id', $user->id)
                     ->where('status', 'pending')
+                    ->whereIn('review_status', ['pending_review', 'approved'])
                     ->whereIn('game_id', $generationGameIds)
                     ->get(['game_id', 'game_type', 'category'])
                     ->filter(function (LearningTask $task) use ($generationGamesById): bool {
@@ -493,8 +500,105 @@ class StudentDashboardController extends Controller
             $playableGameIds,
             $playableGamesById
         );
+        $pendingReviewCount = LearningTask::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->where('review_status', 'pending_review')
+            ->whereIn('game_id', $playableGameIds)
+            ->count();
+        $pendingReviewTasks = LearningTask::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->where('review_status', 'pending_review')
+            ->whereIn('game_id', $playableGameIds)
+            ->latest()
+            ->get()
+            ->filter(function (LearningTask $task) use ($playableGamesById): bool {
+                $game = $playableGamesById->get((int) $task->game_id);
+
+                return $game instanceof Game
+                    && strtolower(trim((string) $task->game_type))
+                        === strtolower(trim((string) $game->game_type))
+                    && strtolower(trim((string) $task->category))
+                        === strtolower(trim((string) $game->category));
+            })
+            ->values();
+        $learningQuests = $tasks
+            ->concat($pendingReviewTasks)
+            ->sortByDesc('created_at')
+            ->values();
+
+        $hasActiveProjectChallenge = ProjectChallenge::query()
+            ->where('user_id', $user->id)
+            ->whereIn('review_status', ['pending_review', 'approved'])
+            ->whereDoesntHave('submissions', fn ($query) => $query->where('status', 'accepted'))
+            ->exists();
+        $projectChallengeGenerationFailed = $interests === [];
+        if (! $hasActiveProjectChallenge && $interests !== []) {
+            $previousChallenges = ProjectChallenge::query()
+                ->where('user_id', $user->id)
+                ->get(['title', 'project_brief'])
+                ->map(fn (ProjectChallenge $challenge) => [
+                    'title' => $challenge->title,
+                    'project_brief' => $challenge->project_brief,
+                ])
+                ->all();
+
+            $projectChallengeData = $gemini->generateProjectChallenge(
+                $interests,
+                $preference->learning_goal ?? 'Practice and learn',
+                $preference->experience_level ?? 'beginner',
+                $previousChallenges
+            );
+
+            if ($projectChallengeData === null) {
+                $projectChallengeGenerationFailed = true;
+            } else {
+                DB::transaction(function () use ($user, $projectChallengeData): void {
+                    UserRegister::query()
+                        ->whereKey($user->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    $alreadyHasActiveChallenge = ProjectChallenge::query()
+                        ->where('user_id', $user->id)
+                        ->whereIn('review_status', ['pending_review', 'approved'])
+                        ->whereDoesntHave('submissions', fn ($query) => $query->where('status', 'accepted'))
+                        ->exists();
+
+                    if (! $alreadyHasActiveChallenge) {
+                        $alreadyCreated = ProjectChallenge::query()
+                            ->where('user_id', $user->id)
+                            ->whereRaw('LOWER(title) = ?', [
+                                mb_strtolower(trim($projectChallengeData['title'])),
+                            ])
+                            ->exists();
+
+                        if ($alreadyCreated) {
+                            return;
+                        }
+
+                        ProjectChallenge::create([
+                            ...$projectChallengeData,
+                            'user_id' => $user->id,
+                            'review_status' => 'pending_review',
+                        ]);
+                    }
+                });
+            }
+        }
+
+        $projectChallenge = ProjectChallenge::query()
+            ->with(['submissions' => fn ($query) => $query->orderByDesc('id')])
+            ->where('user_id', $user->id)
+            ->whereIn('review_status', ['pending_review', 'approved'])
+            ->whereDoesntHave('submissions', fn ($query) => $query->where('status', 'accepted'))
+            ->latest()
+            ->first();
+
         $questGenerationFailed = $playableGames->isNotEmpty()
             && $tasks->isEmpty()
+            && $pendingReviewCount === 0
             && $generationAttempted;
 
         /*
@@ -537,36 +641,69 @@ class StudentDashboardController extends Controller
 
         $dailyQuest =
             $aiProfile['daily_quest']
-            ?? 'Complete one learning challenge today.';
+            ?? 'Complete one learning quest today.';
 
-        $dailyMissionMaterial = $materialProgression->nextForInterests(
-            $user->id,
-            $interests
-        );
-        $dailyMissionProgress = $dailyMissionMaterial
-            ? LearningMaterialProgress::query()
-                ->where('user_id', $user->id)
-                ->where('learning_material_id', $dailyMissionMaterial->id)
-                ->first()
-            : null;
-        if ($dailyMissionMaterial) {
-            $dailyMissionTitle = $dailyMissionProgress?->completed_at
-                ? 'Take the quiz: '.$dailyMissionMaterial->title
-                : ($dailyMissionProgress?->started_at
-                    ? 'Continue lesson: '.$dailyMissionMaterial->title
-                    : 'Start lesson: '.$dailyMissionMaterial->title);
-            $dailyMissionDescription = $dailyMissionProgress?->completed_at
-                ? 'Pass the lesson quiz with at least 70% to unlock the next level.'
-                : 'Complete this interest-matched lesson, then pass its quiz to unlock the next level.';
-            $dailyMissionUrl = route('student.learning-materials.show', $dailyMissionMaterial);
-            $dailyMissionAction = $dailyMissionProgress?->completed_at
-                ? 'Continue to quiz'
-                : 'Start lesson';
+        $dailyMissionTask = $tasks->first();
+        $dailyMissionMaterial = null;
+        $dailyMissionProgress = null;
+        $latestProjectSubmission = $projectChallenge?->submissions->first();
+
+        if ($projectChallenge) {
+            $dailyMissionTitle = $projectChallenge->title;
+
+            if ($projectChallenge->review_status === 'pending_review') {
+                $dailyMissionDescription = 'This project challenge is waiting for admin approval.';
+                $dailyMissionUrl = null;
+                $dailyMissionAction = null;
+            } else {
+                $dailyMissionDescription = match ($latestProjectSubmission?->status) {
+                    'submitted' => 'Your project submission is waiting for admin review.',
+                    'revision_requested' => 'Admin requested changes. Update your project and submit it again.',
+                    default => 'Complete this real-world project and submit it to earn XP.',
+                };
+                $dailyMissionUrl = route('student.project-challenges.show', $projectChallenge);
+                $dailyMissionAction = match ($latestProjectSubmission?->status) {
+                    'submitted' => 'View submission',
+                    'revision_requested' => 'Update challenge',
+                    default => 'Start challenge',
+                };
+            }
         } else {
-            $dailyMissionTitle = 'Explore a lesson in your interests';
-            $dailyMissionDescription = 'Browse learning materials to find your next lesson and quiz.';
-            $dailyMissionUrl = route('student.learning-materials.index');
-            $dailyMissionAction = 'Browse lessons';
+            $dailyMissionMaterial = $dailyMissionTask
+                ? null
+                : $materialProgression->nextForInterests($user->id, $interests);
+            $dailyMissionProgress = $dailyMissionMaterial
+                ? LearningMaterialProgress::query()
+                    ->where('user_id', $user->id)
+                    ->where('learning_material_id', $dailyMissionMaterial->id)
+                    ->first()
+                : null;
+
+            if ($dailyMissionTask) {
+                $dailyMissionTitle = $dailyMissionTask->title;
+                $dailyMissionDescription = $dailyMissionTask->description
+                    ?? 'Complete this approved game quest to earn XP.';
+                $dailyMissionUrl = route('student.game.play', $dailyMissionTask);
+                $dailyMissionAction = 'Start quest';
+            } elseif ($dailyMissionMaterial) {
+                $dailyMissionTitle = $dailyMissionProgress?->completed_at
+                    ? 'Take the quiz: '.$dailyMissionMaterial->title
+                    : ($dailyMissionProgress?->started_at
+                        ? 'Continue lesson: '.$dailyMissionMaterial->title
+                        : 'Start lesson: '.$dailyMissionMaterial->title);
+                $dailyMissionDescription = $dailyMissionProgress?->completed_at
+                    ? 'Pass the lesson quiz with at least 70% to unlock the next level.'
+                    : 'Complete this interest-matched lesson, then pass its quiz to unlock the next level.';
+                $dailyMissionUrl = route('student.learning-materials.show', $dailyMissionMaterial);
+                $dailyMissionAction = $dailyMissionProgress?->completed_at
+                    ? 'Continue to quiz'
+                    : 'Start lesson';
+            } else {
+                $dailyMissionTitle = 'Explore a lesson in your interests';
+                $dailyMissionDescription = 'Browse learning materials to find your next lesson and quiz.';
+                $dailyMissionUrl = route('student.learning-materials.index');
+                $dailyMissionAction = 'Browse lessons';
+            }
         }
 
         $recommendedTopics =
@@ -591,6 +728,7 @@ class StudentDashboardController extends Controller
                 'aiProfile',
 
                 'tasks',
+                'learningQuests',
                 'playableGames',
 
                 'themeKey',
@@ -615,10 +753,14 @@ class StudentDashboardController extends Controller
                 'welcomeMessage',
                 'dailyQuest',
                 'dailyMissionMaterial',
+                'dailyMissionTask',
                 'dailyMissionTitle',
                 'dailyMissionDescription',
                 'dailyMissionUrl',
                 'dailyMissionAction',
+                'pendingReviewCount',
+                'projectChallenge',
+                'projectChallengeGenerationFailed',
                 'recommendedTopics',
                 'learningStyle',
                 'questGenerationFailed'
@@ -656,6 +798,7 @@ class StudentDashboardController extends Controller
         return LearningTask::query()
             ->where('user_id', $userId)
             ->where('status', 'pending')
+            ->where('review_status', 'approved')
             ->whereIn('game_id', $gameIds)
             ->latest()
             ->get()

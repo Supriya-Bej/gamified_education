@@ -6,8 +6,10 @@ use App\Http\Controllers\Admin\BadgeManagementController;
 use App\Http\Controllers\Admin\GameContentManagementController;
 use App\Http\Controllers\Admin\GameEngineManagementController;
 use App\Http\Controllers\Admin\GameManagementController;
+use App\Http\Controllers\Admin\LeaderboardManagementController;
 use App\Http\Controllers\Admin\LearningMaterialManagementController;
 use App\Http\Controllers\Admin\LearningTaskManagementController;
+use App\Http\Controllers\Admin\ProjectChallengeManagementController;
 use App\Http\Controllers\Admin\RewardManagementController;
 use App\Http\Controllers\Admin\StudentManagementController;
 use App\Http\Controllers\Admin\TopicManagementController;
@@ -15,8 +17,10 @@ use App\Http\Controllers\AdminGameController;
 use App\Http\Controllers\StudentBadgeController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\StudentGameController;
+use App\Http\Controllers\StudentLeaderboardController;
 use App\Http\Controllers\StudentLearningMaterialController;
 use App\Http\Controllers\StudentProfileController;
+use App\Http\Controllers\StudentProjectChallengeController;
 use App\Http\Controllers\StudentProgressController;
 use App\Http\Controllers\UserController;
 use App\Models\Task;
@@ -73,6 +77,9 @@ Route::middleware('auth:student')->group(function () {
     Route::get('/student/progress', [StudentProgressController::class, 'index'])
         ->name('student.progress');
 
+    Route::get('/student/leaderboard', [StudentLeaderboardController::class, 'index'])
+        ->name('student.leaderboard');
+
     // View Learning Materials
     Route::get('/student/learning-materials', [StudentLearningMaterialController::class, 'index'])
         ->name('student.learning-materials.index');
@@ -94,6 +101,13 @@ Route::middleware('auth:student')->group(function () {
         '/student/learning-materials/{learningMaterial}/quiz',
         [StudentLearningMaterialController::class, 'submitQuiz']
     )->name('student.learning-materials.quiz.submit');
+
+    Route::get('/student/project-challenges/{projectChallenge}', [StudentProjectChallengeController::class, 'show'])
+        ->name('student.project-challenges.show');
+
+    Route::post('/student/project-challenges/{projectChallenge}/submissions', [StudentProjectChallengeController::class, 'submit'])
+        ->middleware('throttle:6,1')
+        ->name('student.project-challenges.submit');
 });
 // Logout
 Route::post('/student/logout', [UserController::class, 'logoutUser'])->name('logout-user');
@@ -130,13 +144,13 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
     Route::get('/games', [GameManagementController::class, 'index'])
         ->name('admin.games.index');
 
-    // Dashboard e games section view button
-    Route::get('/games/{game}', [GameManagementController::class, 'show'])
-        ->name('admin.games.show');
-
     // Game create
     Route::get('/games/create', [GameManagementController::class, 'create'])
         ->name('admin.games.create');
+
+    // Dashboard e games section view button
+    Route::get('/games/{game}', [GameManagementController::class, 'show'])
+        ->name('admin.games.show');
 
     //
     Route::post('/games', [GameManagementController::class, 'store'])
@@ -162,6 +176,26 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
     Route::get('/tasks/{task}', [LearningTaskManagementController::class, 'show'])
         ->name('admin.tasks.show');
 
+    Route::put('/tasks/{task}/review', [LearningTaskManagementController::class, 'review'])
+        ->name('admin.tasks.review');
+
+    Route::post('/tasks/{task}/reject', [LearningTaskManagementController::class, 'reject'])
+        ->name('admin.tasks.reject');
+
+    Route::get('/project-challenges', [ProjectChallengeManagementController::class, 'index'])
+        ->name('admin.project-challenges.index');
+
+    Route::get('/project-challenges/{projectChallenge}', [ProjectChallengeManagementController::class, 'show'])
+        ->name('admin.project-challenges.show');
+
+    Route::put('/project-challenges/{projectChallenge}/review', [ProjectChallengeManagementController::class, 'review'])
+        ->name('admin.project-challenges.review');
+
+    Route::put(
+        '/project-challenges/{projectChallenge}/submissions/{submission}/review',
+        [ProjectChallengeManagementController::class, 'reviewSubmission']
+    )->name('admin.project-challenges.submissions.review');
+
     // Game engine
     Route::get('/engines', [GameEngineManagementController::class, 'index'])
         ->name('admin.engines.index');
@@ -179,6 +213,12 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
     // xp & Rewards
     Route::get('/rewards', [RewardManagementController::class, 'index'])
         ->name('admin.rewards.index');
+
+    Route::get('/leaderboard', [LeaderboardManagementController::class, 'index'])
+        ->name('admin.leaderboard.index');
+
+    Route::post('/leaderboard/{student}/adjustments', [LeaderboardManagementController::class, 'adjustXp'])
+        ->name('admin.leaderboard.xp.adjust');
 
     // Badges Management
     Route::get('/badges', [BadgeManagementController::class, 'index'])

@@ -1177,7 +1177,7 @@
                         </span>
 
 
-                        <a href="registration.html" class="register-link">
+                        <a href="{{ route('user.register') }}" class="register-link">
 
                             Create Account
 

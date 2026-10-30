@@ -132,10 +132,20 @@ class GeminiService
             'programming' => 'coding',
             'computer' => 'coding',
             'computers' => 'coding',
-            'technology' => 'coding',
             'software' => 'coding',
             'web development' => 'coding',
             'coding' => 'coding',
+
+            'gk' => 'general_knowledge',
+            'general knowledge' => 'general_knowledge',
+            'general_knowledge' => 'general_knowledge',
+
+            'puzzle' => 'puzzles',
+            'puzzles' => 'puzzles',
+
+            'sports' => 'sports',
+            'reading' => 'reading',
+            'technology' => 'technology',
 
             'song' => 'music',
             'songs' => 'music',
@@ -263,7 +273,6 @@ class GeminiService
 
             'coding' => [
                 'algorithm_race',
-                'sorting_challenge',
                 'creative_coding',
                 'debugging_challenge',
             ],
@@ -272,9 +281,17 @@ class GeminiService
                 'physics_quiz',
                 'chemistry_lab',
                 'biology_matching',
+                'science_quiz',
             ],
 
+            'sports' => ['sports_quiz'],
+            'reading' => ['reading_quiz'],
+            'puzzles' => ['puzzles_quiz'],
+            'technology' => ['technology_quiz'],
+            'general_knowledge' => ['general_knowledge_quiz'],
+
             'environment' => [
+                'sorting_challenge',
                 'waste_sorting',
                 'recycling_challenge',
                 'water_conservation',
@@ -387,11 +404,21 @@ class GeminiService
 
             'mathematics' => 'arithmetic_speed',
 
-            'coding' => 'algorithm_race',
+            'coding' => 'creative_coding',
 
-            'science' => 'physics_quiz',
+            'science' => 'science_quiz',
 
-            'environment' => 'waste_sorting',
+            'sports' => 'sports_quiz',
+
+            'reading' => 'reading_quiz',
+
+            'puzzles' => 'puzzles_quiz',
+
+            'technology' => 'technology_quiz',
+
+            'general_knowledge' => 'general_knowledge_quiz',
+
+            'environment' => 'sorting_challenge',
 
             'geography' => 'geography_exploration',
 
@@ -715,6 +742,12 @@ Each task MUST contain:
 For creative_coding, game_data must contain:
 - instructions
 - starter_code
+
+For science_quiz, sports_quiz, reading_quiz, puzzles_quiz,
+technology_quiz, and general_knowledge_quiz, game_data must contain:
+- instructions
+- questions (one or more question objects with question, answer, and options)
+- the answer must exactly match one of the options
 
 Return game_data as a JSON object, not as a string.
 
@@ -1067,6 +1100,165 @@ PROMPT;
     }
 
     /**
+     * Generate one practical, interest-based project challenge unrelated to game engines.
+     *
+     * @param  array<int, string>  $interests
+     * @param  array<int, array{title: string, project_brief: string}>  $previousChallenges
+     * @return array<string, mixed>|null
+     */
+    public function generateProjectChallenge(
+        array $interests,
+        string $learningGoal,
+        string $experienceLevel,
+        array $previousChallenges = []
+    ): ?array {
+        $interestOptions = collect($interests)
+            ->map(fn (string $interest) => trim($interest))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($interestOptions === []) {
+            return null;
+        }
+
+        $previousChallenges = collect($previousChallenges)
+            ->filter(fn ($challenge) => is_array($challenge)
+                && is_string($challenge['title'] ?? null)
+                && is_string($challenge['project_brief'] ?? null))
+            ->map(fn (array $challenge) => [
+                'title' => trim($challenge['title']),
+                'project_brief' => trim($challenge['project_brief']),
+            ])
+            ->filter(fn (array $challenge) => $challenge['title'] !== '')
+            ->values()
+            ->all();
+
+        $prompt = <<<PROMPT
+You design realistic, small portfolio projects for students.
+
+Create one original project challenge for a student. It must be an actual project with a useful deliverable, not a quiz, game, worksheet, or short learning quest.
+
+Student interests (choose exactly one and copy it into "interest"):
+{$this->jsonForPrompt($interestOptions)}
+
+Learning goal: {$learningGoal}
+Experience level: {$experienceLevel}
+
+Previous projects for this student (do not repeat their title, brief, or core idea; create a clearly different project):
+{$this->jsonForPrompt($previousChallenges)}
+
+The project must be achievable by this experience level, solve or explore a practical real-world problem, and have clear acceptance criteria. Give the student a project brief, 3-5 measurable objectives, and 2-4 concrete deliverables. Keep the brief focused and understandable.
+
+Return ONLY JSON in this shape:
+{
+  "interest": "one exact item from the supplied interests",
+  "title": "Project title",
+  "project_brief": "A clear practical project description",
+  "objectives": ["Measurable objective"],
+  "deliverables": ["Concrete item the student should produce"],
+  "difficulty": "beginner",
+  "xp": 40
+}
+
+Difficulty must be beginner, intermediate, or advanced. XP must be an integer from 20 to 100. Do not include game mechanics, game_data, quizzes, or generic practice tasks.
+PROMPT;
+
+        $result = $this->callGemini($prompt, 0.5, 30, 1800);
+        if (! is_array($result)) {
+            return null;
+        }
+
+        $interest = trim((string) ($result['interest'] ?? ''));
+        $matchingInterest = collect($interestOptions)
+            ->first(fn (string $option) => mb_strtolower($option) === mb_strtolower($interest));
+        $title = trim((string) ($result['title'] ?? ''));
+        $brief = trim((string) ($result['project_brief'] ?? ''));
+        $difficulty = strtolower(trim((string) ($result['difficulty'] ?? '')));
+        $xp = filter_var($result['xp'] ?? null, FILTER_VALIDATE_INT);
+        $objectives = $this->validateProjectItems($result['objectives'] ?? null, 3, 5);
+        $deliverables = $this->validateProjectItems($result['deliverables'] ?? null, 2, 4);
+
+        if (
+            $matchingInterest === null
+            || $title === ''
+            || mb_strlen($title) > 255
+            || $brief === ''
+            || mb_strlen($brief) > 5000
+            || ! in_array($difficulty, ['beginner', 'intermediate', 'advanced'], true)
+            || $xp === false
+            || $xp < 20
+            || $xp > 100
+            || $objectives === null
+            || $deliverables === null
+        ) {
+            Log::warning('Gemini returned an invalid project challenge.', [
+                'interest' => $interest,
+            ]);
+
+            return null;
+        }
+
+        $normalizedTitle = mb_strtolower(preg_replace('/\s+/', ' ', $title));
+        $repeatsPreviousChallenge = collect($previousChallenges)->contains(
+            fn (array $challenge) => mb_strtolower(preg_replace(
+                '/\s+/',
+                ' ',
+                trim($challenge['title'])
+            )) === $normalizedTitle
+        );
+
+        if ($repeatsPreviousChallenge) {
+            Log::warning('Gemini repeated a previous project challenge.', [
+                'title' => $title,
+            ]);
+
+            return null;
+        }
+
+        return [
+            'interest' => $matchingInterest,
+            'title' => $title,
+            'project_brief' => $brief,
+            'objectives' => $objectives,
+            'deliverables' => $deliverables,
+            'difficulty' => $difficulty,
+            'xp' => $xp,
+        ];
+    }
+
+    /**
+     * @return array<int, string>|null
+     */
+    private function validateProjectItems(mixed $items, int $minimum, int $maximum): ?array
+    {
+        if (! is_array($items) || count($items) < $minimum || count($items) > $maximum) {
+            return null;
+        }
+
+        $normalized = [];
+        foreach ($items as $item) {
+            if (! is_string($item) || trim($item) === '' || mb_strlen(trim($item)) > 500) {
+                return null;
+            }
+            $normalized[] = trim($item);
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Encode values consistently for inclusion in an AI prompt.
+     *
+     * @param  array<int, string>  $values
+     */
+    private function jsonForPrompt(array $values): string
+    {
+        return json_encode($values, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    }
+
+    /**
      * Keep quest rotation available when Gemini repeats an old quest or is offline.
      *
      * @param  array<string, array<int, string>>  $previousTaskTitles
@@ -1311,6 +1503,102 @@ PROMPT;
                         ],
                     ],
                 ],
+                'science_quiz' => [
+                    [
+                        'title' => 'Solar System Explorer',
+                        'description' => 'Explore a foundational idea about our solar system.',
+                        'question' => 'Which planet is known as the Red Planet?',
+                        'answer' => 'Mars',
+                        'options' => ['Mars', 'Venus', 'Neptune'],
+                    ],
+                    [
+                        'title' => 'Matter Detective',
+                        'description' => 'Review how matter changes between its common states.',
+                        'question' => 'What happens when liquid water freezes?',
+                        'answer' => 'It becomes a solid',
+                        'options' => ['It becomes a solid', 'It becomes a gas', 'It disappears'],
+                    ],
+                ],
+                'sports_quiz' => [
+                    [
+                        'title' => 'Football Field Facts',
+                        'description' => 'Learn a basic rule from a popular team sport.',
+                        'question' => 'How many players from one soccer team are on the field at the start of a standard match?',
+                        'answer' => '11',
+                        'options' => ['7', '11', '15'],
+                    ],
+                    [
+                        'title' => 'Basketball Basics',
+                        'description' => 'Practice recognizing common basketball scoring.',
+                        'question' => 'How many points is a successful free throw worth?',
+                        'answer' => '1',
+                        'options' => ['1', '2', '3'],
+                    ],
+                ],
+                'reading_quiz' => [
+                    [
+                        'title' => 'Reading for Meaning',
+                        'description' => 'Use context clues to understand a sentence.',
+                        'question' => 'If a character is “relieved” after finding a lost key, how do they most likely feel?',
+                        'answer' => 'Less worried',
+                        'options' => ['Less worried', 'More confused', 'Very angry'],
+                    ],
+                    [
+                        'title' => 'Story Structure',
+                        'description' => 'Identify the part of a story that introduces its characters and setting.',
+                        'question' => 'Which story part usually introduces the characters and setting?',
+                        'answer' => 'The beginning',
+                        'options' => ['The beginning', 'The climax', 'The ending'],
+                    ],
+                ],
+                'puzzles_quiz' => [
+                    [
+                        'title' => 'Number Pattern Solver',
+                        'description' => 'Find the rule in a short number sequence.',
+                        'question' => 'What number comes next: 2, 4, 8, 16, ...?',
+                        'answer' => '32',
+                        'options' => ['24', '30', '32'],
+                    ],
+                    [
+                        'title' => 'Logic Clue Challenge',
+                        'description' => 'Use a simple clue to identify the correct conclusion.',
+                        'question' => 'All squares have four sides. This shape is a square. How many sides does it have?',
+                        'answer' => '4',
+                        'options' => ['3', '4', '5'],
+                    ],
+                ],
+                'technology_quiz' => [
+                    [
+                        'title' => 'Digital Safety Check',
+                        'description' => 'Recognize a safe response to an unexpected online request.',
+                        'question' => 'A stranger online asks for your password. What should you do?',
+                        'answer' => 'Do not share it and tell a trusted adult',
+                        'options' => ['Send it to them', 'Do not share it and tell a trusted adult', 'Post it publicly'],
+                    ],
+                    [
+                        'title' => 'How the Web Works',
+                        'description' => 'Review a basic idea about websites and browsers.',
+                        'question' => 'What does a web browser help you do?',
+                        'answer' => 'Open and view websites',
+                        'options' => ['Open and view websites', 'Charge a battery', 'Print money'],
+                    ],
+                ],
+                'general_knowledge_quiz' => [
+                    [
+                        'title' => 'World Knowledge Starter',
+                        'description' => 'Answer a general fact about our planet.',
+                        'question' => 'Which is the largest ocean on Earth?',
+                        'answer' => 'Pacific Ocean',
+                        'options' => ['Atlantic Ocean', 'Pacific Ocean', 'Indian Ocean'],
+                    ],
+                    [
+                        'title' => 'Everyday Knowledge',
+                        'description' => 'Explore a useful fact about the natural world.',
+                        'question' => 'Which star is closest to Earth?',
+                        'answer' => 'The Sun',
+                        'options' => ['Sirius', 'The Sun', 'Polaris'],
+                    ],
+                ],
                 default => null,
             };
 
@@ -1369,6 +1657,12 @@ PROMPT;
                             'chess_tactics' => 'Choose the best answer for this chess tactics question.',
                             'art_color_theory' => 'Choose the best answer for this art and color question.',
                             'music_note_rhythm' => 'Choose the best answer for this music question.',
+                            'science_quiz' => 'Choose the best answer for this science question.',
+                            'sports_quiz' => 'Choose the best answer for this sports question.',
+                            'reading_quiz' => 'Choose the best answer based on the reading skill.',
+                            'puzzles_quiz' => 'Solve the logic or pattern puzzle.',
+                            'technology_quiz' => 'Choose the best answer about technology and digital safety.',
+                            'general_knowledge_quiz' => 'Choose the best answer to the general knowledge question.',
                             default => 'Solve the arithmetic question.',
                         },
                         $contentKey => [$questionData],
@@ -1592,7 +1886,7 @@ PROMPT;
     /**
      * Validate that task data satisfies the selected game's view contract.
      */
-    protected function isValidGameData(string $gameType, array $gameData): bool
+    public function isValidGameData(string $gameType, array $gameData): bool
     {
         if (! is_string($gameData['instructions'] ?? null) || trim($gameData['instructions']) === '') {
             return false;
@@ -1631,7 +1925,16 @@ PROMPT;
             return true;
         }
 
-        if (in_array($gameType, ['art_color_theory', 'music_note_rhythm'], true)) {
+        if (in_array($gameType, [
+            'art_color_theory',
+            'music_note_rhythm',
+            'science_quiz',
+            'sports_quiz',
+            'reading_quiz',
+            'puzzles_quiz',
+            'technology_quiz',
+            'general_knowledge_quiz',
+        ], true)) {
             $questions = $gameData['questions'] ?? null;
 
             if (! is_array($questions) || $questions === []) {

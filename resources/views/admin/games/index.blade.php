@@ -6,6 +6,14 @@
 
 @section('content')
 
+@if(session('success'))
+    <div class="alert alert-success">{{ session('success') }}</div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger">{{ session('error') }}</div>
+@endif
+
 <div class="d-flex justify-content-between align-items-center mb-4">
 
     <div>
@@ -15,7 +23,7 @@
         </h3>
 
         <p class="text-muted mb-0">
-            Manage the reusable games available in EcoQuest.
+            Manage playable game-library entries linked to configured game engines.
         </p>
 
     </div>

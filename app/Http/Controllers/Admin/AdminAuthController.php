@@ -40,11 +40,25 @@ class AdminAuthController extends Controller
             ->withInput($request->only('email'));
     }
 
+    // public function logout(Request $request)
+    // {
+    //     Auth::guard('admin')->logout();
+
+    //     $request->session()->invalidate();
+    //     $request->session()->regenerateToken();
+
+    //     return redirect()
+    //         ->route('admin.login')
+    //         ->with('success', 'Admin logged out successfully.');
+    // }
+
     public function logout(Request $request)
     {
         Auth::guard('admin')->logout();
 
-        $request->session()->invalidate();
+        // Keep other guards logged in
+        $request->session()->regenerate();
+
         $request->session()->regenerateToken();
 
         return redirect()

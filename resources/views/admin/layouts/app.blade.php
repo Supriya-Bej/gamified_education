@@ -320,7 +320,16 @@
 
                 <i class="bi bi-journal-text"></i>
 
-                <span>Learning Tasks</span>
+                <span>Game Quest Review</span>
+
+            </a>
+
+            <a href="{{ route('admin.project-challenges.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.project-challenges.*') ? 'active' : '' }}">
+
+                <i class="bi bi-kanban"></i>
+
+                <span>Project Challenges</span>
 
             </a>
 
@@ -371,8 +380,8 @@
 
             </a>
 
-            <a href="#"
-                class="sidebar-link">
+            <a href="{{ route('admin.leaderboard.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.leaderboard.*') ? 'active' : '' }}">
 
                 <i class="bi bi-trophy-fill"></i>
 

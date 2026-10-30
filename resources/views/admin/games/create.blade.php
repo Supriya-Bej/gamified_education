@@ -14,7 +14,7 @@
         </h3>
 
         <p class="text-muted mb-0">
-            Add a reusable game to the EcoQuest game library.
+            Add a library entry using an existing playable game engine.
         </p>
     </div>
 
@@ -106,12 +106,14 @@
                         Category
                     </label>
 
-                    <input type="text"
-                           name="category"
-                           class="form-control"
-                           value="{{ old('category') }}"
-                           placeholder="Example: environment"
-                           required>
+                    <select name="category" id="game-category" class="form-select" required>
+                        <option value="">Select an interest</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category }}" @selected(old('category') === $category)>
+                                {{ ucwords(str_replace('_', ' ', $category)) }}
+                            </option>
+                        @endforeach
+                    </select>
 
                 </div>
 
@@ -132,19 +134,16 @@
                             Select difficulty
                         </option>
 
-                        <option value="easy"
-                            {{ old('difficulty') === 'easy' ? 'selected' : '' }}>
-                            Easy
+                        <option value="beginner" @selected(old('difficulty') === 'beginner')>
+                            Beginner
                         </option>
 
-                        <option value="medium"
-                            {{ old('difficulty') === 'medium' ? 'selected' : '' }}>
-                            Medium
+                        <option value="intermediate" @selected(old('difficulty') === 'intermediate')>
+                            Intermediate
                         </option>
 
-                        <option value="hard"
-                            {{ old('difficulty') === 'hard' ? 'selected' : '' }}>
-                            Hard
+                        <option value="advanced" @selected(old('difficulty') === 'advanced')>
+                            Advanced
                         </option>
 
                     </select>
@@ -164,39 +163,19 @@
                             class="form-select"
                             required>
 
-                        <option value="">
-                            Select game engine
-                        </option>
-
-                        <option value="arithmetic_speed"
-                            {{ old('game_type') === 'arithmetic_speed' ? 'selected' : '' }}>
-                            Arithmetic Speed
-                        </option>
-
-                        <option value="algorithm_race"
-                            {{ old('game_type') === 'algorithm_race' ? 'selected' : '' }}>
-                            Algorithm Race
-                        </option>
-
-                        <option value="sorting_challenge"
-                            {{ old('game_type') === 'sorting_challenge' ? 'selected' : '' }}>
-                            Sorting Challenge
-                        </option>
-
-                        <option value="creative_coding"
-                            {{ old('game_type') === 'creative_coding' ? 'selected' : '' }}>
-                            Creative Coding
-                        </option>
-
-                        <option value="physics_quiz"
-                            {{ old('game_type') === 'physics_quiz' ? 'selected' : '' }}>
-                            Physics Quiz
-                        </option>
+                        <option value="">Select game engine</option>
+                        @foreach($engines as $engine)
+                            <option
+                                value="{{ $engine->engine_key }}"
+                                data-supported-interests="{{ json_encode($engine->supported_interests ?? []) }}"
+                                @selected(old('game_type') === $engine->engine_key)
+                            >{{ $engine->name }}</option>
+                        @endforeach
 
                     </select>
 
                     <small class="text-muted">
-                        This determines which game engine the student will use.
+                        The selected engine supplies the playable game screen and answer-checking logic. New engine code must be added by a developer.
                     </small>
 
                 </div>
@@ -234,3 +213,31 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+    const gameEngineSelect = document.querySelector('[name="game_type"]');
+    const gameCategorySelect = document.getElementById('game-category');
+    const allCategories = Array.from(gameCategorySelect.options).slice(1);
+
+    function filterGameCategories() {
+        const selectedEngine = gameEngineSelect.selectedOptions[0];
+        const supportedInterests = selectedEngine?.dataset.supportedInterests
+            ? JSON.parse(selectedEngine.dataset.supportedInterests)
+            : [];
+        const currentCategory = gameCategorySelect.value;
+
+        gameCategorySelect.replaceChildren(new Option('Select an interest', ''));
+        allCategories
+            .filter((option) => supportedInterests.includes(option.value))
+            .forEach((option) => gameCategorySelect.add(option.cloneNode(true)));
+
+        if (supportedInterests.includes(currentCategory)) {
+            gameCategorySelect.value = currentCategory;
+        }
+    }
+
+    gameEngineSelect.addEventListener('change', filterGameCategories);
+    filterGameCategories();
+</script>
+@endpush
