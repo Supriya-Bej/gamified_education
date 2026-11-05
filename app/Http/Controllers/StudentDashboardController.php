@@ -9,6 +9,7 @@ use App\Models\ProjectChallenge;
 use App\Models\StudentProgress;
 use App\Models\UserRegister;
 use App\Services\GeminiService;
+use App\Services\InterestGameProgressionService;
 use App\Services\LearningMaterialProgressionService;
 use App\Services\StudentThemeService;
 use Illuminate\Database\Eloquent\Collection;
@@ -59,6 +60,7 @@ class StudentDashboardController extends Controller
     public function index(
         Request $request,
         GeminiService $gemini,
+        InterestGameProgressionService $interestProgression,
         StudentThemeService $themeService,
         LearningMaterialProgressionService $materialProgression
     ) {
@@ -280,6 +282,27 @@ class StudentDashboardController extends Controller
         $playableGames = $gemini->getPlayableGamesForInterests($interests);
         $playableGameIds = $playableGames->modelKeys();
         $playableGamesById = $playableGames->keyBy('id');
+        $loadCourseProgress = function () use ($playableGames, $interestProgression, $user): array {
+            return $playableGames
+                ->pluck('category')
+                ->filter(fn ($category) => is_string($category) && trim($category) !== '')
+                ->map(fn ($category) => strtolower(trim($category)))
+                ->unique()
+                ->mapWithKeys(fn (string $category) => [
+                    $category => $interestProgression->stateFor((int) $user->id, $category),
+                ])
+                ->all();
+        };
+        $courseProgress = $loadCourseProgress();
+        $filterTasksToActiveStages = function (Collection $candidateTasks) use (&$courseProgress): Collection {
+            return $candidateTasks
+                ->filter(function (LearningTask $task) use (&$courseProgress): bool {
+                    $category = strtolower(trim((string) $task->category));
+
+                    return ($courseProgress[$category]['active_difficulty'] ?? null) === $task->difficulty;
+                })
+                ->values();
+        };
 
         $this->supersedePendingDuplicateQuests(
             $user->id,
@@ -293,11 +316,11 @@ class StudentDashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $tasks = $this->pendingPlayableTasks(
+        $tasks = $filterTasksToActiveStages($this->pendingPlayableTasks(
             $user->id,
             $playableGameIds,
             $playableGamesById
-        );
+        ));
 
         /*
         |--------------------------------------------------------------------------
@@ -312,36 +335,36 @@ class StudentDashboardController extends Controller
             'playable_games_count' => $playableGames->count(),
         ]);
 
-        $coveredCategories = LearningTask::query()
-            ->where('user_id', $user->id)
-            ->where('status', 'pending')
-            ->whereIn('review_status', ['pending_review', 'approved'])
-            ->whereIn('game_id', $playableGameIds)
-            ->pluck('category')
-            ->map(fn ($category) => strtolower(trim((string) $category)))
-            ->unique()
-            ->all();
-        $gamesNeedingTasks = $playableGames
-            ->reject(fn (Game $game) => in_array(
-                strtolower(trim((string) $game->category)),
-                $coveredCategories,
-                true
-            ))
-            ->values();
+        $generationPlans = [];
+        foreach ($courseProgress as $category => $state) {
+            $difficulty = $state['active_difficulty'];
+            $remainingSlots = InterestGameProgressionService::TASKS_PER_LEVEL - $state['active_total'];
+            if ($difficulty === null || $remainingSlots < 1) {
+                continue;
+            }
 
-        $generationAttempted = $gamesNeedingTasks->isNotEmpty();
+            $categoryGames = $playableGames
+                ->filter(fn (Game $game) => strtolower(trim((string) $game->category)) === $category)
+                ->values();
+            if ($categoryGames->isEmpty()) {
+                continue;
+            }
 
-        if ($generationAttempted) {
-            $generationGameIds = $gamesNeedingTasks->modelKeys();
-            $generationGamesById = $gamesNeedingTasks->keyBy('id');
-            $missingInterests = $gamesNeedingTasks
-                ->pluck('category')
-                ->unique()
-                ->values()
-                ->all();
+            $hasPendingStageTasks = LearningTask::query()
+                ->where('user_id', $user->id)
+                ->whereRaw('LOWER(category) = ?', [$category])
+                ->where('difficulty', $difficulty)
+                ->where('status', 'pending')
+                ->whereIn('review_status', ['pending_review', 'approved'])
+                ->exists();
+            if ($hasPendingStageTasks) {
+                continue;
+            }
+
+            $generationGamesById = $categoryGames->keyBy('id');
             $previousTaskTitles = LearningTask::query()
                 ->where('user_id', $user->id)
-                ->whereIn('game_id', $generationGameIds)
+                ->whereIn('game_id', $categoryGames->modelKeys())
                 ->get(['game_id', 'game_type', 'category', 'title'])
                 ->filter(function (LearningTask $task) use ($generationGamesById): bool {
                     $game = $generationGamesById->get((int) $task->game_id);
@@ -356,22 +379,35 @@ class StudentDashboardController extends Controller
                 ->map(fn ($gameTasks) => $gameTasks->pluck('title')->all())
                 ->all();
 
+            $generationPlans[$difficulty][$category] = [
+                'capacity' => min(4, $remainingSlots),
+                'games_by_id' => $generationGamesById,
+                'previous_titles' => $previousTaskTitles,
+            ];
+        }
+
+        $generationBatches = [];
+        foreach ($generationPlans as $difficulty => $plansForLevel) {
+            $categories = array_keys($plansForLevel);
+            $previousTaskTitles = [];
+            foreach ($plansForLevel as $plan) {
+                foreach ($plan['previous_titles'] as $gameType => $titles) {
+                    $previousTaskTitles[$gameType] = array_values(array_unique(array_merge(
+                        $previousTaskTitles[$gameType] ?? [],
+                        $titles
+                    )));
+                }
+            }
+
+            $batchSize = min(4, array_sum(array_column($plansForLevel, 'capacity')));
             $generatedData = $gemini->generateTasks(
-                $missingInterests,
-                $preference->learning_goal
-                    ?? 'Practice and learn',
-                $preference->experience_level
-                    ?? 'beginner',
-                4,
+                $categories,
+                $preference->learning_goal ?? 'Practice and learn',
+                $difficulty,
+                $batchSize,
                 $previousTaskTitles
             );
-
-            Log::info('EcoQuest Gemini task response', [
-                'user_id' => $user->id,
-                'generated_count' => count($generatedData['tasks'] ?? []),
-            ]);
-
-            $tasksToSave = [];
+            $tasksByCategory = [];
             $seenTaskKeys = [];
 
             foreach (($generatedData['tasks'] ?? []) as $generatedTask) {
@@ -379,19 +415,26 @@ class StudentDashboardController extends Controller
                     continue;
                 }
 
+                $category = strtolower(trim((string) ($generatedTask['category'] ?? '')));
+                $plan = $plansForLevel[$category] ?? null;
+                if (! $plan) {
+                    continue;
+                }
+
                 $gameType = strtolower(trim((string) ($generatedTask['game_type'] ?? '')));
                 $gameId = filter_var($generatedTask['game_id'] ?? null, FILTER_VALIDATE_INT);
-                $game = $gameId !== false ? $generationGamesById->get($gameId) : null;
+                $game = $gameId !== false ? $plan['games_by_id']->get($gameId) : null;
                 $title = trim((string) ($generatedTask['title'] ?? ''));
-                $difficultyValue = strtolower(trim((string) ($generatedTask['difficulty'] ?? '')));
+                $generatedDifficulty = strtolower(trim((string) ($generatedTask['difficulty'] ?? '')));
                 $xp = filter_var($generatedTask['xp'] ?? null, FILTER_VALIDATE_INT);
                 $gameData = $generatedTask['game_data'] ?? null;
 
                 if (
                     ! $game
                     || strtolower(trim($game->game_type)) !== $gameType
+                    || strtolower(trim((string) $game->category)) !== $category
                     || $title === ''
-                    || ! in_array($difficultyValue, ['beginner', 'intermediate', 'advanced'], true)
+                    || $generatedDifficulty !== $difficulty
                     || $xp === false
                     || $xp < 10
                     || $xp > 50
@@ -400,6 +443,7 @@ class StudentDashboardController extends Controller
                     Log::warning('Skipping invalid generated learning task.', [
                         'user_id' => $user->id,
                         'game_type' => $gameType,
+                        'expected_difficulty' => $difficulty,
                     ]);
 
                     continue;
@@ -411,14 +455,18 @@ class StudentDashboardController extends Controller
                 }
                 $seenTaskKeys[$taskKey] = true;
 
-                $tasksToSave[] = [
+                $tasksByCategory[$category] ??= [];
+                if (count($tasksByCategory[$category]) >= $plan['capacity']) {
+                    continue;
+                }
+                $tasksByCategory[$category][] = [
                     'user_id' => $user->id,
                     'game_id' => $game->id,
                     'game_type' => $gameType,
                     'title' => $title,
                     'description' => trim((string) ($generatedTask['description'] ?? '')),
-                    'category' => trim((string) $game->category),
-                    'difficulty' => $difficultyValue,
+                    'category' => $category,
+                    'difficulty' => $difficulty,
                     'xp' => $xp,
                     'game_data' => $gameData,
                     'status' => 'pending',
@@ -426,55 +474,75 @@ class StudentDashboardController extends Controller
                 ];
             }
 
+            foreach ($plansForLevel as $category => $plan) {
+                $generationBatches[] = [
+                    'category' => $category,
+                    'difficulty' => $difficulty,
+                    'capacity' => $plan['capacity'],
+                    'tasks' => $tasksByCategory[$category] ?? [],
+                ];
+            }
+        }
+
+        $generationAttempted = $generationBatches !== [];
+        $savedCount = 0;
+
+        if ($generationAttempted) {
             $savedCount = DB::transaction(function () use (
                 $user,
-                $generationGameIds,
-                $generationGamesById,
-                $tasksToSave
+                $generationBatches,
+                $interestProgression
             ): int {
                 UserRegister::query()
                     ->whereKey($user->id)
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                $coveredGameIds = LearningTask::query()
-                    ->where('user_id', $user->id)
-                    ->where('status', 'pending')
-                    ->whereIn('review_status', ['pending_review', 'approved'])
-                    ->whereIn('game_id', $generationGameIds)
-                    ->get(['game_id', 'game_type', 'category'])
-                    ->filter(function (LearningTask $task) use ($generationGamesById): bool {
-                        $game = $generationGamesById->get((int) $task->game_id);
-
-                        return $game instanceof Game
-                            && strtolower(trim((string) $task->game_type))
-                                === strtolower(trim((string) $game->game_type))
-                            && strtolower(trim((string) $task->category))
-                                === strtolower(trim((string) $game->category));
-                    })
-                    ->pluck('game_id')
-                    ->map(fn ($gameId) => (int) $gameId)
-                    ->all();
-
                 $saved = 0;
-
-                foreach ($tasksToSave as $taskData) {
-                    if (in_array((int) $taskData['game_id'], $coveredGameIds, true)) {
+                foreach ($generationBatches as $batch) {
+                    $state = $interestProgression->stateFor((int) $user->id, $batch['category']);
+                    if (
+                        $state['active_difficulty'] !== $batch['difficulty']
+                        || $state['active_total'] >= InterestGameProgressionService::TASKS_PER_LEVEL
+                    ) {
                         continue;
                     }
 
-                    $alreadyExists = LearningTask::query()
+                    $hasPendingStageTasks = LearningTask::query()
                         ->where('user_id', $user->id)
-                        ->where('game_type', $taskData['game_type'])
-                        ->whereRaw('LOWER(title) = ?', [strtolower($taskData['title'])])
+                        ->whereRaw('LOWER(category) = ?', [$batch['category']])
+                        ->where('difficulty', $batch['difficulty'])
+                        ->where('status', 'pending')
+                        ->whereIn('review_status', ['pending_review', 'approved'])
                         ->exists();
-
-                    if ($alreadyExists) {
+                    if ($hasPendingStageTasks) {
                         continue;
                     }
 
-                    LearningTask::create($taskData);
-                    $saved++;
+                    $remainingSlots = min(
+                        $batch['capacity'],
+                        InterestGameProgressionService::TASKS_PER_LEVEL - $state['active_total']
+                    );
+                    $savedForInterest = 0;
+                    foreach ($batch['tasks'] as $taskData) {
+                        if ($savedForInterest >= $remainingSlots) {
+                            break;
+                        }
+
+                        $alreadyExists = LearningTask::query()
+                            ->where('user_id', $user->id)
+                            ->where('game_type', $taskData['game_type'])
+                            ->whereRaw('LOWER(title) = ?', [strtolower($taskData['title'])])
+                            ->exists();
+
+                        if ($alreadyExists) {
+                            continue;
+                        }
+
+                        LearningTask::create($taskData);
+                        $savedForInterest++;
+                        $saved++;
+                    }
                 }
 
                 return $saved;
@@ -495,11 +563,12 @@ class StudentDashboardController extends Controller
         |
         */
 
-        $tasks = $this->pendingPlayableTasks(
+        $courseProgress = $loadCourseProgress();
+        $tasks = $filterTasksToActiveStages($this->pendingPlayableTasks(
             $user->id,
             $playableGameIds,
             $playableGamesById
-        );
+        ));
         $pendingReviewCount = LearningTask::query()
             ->where('user_id', $user->id)
             ->where('status', 'pending')

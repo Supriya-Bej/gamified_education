@@ -8,6 +8,7 @@ use App\Models\LearningTask;
 use App\Models\StudentProgress;
 use App\Services\BadgeService;
 use App\Services\GeminiService;
+use App\Services\InterestGameProgressionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -92,7 +93,8 @@ class StudentGameController extends Controller
         Request $request,
         LearningTask $task,
         BadgeService $badgeService,
-        GeminiService $gemini
+        GeminiService $gemini,
+        InterestGameProgressionService $interestProgression
     ) {
         $student = Auth::guard('student')->user();
 
@@ -159,7 +161,8 @@ class StudentGameController extends Controller
             $task,
             $student,
             $score,
-            $passed
+            $passed,
+            $interestProgression
         ): array {
             $lockedTask = LearningTask::query()
                 ->whereKey($task->id)
@@ -171,6 +174,8 @@ class StudentGameController extends Controller
                     'already_completed' => true,
                     'xp_earned' => 0,
                     'progress' => null,
+                    'certificate' => null,
+                    'course_progress' => null,
                 ];
             }
 
@@ -180,6 +185,8 @@ class StudentGameController extends Controller
                     'already_completed' => false,
                     'xp_earned' => 0,
                     'progress' => null,
+                    'certificate' => null,
+                    'course_progress' => null,
                 ];
             }
 
@@ -188,6 +195,8 @@ class StudentGameController extends Controller
                     'already_completed' => false,
                     'xp_earned' => 0,
                     'progress' => null,
+                    'certificate' => null,
+                    'course_progress' => null,
                 ];
             }
 
@@ -218,11 +227,21 @@ class StudentGameController extends Controller
             $progress->save();
 
             $lockedTask->update(['status' => 'completed']);
+            $certificate = $interestProgression->issueCertificateIfCourseComplete(
+                $student,
+                $lockedTask
+            );
+            $courseProgress = $interestProgression->stateFor(
+                (int) $student->id,
+                (string) $lockedTask->category
+            );
 
             return [
                 'already_completed' => false,
                 'xp_earned' => $earnedXp,
                 'progress' => $progress,
+                'certificate' => $certificate,
+                'course_progress' => $courseProgress,
             ];
         });
 
@@ -255,11 +274,15 @@ class StudentGameController extends Controller
         $awardedBadges = $badgeService->checkAndAward($student);
         /** @var StudentProgress $progress */
         $progress = $result['progress'];
+        $certificate = $result['certificate'];
+        $courseProgress = $result['course_progress'];
 
         return response()->json([
             'success' => true,
             'passed' => true,
-            'message' => 'Quest completed successfully!',
+            'message' => $certificate
+                ? 'Course completed! Your certificate is waiting for admin approval.'
+                : 'Quest completed successfully!',
             'score' => $score,
             'correct_answers' => $correct,
             'total_questions' => $total,
@@ -267,6 +290,18 @@ class StudentGameController extends Controller
             'total_xp' => $progress->total_xp,
             'completed_tasks' => $progress->completed_tasks,
             'level' => $progress->level,
+            'certificate' => $certificate ? [
+                'title' => $certificate->title,
+                'number' => $certificate->certificate_number,
+                'status' => $certificate->status,
+            ] : null,
+            'course_progress' => $courseProgress ? [
+                'interest' => $courseProgress['interest'],
+                'levels' => $courseProgress['levels'],
+                'active_level' => $courseProgress['active_difficulty'],
+                'course_complete' => $courseProgress['course_complete'],
+                'certificate_status' => $courseProgress['certificate_status'],
+            ] : null,
             'badges' => collect($awardedBadges)->map(function ($badge) {
                 return [
                     'id' => $badge->id,

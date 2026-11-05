@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Game;
 use App\Models\LearningTask;
-use Illuminate\Support\Facades\DB;
 
 class GameEngineManagementController extends Controller
 {
@@ -18,16 +17,19 @@ class GameEngineManagementController extends Controller
             ->selectRaw('COUNT(*) as game_count')
             ->groupBy('game_type')
             ->orderBy('game_type')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
-        foreach ($engines as $engine) {
+        $taskCounts = LearningTask::query()
+            ->whereIn('game_type', $engines->getCollection()->pluck('game_type'))
+            ->select('game_type')
+            ->selectRaw('COUNT(*) as task_count')
+            ->groupBy('game_type')
+            ->pluck('task_count', 'game_type');
 
-            $engine->task_count = LearningTask::where(
-                'game_type',
-                $engine->game_type
-            )->count();
-
-        }
+        $engines->getCollection()->each(function ($engine) use ($taskCounts): void {
+            $engine->task_count = $taskCounts[$engine->game_type] ?? 0;
+        });
 
         return view('admin.engines.index', compact('engines'));
     }
@@ -36,12 +38,14 @@ class GameEngineManagementController extends Controller
     {
         $games = Game::where('game_type', $gameType)
             ->latest()
-            ->get();
+            ->paginate(10, ['*'], 'games_page')
+            ->withQueryString();
 
         $tasks = LearningTask::with('user')
             ->where('game_type', $gameType)
             ->latest()
-            ->get();
+            ->paginate(10, ['*'], 'tasks_page')
+            ->withQueryString();
 
         return view('admin.engines.show', compact(
             'gameType',

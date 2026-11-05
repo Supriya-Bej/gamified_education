@@ -15,4 +15,19 @@ class QuestAttempt extends Model
         'passed' => 'boolean',
         'answers' => 'array',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(UserRegister::class, 'user_id');
+    }
+
+    public function task()
+    {
+        return $this->belongsTo(LearningTask::class, 'task_id');
+    }
+
+    public function certificate()
+    {
+        return $this->hasOne(Certificate::class, 'quest_attempt_id');
+    }
 }

@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\LearningTask;
 use App\Models\QuestAttempt;
+use App\Models\Certificate;
 use App\Models\QuestContent;
 use App\Services\GeminiService;
+use App\Services\InterestGameProgressionService;
 use App\Services\QuestRewardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -77,7 +79,7 @@ class QuestController extends Controller
     {
         $task = $this->myTask($id);
 
-        if ($task->status === 'completed') {
+        if ($task->status === 'completed' && $this->perfectAttemptFor($task)) {
             return redirect()->route('student.dashboard');
         }
 
@@ -96,9 +98,23 @@ class QuestController extends Controller
     }
 
     /* Grade + XP */
-    public function submit(Request $request, $id, QuestRewardService $rewards)
+    public function submit(
+        Request $request,
+        $id,
+        QuestRewardService $rewards,
+        InterestGameProgressionService $interestProgression
+    )
     {
         $task = $this->myTask($id);
+
+        if ($task->status === 'completed') {
+            $perfectAttempt = $this->perfectAttemptFor($task);
+
+            if ($perfectAttempt) {
+                return redirect()->route('student.quest.result', $perfectAttempt->id);
+            }
+        }
+
         $content = QuestContent::where('task_id', $task->id)->firstOrFail();
         $user = Auth::guard('student')->user();
 
@@ -116,13 +132,24 @@ class QuestController extends Controller
         $score = (int) round($correct / $total * 100);
         $passed = $score >= self::PASS_MARK;
 
-        $attempt = DB::transaction(function () use ($task, $user, $rewards, $passed, $score, $correct, $total, $answers) {
+        $attempt = DB::transaction(function () use (
+            $task,
+            $user,
+            $rewards,
+            $interestProgression,
+            $passed,
+            $score,
+            $correct,
+            $total,
+            $answers
+        ) {
             $fresh = LearningTask::where('id', $task->id)->lockForUpdate()->first();
 
             $xp = 0;
             if ($passed && $fresh->status !== 'completed') {
                 $xp = (int) round($fresh->xp * $score / 100);
                 $rewards->award($user, $fresh, $xp);
+                $interestProgression->issueCertificateIfCourseComplete($user, $fresh);
             }
 
             return QuestAttempt::create([
@@ -149,7 +176,18 @@ class QuestController extends Controller
 
         $task = LearningTask::findOrFail($attempt->task_id);
         $content = QuestContent::where('task_id', $task->id)->firstOrFail();
+        $certificate = Certificate::where('quest_attempt_id', $attempt->id)
+            ->where('status', 'issued')
+            ->first();
 
-        return view('quest.result', compact('attempt', 'task', 'content'));
+        return view('quest.result', compact('attempt', 'task', 'content', 'certificate'));
+    }
+
+    private function perfectAttemptFor(LearningTask $task): ?QuestAttempt
+    {
+        return QuestAttempt::where('user_id', Auth::guard('student')->id())
+            ->where('task_id', $task->id)
+            ->where('score', 100)
+            ->first();
     }
 }

@@ -82,7 +82,7 @@
                     </h5>
 
                     <p class="text-muted mb-0">
-                        Game library entries connected to this engine.
+                        {{ $games->total() }} game library {{ $games->total() === 1 ? 'entry' : 'entries' }} connected to this engine.
                     </p>
 
                 </div>
@@ -129,6 +129,12 @@
 
                 </div>
 
+                @if($games->hasPages())
+                    <div class="card-footer bg-white border-0 p-4">
+                        {{ $games->links() }}
+                    </div>
+                @endif
+
             </div>
 
         </div>
@@ -147,7 +153,7 @@
                     </h5>
 
                     <p class="text-muted mb-0">
-                        Tasks currently using this engine.
+                        {{ $tasks->total() }} learning {{ $tasks->total() === 1 ? 'task' : 'tasks' }} currently use this engine.
                     </p>
 
                 </div>
@@ -211,6 +217,12 @@
                     @endforelse
 
                 </div>
+
+                @if($tasks->hasPages())
+                    <div class="card-footer bg-white border-0 p-4">
+                        {{ $tasks->links() }}
+                    </div>
+                @endif
 
             </div>
 

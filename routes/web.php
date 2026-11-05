@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\BadgeManagementController;
+use App\Http\Controllers\Admin\CertificateManagementController;
 use App\Http\Controllers\Admin\GameContentManagementController;
 use App\Http\Controllers\Admin\GameEngineManagementController;
 use App\Http\Controllers\Admin\GameManagementController;
@@ -14,14 +15,16 @@ use App\Http\Controllers\Admin\RewardManagementController;
 use App\Http\Controllers\Admin\StudentManagementController;
 use App\Http\Controllers\Admin\TopicManagementController;
 use App\Http\Controllers\AdminGameController;
+use App\Http\Controllers\QuestController;
 use App\Http\Controllers\StudentBadgeController;
+use App\Http\Controllers\StudentCertificateController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\StudentGameController;
 use App\Http\Controllers\StudentLeaderboardController;
 use App\Http\Controllers\StudentLearningMaterialController;
 use App\Http\Controllers\StudentProfileController;
-use App\Http\Controllers\StudentProjectChallengeController;
 use App\Http\Controllers\StudentProgressController;
+use App\Http\Controllers\StudentProjectChallengeController;
 use App\Http\Controllers\UserController;
 use App\Models\Task;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +48,24 @@ Route::middleware('auth:student')->group(function () {
     Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])
         ->name('student.dashboard');
 
+    Route::get('/student/quests/{id}', [QuestController::class, 'show'])
+        ->name('student.quest.show');
+
+    Route::get('/student/quests/{id}/quiz', [QuestController::class, 'quiz'])
+        ->name('student.quest.quiz');
+
+    Route::post('/student/quests/{id}/quiz', [QuestController::class, 'submit'])
+        ->name('student.quest.submit');
+
+    Route::get('/student/quest-attempts/{attemptId}', [QuestController::class, 'result'])
+        ->name('student.quest.result');
+
+    Route::get('/student/certificates', [StudentCertificateController::class, 'index'])
+        ->name('student.certificates.index');
+
+    Route::get('/student/certificates/{certificateId}', [StudentCertificateController::class, 'show'])
+        ->name('student.certificates.show');
+
     Route::post('/student/ai-recommendations/chat', [StudentDashboardController::class, 'chat'])
         ->middleware('throttle:12,1')
         ->name('student.ai-recommendations.chat');
@@ -56,6 +77,10 @@ Route::middleware('auth:student')->group(function () {
     // Update Profile
     Route::put('/student/profile', [StudentProfileController::class, 'update'])
         ->name('student.profile.update');
+
+    Route::put('/student/profile/password', [StudentProfileController::class, 'updatePassword'])
+        ->middleware('throttle:6,1')
+        ->name('student.profile.password.update');
 
     // Delete Picture
     Route::delete('/student/profile/picture', [StudentProfileController::class, 'deletePicture'])
@@ -139,6 +164,18 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
     // Dashboard er students er view button
     Route::get('/students/{student}', [StudentManagementController::class, 'show'])
         ->name('admin.students.show');
+
+    Route::get('/certificates', [CertificateManagementController::class, 'index'])
+        ->name('admin.certificates.index');
+
+    Route::post('/certificates/attempts/{attempt}/issue', [CertificateManagementController::class, 'issue'])
+        ->name('admin.certificates.issue');
+
+    Route::post('/certificates/{certificate}/approve', [CertificateManagementController::class, 'approve'])
+        ->name('admin.certificates.approve');
+
+    Route::post('/certificates/{certificate}/revoke', [CertificateManagementController::class, 'revoke'])
+        ->name('admin.certificates.revoke');
 
     // Dashboard e games section open
     Route::get('/games', [GameManagementController::class, 'index'])

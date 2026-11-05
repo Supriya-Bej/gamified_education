@@ -29,12 +29,14 @@ class StudentManagementController extends Controller
         $completedTasks = \App\Models\LearningTask::where('user_id', $student->id)
             ->where('status', 'completed')
             ->latest()
-            ->get();
+            ->paginate(10, ['*'], 'completed_page')
+            ->withQueryString();
 
         $pendingTasks = \App\Models\LearningTask::where('user_id', $student->id)
             ->where('status', 'pending')
             ->latest()
-            ->get();
+            ->paginate(10, ['*'], 'pending_page')
+            ->withQueryString();
 
         return view('admin.students.show', compact(
             'student',

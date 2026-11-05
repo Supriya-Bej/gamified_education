@@ -87,6 +87,16 @@
 
     </a>
 
+    <a
+        href="{{ route('student.certificates.index') }}"
+        class="side-link {{ request()->routeIs('student.certificates.*') ? 'active' : '' }}">
+
+        <i class="bi bi-award"></i>
+
+        <span>My Certificates</span>
+
+    </a>
+
     <!-- 
 
     <a

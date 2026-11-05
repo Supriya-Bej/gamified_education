@@ -179,7 +179,7 @@
 
                         <td>
 
-                            {{ $game->learningTasks()->count() }}
+                            {{ $game->learning_tasks_count }}
 
                         </td>
 

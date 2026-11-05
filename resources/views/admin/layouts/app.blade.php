@@ -19,9 +19,25 @@
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <style>
+        :root {
+            --admin-ink: #172b3a;
+            --admin-muted: #718096;
+            --admin-line: #e6edf1;
+            --admin-canvas: #f3f7f8;
+            --admin-primary: #167c65;
+            --admin-primary-dark: #116550;
+            --admin-sidebar: #102a24;
+        }
+
+        * {
+            scrollbar-color: #b8c8c4 transparent;
+        }
+
         body {
-            background: #f5f7fb;
-            font-family: Arial, sans-serif;
+            background: var(--admin-canvas);
+            color: var(--admin-ink);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: .94rem;
         }
 
         .admin-wrapper {
@@ -33,9 +49,9 @@
         ========================= */
 
         .admin-sidebar {
-            width: 260px;
+            width: 272px;
             min-height: 100vh;
-            background: #111827;
+            background: linear-gradient(180deg, #102a24 0%, #142f29 55%, #102721 100%);
             color: #fff;
             position: fixed;
             left: 0;
@@ -43,22 +59,24 @@
             bottom: 0;
             z-index: 1000;
             overflow-y: auto;
+            box-shadow: 12px 0 36px rgba(15, 42, 35, .1);
         }
 
         .brand {
-            padding: 25px 22px;
-            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            padding: 23px 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, .09);
         }
 
         .brand-icon {
             width: 42px;
             height: 42px;
-            background: #22c55e;
+            background: linear-gradient(145deg, #45c59c, #168568);
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 21px;
+            box-shadow: 0 8px 18px rgba(30, 176, 132, .2);
         }
 
         .brand-name {
@@ -73,8 +91,8 @@
         }
 
         .sidebar-section {
-            padding: 20px 18px 8px;
-            color: #6b7280;
+            padding: 21px 18px 8px;
+            color: #819a91;
             font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
@@ -86,21 +104,23 @@
             align-items: center;
             gap: 12px;
             margin: 4px 12px;
-            padding: 11px 14px;
-            color: #d1d5db;
+            padding: 10px 14px;
+            color: #c1d0ca;
             text-decoration: none;
-            border-radius: 10px;
-            transition: .2s ease;
+            border-radius: 11px;
+            transition: background .2s ease, color .2s ease, transform .2s ease;
         }
 
         .sidebar-link:hover {
-            background: #1f2937;
+            background: rgba(255, 255, 255, .08);
             color: #fff;
+            transform: translateX(2px);
         }
 
         .sidebar-link.active {
-            background: #22c55e;
+            background: linear-gradient(100deg, #168568, #209b78);
             color: #fff;
+            box-shadow: 0 8px 18px rgba(12, 118, 89, .22);
         }
 
         .sidebar-link i {
@@ -112,24 +132,29 @@
         ========================= */
 
         .admin-main {
-            margin-left: 260px;
+            margin-left: 272px;
             min-height: 100vh;
         }
 
         .admin-navbar {
-            height: 75px;
-            background: #fff;
-            border-bottom: 1px solid #e5e7eb;
+            min-height: 74px;
+            background: rgba(255, 255, 255, .94);
+            border-bottom: 1px solid var(--admin-line);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 30px;
+            padding: 12px clamp(18px, 3vw, 36px);
+            position: sticky;
+            top: 0;
+            z-index: 900;
+            backdrop-filter: blur(14px);
         }
 
         .page-heading {
-            font-size: 22px;
+            font-size: 1.15rem;
             font-weight: 700;
-            color: #111827;
+            color: var(--admin-ink);
+            letter-spacing: -.025em;
         }
 
         .admin-profile {
@@ -142,8 +167,8 @@
             width: 42px;
             height: 42px;
             border-radius: 50%;
-            background: #dcfce7;
-            color: #15803d;
+            background: #e2f5ee;
+            color: #14785d;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -157,11 +182,122 @@
 
         .admin-role {
             font-size: 12px;
-            color: #6b7280;
+            color: var(--admin-muted);
         }
 
         .dashboard-content {
-            padding: 30px;
+            padding: clamp(18px, 3vw, 34px);
+        }
+
+        .dashboard-content > .container-fluid {
+            padding-right: 0;
+            padding-left: 0;
+        }
+
+        .dashboard-content .card {
+            border-color: var(--admin-line) !important;
+            border-radius: 16px;
+            box-shadow: 0 8px 26px rgba(31, 57, 72, .055) !important;
+        }
+
+        .dashboard-content .card-header,
+        .dashboard-content .card-footer {
+            border-color: var(--admin-line) !important;
+        }
+
+        .dashboard-content .table {
+            --bs-table-hover-bg: #f6faf8;
+            color: #334b58;
+        }
+
+        .dashboard-content .table > :not(caption) > * > * {
+            padding-top: .9rem;
+            padding-bottom: .9rem;
+            border-color: #edf1f3;
+        }
+
+        .dashboard-content .table thead th {
+            background: #f7faf9;
+            color: #617680;
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .045em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .dashboard-content .form-control,
+        .dashboard-content .form-select {
+            min-height: 42px;
+            border-color: #dce6e6;
+            border-radius: 10px;
+            color: var(--admin-ink);
+        }
+
+        .dashboard-content textarea.form-control {
+            min-height: auto;
+        }
+
+        .dashboard-content .form-control:focus,
+        .dashboard-content .form-select:focus {
+            border-color: #70bea7;
+            box-shadow: 0 0 0 .2rem rgba(22, 124, 101, .12);
+        }
+
+        .dashboard-content .btn {
+            border-radius: 9px;
+            font-weight: 600;
+            transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease;
+        }
+
+        .dashboard-content .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .dashboard-content .btn-primary,
+        .dashboard-content .btn-success {
+            border-color: var(--admin-primary);
+            background-color: var(--admin-primary);
+        }
+
+        .dashboard-content .btn-primary:hover,
+        .dashboard-content .btn-success:hover {
+            border-color: var(--admin-primary-dark);
+            background-color: var(--admin-primary-dark);
+            box-shadow: 0 6px 16px rgba(22, 124, 101, .18);
+        }
+
+        .dashboard-content .pagination {
+            gap: 5px;
+            margin-bottom: 0;
+        }
+
+        .dashboard-content .page-link {
+            border: 1px solid var(--admin-line);
+            border-radius: 8px !important;
+            color: var(--admin-primary);
+            font-size: .85rem;
+        }
+
+        .dashboard-content .page-item.active .page-link {
+            border-color: var(--admin-primary);
+            background: var(--admin-primary);
+            color: #fff;
+        }
+
+        .dashboard-content .alert {
+            border-radius: 12px;
+        }
+
+        .admin-profile {
+            padding: 5px 8px 5px 12px;
+            border: 1px solid #edf1f2;
+            border-radius: 999px;
+            background: #fff;
+        }
+
+        .admin-avatar {
+            flex-shrink: 0;
         }
 
         /* =========================
@@ -173,6 +309,7 @@
             .admin-sidebar {
                 transform: translateX(-100%);
                 transition: .3s ease;
+                box-shadow: 18px 0 40px rgba(15, 42, 35, .2);
             }
 
             .admin-sidebar.show {
@@ -187,6 +324,26 @@
                 display: block !important;
             }
 
+        }
+
+        @media (max-width: 575px) {
+            .admin-navbar {
+                min-height: 64px;
+                padding: 10px 16px;
+            }
+
+            .page-heading {
+                font-size: 1rem;
+            }
+
+            .dashboard-content {
+                padding: 16px 12px 24px;
+            }
+
+            .admin-profile {
+                gap: 7px;
+                padding-left: 7px;
+            }
         }
 
         .mobile-menu {
@@ -315,14 +472,14 @@
                 Learning
             </div>
 
-            <a href="{{ route('admin.tasks.index') }}"
+            <!-- <a href="{{ route('admin.tasks.index') }}"
                 class="sidebar-link {{ request()->routeIs('admin.tasks.*') ? 'active' : '' }}">
 
                 <i class="bi bi-journal-text"></i>
 
                 <span>Game Quest Review</span>
 
-            </a>
+            </a> -->
 
             <a href="{{ route('admin.project-challenges.index') }}"
                 class="sidebar-link {{ request()->routeIs('admin.project-challenges.*') ? 'active' : '' }}">
@@ -369,6 +526,12 @@
                 class="sidebar-link {{ request()->routeIs('admin.rewards.*') ? 'active' : '' }}">
                 <i class="bi bi-stars"></i>
                 <span>XP & Rewards</span>
+            </a>
+
+            <a href="{{ route('admin.certificates.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.certificates.*') ? 'active' : '' }}">
+                <i class="bi bi-award"></i>
+                <span>Certificates</span>
             </a>
 
             <a href="{{ route('admin.badges.index') }}"

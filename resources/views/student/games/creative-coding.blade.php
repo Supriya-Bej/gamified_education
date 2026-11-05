@@ -648,6 +648,14 @@ for (let i = 0; i < 8; i++) {
                             .join(', ');
                         message.textContent += ` New badge${data.badges.length === 1 ? '' : 's'} earned: ${badgeNames}.`;
                     }
+                    if (data.certificate?.url) {
+                        const certificateLink = document.createElement('a');
+                        certificateLink.href = data.certificate.url;
+                        certificateLink.textContent = ' View your interest certificate.';
+                        message.appendChild(certificateLink);
+                    } else if (data.certificate?.status === 'pending_review') {
+                        message.textContent += ' Your course certificate is waiting for admin approval.';
+                    }
                     document.getElementById('progressFill').style.width = '100%';
                     document.getElementById('resetCodeButton').disabled = true;
                 } else {

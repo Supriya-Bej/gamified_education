@@ -15,7 +15,10 @@ class GameManagementController extends Controller
 {
     public function index()
     {
-        $games = Game::query()->orderByDesc('id')->paginate(10);
+        $games = Game::query()
+            ->withCount('learningTasks')
+            ->orderByDesc('id')
+            ->paginate(10);
 
         return view('admin.games.index', compact('games'));
     }

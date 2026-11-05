@@ -15,7 +15,7 @@ class StudentThemeService
      * 2. Previously selected focus stored in session
      * 3. Single registered interest
      * 4. Chess if chess is one of multiple interests
-     * 5. AI visual theme
+     * 5. Matching AI visual theme, or the first supported interest
      * 6. General theme
      */
     public function getTheme(
@@ -123,6 +123,12 @@ class StudentThemeService
             'music' => 'music',
             'guitar' => 'music',
             'piano' => 'music',
+            'sing' => 'music',
+            'songwriting' => 'music',
+            'instrument' => 'music',
+            'instruments' => 'music',
+            'violin' => 'music',
+            'drums' => 'music',
 
             // Sports
             'football' => 'sports',
@@ -143,6 +149,12 @@ class StudentThemeService
             'painting' => 'creative',
             'art' => 'creative',
             'art & design' => 'creative',
+            'design' => 'creative',
+            'crafts' => 'creative',
+            'craft' => 'creative',
+            'color theory' => 'creative',
+            'colour theory' => 'creative',
+            'illustration' => 'creative',
 
             // Reading
             'reading' => 'reading',
@@ -240,7 +252,7 @@ class StudentThemeService
             */
 
             session([
-                'student_theme_focus' => $requestedFocus
+                $this->focusSessionKey($user) => $requestedFocus,
             ]);
 
             /*
@@ -257,9 +269,7 @@ class StudentThemeService
         |--------------------------------------------------------------------------
         */
 
-        $storedFocus = session(
-            'student_theme_focus'
-        );
+        $storedFocus = session($this->focusSessionKey($user));
 
         /*
         |--------------------------------------------------------------------------
@@ -331,13 +341,23 @@ class StudentThemeService
 
                 /*
                 |--------------------------------------------------------------------------
-                | Otherwise use Gemini AI's visual theme
+                | Use Gemini's visual theme only when it matches one of the
+                | student's interests; otherwise use their first supported
+                | interest instead of a stale or unrelated saved theme.
                 |--------------------------------------------------------------------------
                 */
 
-                $themeKey = $mapInterestToTheme(
+                $interestThemeKeys = collect($interests)
+                    ->map($mapInterestToTheme)
+                    ->filter(fn ($key) => $key !== 'general')
+                    ->unique()
+                    ->values();
+                $aiThemeKey = $mapInterestToTheme(
                     $aiProfile['visual_theme'] ?? 'general'
                 );
+                $themeKey = $interestThemeKeys->contains($aiThemeKey)
+                    ? $aiThemeKey
+                    : ($interestThemeKeys->first() ?? $aiThemeKey);
             }
         }
 
@@ -491,5 +511,10 @@ class StudentThemeService
 
             'interests' => [],
         ];
+    }
+
+    private function focusSessionKey(UserRegister $user): string
+    {
+        return 'student_theme_focus_'.$user->getKey();
     }
 }

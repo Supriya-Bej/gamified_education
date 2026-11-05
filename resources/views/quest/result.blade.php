@@ -17,6 +17,20 @@
         @if($attempt->xp_awarded > 0)
             <p class="text-success fs-5">+{{ $attempt->xp_awarded }} XP earned</p>
         @endif
+        @if((int) $attempt->score === 100)
+            <div class="alert alert-success">
+                Perfect score! Your quest is eligible for an achievement certificate. An admin will review and issue it.
+                @if($certificate)
+                    <a href="{{ route('student.certificates.show', $certificate->id) }}" class="alert-link d-block mt-2">
+                        View your certificate
+                    </a>
+                @endif
+            </div>
+        @else
+            <p class="text-secondary">
+                You passed! A 100% score qualifies for a certificate. You can retry the quiz without earning XP again.
+            </p>
+        @endif
     @else
         <p class="text-warning">Pass korte 70% lagbe. Lesson ta abar ekbar poro.</p>
     @endif
@@ -45,7 +59,10 @@
 
     <div class="d-flex gap-2 mt-3">
         @if($attempt->passed)
-            <a href="{{ route('student.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+            @if((int) $attempt->score < 100)
+                <a href="{{ route('student.quest.quiz', $task->id) }}" class="btn btn-primary">Retry for 100%</a>
+            @endif
+            <a href="{{ route('student.dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
         @else
             <a href="{{ route('student.quest.show', $task->id) }}" class="btn btn-outline-secondary">Lesson abar poro</a>
             <a href="{{ route('student.quest.quiz', $task->id) }}" class="btn btn-primary">Retry Quiz</a>

@@ -616,6 +616,46 @@
             </form>
         </div>
 
+        <div class="pcard">
+            <div class="pcard-header">
+                <div class="pcard-icon">🔒</div>
+                <div>
+                    <div class="pcard-title">Change Password</div>
+                    <div class="pcard-subtitle">Verify your current password before choosing a new one</div>
+                </div>
+            </div>
+
+            <form action="{{ route('student.profile.password.update') }}" method="POST">
+                @csrf
+                @method('PUT')
+
+                <div class="mb-3">
+                    <label class="form-label" for="current_password">Current Password</label>
+                    <input type="password" id="current_password" name="current_password"
+                           class="form-control" autocomplete="current-password" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="password">New Password</label>
+                    <input type="password" id="password" name="password"
+                           class="form-control" minlength="8" autocomplete="new-password" required>
+                    <div class="file-hint mt-1">Use at least 8 characters.</div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" for="password_confirmation">Confirm New Password</label>
+                    <input type="password" id="password_confirmation" name="password_confirmation"
+                           class="form-control" minlength="8" autocomplete="new-password" required>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn-theme d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-shield-lock"></i> Update Password
+                    </button>
+                </div>
+            </form>
+        </div>
+
 
         {{-- ── ACCOUNT SUMMARY ────────────────────────────────────────── --}}
         <div class="pcard">

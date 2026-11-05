@@ -73,12 +73,16 @@ return [
     'music' => [
 
         'name' => 'Music',
+        'title' => 'The Music Room',
+        'subtitle' => 'Find your rhythm. Create your sound.',
 
         'primary' => '#8E44AD',
-        'secondary' => '#D6A2E8',
+        'secondary' => '#80449B',
+        'accent' => '#C548A0',
         'background' => '#FAF9F6',
         'surface' => '#FFFFFF',
         'surface_alt' => '#F1ECF5',
+        'border' => 'rgba(142,68,173,0.16)',
         'text' => '#26202B',
         'muted' => '#756B7D',
         'glow' => '#D6A2E8',
@@ -97,6 +101,10 @@ return [
         'motion' => 'pulse',
         'font_display' => 'Playfair Display',
         'font_url' => 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap',
+        'gamified_rank' => 'Rhythm Maker',
+        'gamified_motto' => 'Every great song starts with one note.',
+        'welcome_message' => 'Welcome to your music room. Find your rhythm, explore new sounds, and compose your next success.',
+        'daily_quest' => 'Warm up with a rhythm and note challenge',
 
     ],
 
@@ -227,12 +235,16 @@ return [
     'creative' => [
 
         'name' => 'Creative',
+        'title' => 'The Art Studio',
+        'subtitle' => 'Imagine. Experiment. Create.',
 
         'primary' => '#E84393',
-        'secondary' => '#FDCB6E',
+        'secondary' => '#B42374',
+        'accent' => '#6C5CE7',
         'background' => '#FFF8FC',
         'surface' => '#FFFFFF',
         'surface_alt' => '#FFF0F7',
+        'border' => 'rgba(180,35,116,0.16)',
         'text' => '#30202A',
         'muted' => '#806B75',
         'glow' => '#FDCB6E',
@@ -251,6 +263,10 @@ return [
         'motion' => 'float',
         'font_display' => 'Bricolage Grotesque',
         'font_url' => 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap',
+        'gamified_rank' => 'Color Creator',
+        'gamified_motto' => 'Every idea begins with a splash of color.',
+        'welcome_message' => 'Welcome to your art studio. Pick your colors, try something new, and make every quest your canvas.',
+        'daily_quest' => 'Explore a new color and creativity challenge',
 
     ],
 

@@ -176,11 +176,25 @@
         |--------------------------------------------------------------------------
         */
 
-        $themeIcon =
-            $themeConfig['icon']
-            ?? $aiProfile['theme_icon']
-            ?? ($isChess ? '♞' : '✦');
+        $generatedThemeIcons = [
+            'music' => ['🎼', '🎹', '🎸', '🎤', '🎧', '♫'],
+            'creative' => ['🎨', '🖌️', '🖍️', '✏️', '🖼️'],
+        ];
+        $generatedTheme = strtolower(trim((string) ($aiProfile['visual_theme'] ?? '')));
+        $generatedThemeIcon = $aiProfile['theme_icon'] ?? null;
 
+        if (
+            $generatedTheme === $theme &&
+            is_string($generatedThemeIcon) &&
+            in_array($generatedThemeIcon, $generatedThemeIcons[$theme] ?? [], true)
+        ) {
+            $themeIcon = $generatedThemeIcon;
+        } else {
+            $themeIcon = $themeConfig['icon']
+                ?? ($isChess ? '♞' : '✦');
+        }
+
+        $profileMatchesTheme = $generatedTheme === $theme;
 
         /*
         |--------------------------------------------------------------------------
@@ -201,36 +215,38 @@
         */
 
         $rankTitle =
-            $aiProfile['rank_title']
+            ($profileMatchesTheme ? ($aiProfile['rank_title'] ?? null) : null)
             ?? $themeConfig['gamified_rank']
             ?? 'Explorer';
 
 
         $dashboardTitle =
-            $aiProfile['dashboard_title']
+            ($profileMatchesTheme ? ($aiProfile['dashboard_title'] ?? null) : null)
             ?? $themeConfig['title']
             ?? 'Learning Arena';
 
 
         $tagline =
-            $aiProfile['tagline']
+            ($profileMatchesTheme ? ($aiProfile['tagline'] ?? null) : null)
             ?? $themeConfig['subtitle']
             ?? 'Your personalized learning world';
 
 
         $motto =
-            $aiProfile['motto']
+            ($profileMatchesTheme ? ($aiProfile['motto'] ?? null) : null)
             ?? $themeConfig['gamified_motto']
             ?? 'Every step forward makes you stronger.';
 
 
         $welcomeMessage =
-            $aiProfile['welcome_message']
+            ($profileMatchesTheme ? ($aiProfile['welcome_message'] ?? null) : null)
+            ?? $themeConfig['welcome_message']
             ?? 'Welcome to your personalized learning world!';
 
 
         $dailyQuest =
-            $aiProfile['daily_quest']
+            ($profileMatchesTheme ? ($aiProfile['daily_quest'] ?? null) : null)
+            ?? $themeConfig['daily_quest']
             ?? "Complete today's learning challenge";
 
 
@@ -379,6 +395,199 @@
 
             overflow-x: hidden;
 
+        }
+
+        body.theme-creative {
+            background:
+                radial-gradient(circle at 8% 12%, rgba(255, 190, 65, .25), transparent 22%),
+                radial-gradient(circle at 92% 24%, rgba(232, 67, 147, .2), transparent 25%),
+                radial-gradient(circle at 76% 88%, rgba(62, 177, 210, .18), transparent 25%),
+                linear-gradient(135deg, #fff8fc, #fffaf0 55%, #f5fbff);
+        }
+
+        body.theme-music {
+            background:
+                radial-gradient(circle at 88% 12%, rgba(142, 68, 173, .16), transparent 24%),
+                radial-gradient(circle at 12% 82%, rgba(214, 162, 232, .2), transparent 24%),
+                repeating-linear-gradient(
+                    to bottom,
+                    transparent 0,
+                    transparent 54px,
+                    rgba(142, 68, 173, .055) 55px,
+                    transparent 56px
+                ),
+                linear-gradient(135deg, #faf9ff, #f8f2fc 55%, #fffafd);
+        }
+
+        body.theme-creative .hero {
+            border-color: rgba(232, 67, 147, .24);
+            background:
+                radial-gradient(circle at 85% 20%, rgba(255, 196, 74, .22), transparent 24%),
+                linear-gradient(120deg, #fff 0%, #fff7e9 48%, #fff0f8 100%);
+        }
+
+        body.theme-music .hero {
+            border-color: rgba(142, 68, 173, .24);
+            background:
+                repeating-linear-gradient(
+                    to bottom,
+                    transparent 0,
+                    transparent 15px,
+                    rgba(142, 68, 173, .09) 16px,
+                    transparent 17px
+                ),
+                linear-gradient(120deg, #fff 0%, #f8f1fc 55%, #f2f7ff 100%);
+        }
+
+        .theme-artwork {
+            position: relative;
+            width: 190px;
+            height: 126px;
+            margin: 12px auto 0;
+        }
+
+        .art-palette {
+            position: absolute;
+            right: 24px;
+            bottom: 4px;
+            width: 112px;
+            height: 98px;
+            border: 1px solid rgba(120, 74, 54, .15);
+            border-radius: 48% 52% 50% 42%;
+            background: #f5d7b4;
+            box-shadow: 0 12px 25px rgba(104, 66, 78, .16);
+            transform: rotate(-12deg);
+        }
+
+        .art-palette::before {
+            position: absolute;
+            top: 31px;
+            left: 36px;
+            width: 25px;
+            height: 23px;
+            border-radius: 50%;
+            background: #fff8ed;
+            content: "";
+        }
+
+        .paint-dot {
+            position: absolute;
+            width: 23px;
+            height: 23px;
+            border: 2px solid rgba(255, 255, 255, .75);
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(53, 38, 53, .14);
+        }
+
+        .paint-dot.one { top: 12px; left: 23px; background: #ef476f; }
+        .paint-dot.two { top: 29px; right: 15px; background: #ffd166; }
+        .paint-dot.three { right: 17px; bottom: 14px; background: #06a77d; }
+        .paint-dot.four { bottom: 11px; left: 24px; background: #4895ef; }
+        .paint-dot.five { top: 11px; right: 43px; background: #9b5de5; }
+
+        .art-brush {
+            position: absolute;
+            top: 0;
+            left: 15px;
+            z-index: 1;
+            color: #8c4f72;
+            font-size: 4.5rem;
+            filter: drop-shadow(0 5px 8px rgba(100, 57, 78, .18));
+            transform: rotate(-28deg);
+        }
+
+        .music-staff {
+            position: absolute;
+            top: 24px;
+            right: 4px;
+            width: 178px;
+            height: 76px;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0,
+                transparent 13px,
+                rgba(102, 52, 126, .38) 14px,
+                transparent 15px
+            );
+            transform: rotate(-5deg);
+        }
+
+        .music-note {
+            position: absolute;
+            color: #8e44ad;
+            font-family: Georgia, serif;
+            font-size: 3.6rem;
+            line-height: 1;
+            text-shadow: 0 6px 12px rgba(90, 43, 111, .16);
+        }
+
+        .music-note.first { top: 4px; left: 24px; transform: rotate(-8deg); }
+        .music-note.second { top: 32px; left: 82px; color: #e84393; transform: rotate(7deg); }
+        .music-note.third { top: -4px; right: 12px; color: #d29ae4; transform: rotate(12deg); }
+
+        .theme-feature {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-top: 20px;
+            padding: 22px 26px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: linear-gradient(115deg, var(--surface), var(--surface-alt));
+            box-shadow: 0 10px 28px rgba(71, 46, 79, .1);
+        }
+
+        .theme-feature-copy { position: relative; z-index: 1; }
+        .theme-feature-kicker {
+            margin: 0 0 5px;
+            color: var(--secondary);
+            font-size: .72rem;
+            font-weight: 900;
+            letter-spacing: .13em;
+            text-transform: uppercase;
+        }
+        .theme-feature-title {
+            margin: 0 0 5px;
+            color: var(--text-main);
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
+        .theme-feature-description { margin: 0; color: var(--text-muted); }
+        .theme-feature-decoration {
+            flex: 0 0 auto;
+            color: var(--secondary);
+            font-size: 2.8rem;
+            letter-spacing: .14em;
+            opacity: .8;
+        }
+
+        body.theme-creative .theme-feature {
+            border-color: rgba(232, 67, 147, .22);
+            background: linear-gradient(110deg, #fff, #fff4e2 52%, #ffeff8);
+        }
+
+        body.theme-music .theme-feature {
+            border-color: rgba(142, 68, 173, .22);
+            background:
+                repeating-linear-gradient(to bottom, transparent 0 17px, rgba(142,68,173,.07) 18px, transparent 19px),
+                linear-gradient(110deg, #fff, #f7effb 58%, #f0f7ff);
+        }
+
+        body.theme-creative .interest-pill.active,
+        body.theme-creative .primary-btn,
+        body.theme-music .interest-pill.active,
+        body.theme-music .primary-btn {
+            color: #fff !important;
+        }
+
+        @media (max-width: 767px) {
+            .theme-artwork { margin-top: 6px; transform: scale(.85); }
+            .theme-feature { align-items: flex-start; padding: 18px; }
+            .theme-feature-decoration { font-size: 2rem; }
         }
 
 
@@ -1698,7 +1907,7 @@
 </head>
 
 
-<body>
+<body class="theme-{{ $themeKey }}">
 
     <button
         type="button"
@@ -1974,8 +2183,20 @@
                                 $cleanInterest =
                                     strtolower(trim($interest));
 
-                                $active =
-                                    $theme === $cleanInterest;
+                                $themeInterestAliases = [
+                                    'music' => [
+                                        'music', 'song', 'songs', 'singing', 'guitar',
+                                        'piano', 'violin', 'drums', 'instrument',
+                                        'instruments', 'songwriting',
+                                    ],
+                                    'creative' => [
+                                        'art', 'art & design', 'drawing', 'painting',
+                                        'design', 'craft', 'crafts', 'color theory',
+                                        'colour theory', 'illustration',
+                                    ],
+                                ];
+                                $active = $theme === $cleanInterest
+                                    || in_array($cleanInterest, $themeInterestAliases[$theme] ?? [], true);
 
                                 if(
                                     $theme === 'chess'
@@ -2129,15 +2350,34 @@
 
 
 
-                <div
-                    class="col-lg-4 text-center d-none d-lg-block"
-                >
+                <div class="col-lg-4 text-center">
 
                     <div class="hero-icon">
 
                         {{ $themeIcon }}
 
                     </div>
+
+                    @if($themeKey === 'creative')
+                        <div class="theme-artwork" aria-hidden="true">
+                            <span class="art-brush">🖌️</span>
+                            <div class="art-palette">
+                                <span class="paint-dot one"></span>
+                                <span class="paint-dot two"></span>
+                                <span class="paint-dot three"></span>
+                                <span class="paint-dot four"></span>
+                                <span class="paint-dot five"></span>
+                            </div>
+                        </div>
+                    @elseif($themeKey === 'music')
+                        <div class="theme-artwork" aria-hidden="true">
+                            <div class="music-staff">
+                                <span class="music-note first">♫</span>
+                                <span class="music-note second">♪</span>
+                                <span class="music-note third">♬</span>
+                            </div>
+                        </div>
+                    @endif
 
 
                     <div
@@ -2422,6 +2662,24 @@
 
             </div>
 
+        @elseif($themeKey === 'creative')
+            <section class="theme-feature mt-4" aria-label="Art studio">
+                <div class="theme-feature-copy">
+                    <p class="theme-feature-kicker">Your creative corner</p>
+                    <h2 class="theme-feature-title">The Art Studio</h2>
+                    <p class="theme-feature-description">Mix ideas, explore color, and make every quest your canvas.</p>
+                </div>
+                <div class="theme-feature-decoration" aria-hidden="true">✎ ✿</div>
+            </section>
+        @elseif($themeKey === 'music')
+            <section class="theme-feature mt-4" aria-label="Music studio">
+                <div class="theme-feature-copy">
+                    <p class="theme-feature-kicker">Find your rhythm</p>
+                    <h2 class="theme-feature-title">The Music Room</h2>
+                    <p class="theme-feature-description">Tune in, follow the beat, and turn each quest into a new composition.</p>
+                </div>
+                <div class="theme-feature-decoration" aria-hidden="true">♫ ♪ ♬</div>
+            </section>
         @endif
 
 
@@ -2515,7 +2773,8 @@
 
                 <div class="section-subtitle">
 
-                    AI-generated learning quests based on your interests
+                    Complete 25 quests at each level to earn a certificate for every interest.
+                    Track each interest's stage in My Progress.
 
                 </div>
 

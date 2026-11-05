@@ -486,10 +486,19 @@ Theme Selection Rules:
 
 chess, technology, music, sports, science, mathematics, creative, reading, business, gaming, general.
 
+3. Generate a theme_icon that visually represents the selected visual_theme:
+
+- For music interests, choose exactly one music-related emoji or symbol, such as 🎼, 🎹, 🎸, 🎤, 🎧, or ♫.
+- For art, drawing, painting, or design interests, choose exactly one art-related emoji, such as 🎨, 🖌️, 🖍️, ✏️, or 🖼️.
+- For other themes, choose one clear emoji or symbol that represents that subject.
+- Never use a generic star or sparkle for music or art.
+- Keep theme_icon to a single emoji or symbol, not a description or a combination.
+
 Return ONLY valid JSON.
 
 {
     \"visual_theme\": \"chess\",
+    \"theme_icon\": \"♞\",
     \"dashboard_title\": \"The Grandmaster Arena\",
     \"tagline\": \"Outthink. Outplay. Level Up.\",
     \"welcome_message\": \"Welcome to the Grandmaster Arena! Plan your strategy, anticipate challenges, and make your winning move.\",
@@ -538,6 +547,7 @@ Return ONLY valid JSON.
 
             return [
                 'visual_theme' => 'chess',
+                'theme_icon' => '♞',
                 'dashboard_title' => 'The Grandmaster Arena',
                 'tagline' => 'Outthink. Outplay. Level Up.',
                 'welcome_message' => 'Welcome to the Grandmaster Arena! Plan your strategy, anticipate challenges, and make your winning move.',
@@ -560,6 +570,7 @@ Return ONLY valid JSON.
 
         return [
             'visual_theme' => 'general',
+            'theme_icon' => '✦',
             'dashboard_title' => 'Personalized Learning Realm',
             'tagline' => 'Learn. Play. Challenge. Earn.',
             'welcome_message' => 'Welcome to your personalized gamified learning world!',
@@ -589,6 +600,12 @@ Return ONLY valid JSON.
         int $taskCount = 5,
         array $previousTaskTitles = []
     ): array {
+
+        $experienceLevel = strtolower(trim($experienceLevel));
+        if (! in_array($experienceLevel, ['beginner', 'intermediate', 'advanced'], true)) {
+            $experienceLevel = 'beginner';
+        }
+        $taskCount = max(1, min(25, $taskCount));
 
         $interestsList = implode(', ', $interests);
         /*
@@ -657,6 +674,24 @@ Learning Goal:
 
 Experience Level:
 {$experienceLevel}
+
+COURSE PROGRESSION RULES:
+
+- The student is currently working on the {$experienceLevel} stage for these interests.
+- A complete interest course has exactly 25 distinct quests at each stage: beginner,
+  intermediate, then advanced (75 completed quests total).
+- This request is for only the next {$taskCount} quest(s) in the current stage.
+- Set every returned task's difficulty to exactly "{$experienceLevel}". Never skip
+  ahead, mix stages, or lower the requested difficulty.
+- Build authentic, factually correct, playable challenges that increase in depth
+  across the stages. Beginner introduces core concepts, intermediate applies them
+  in new situations, and advanced requires multi-step reasoning or transfer.
+- Keep each challenge specific to its interest and to the actual mechanics supported
+  by its selected game engine. Do not invent unsupported controls, pieces, tools,
+  or game modes. Provide enough information for the player to solve and for the
+  server to grade the challenge unambiguously.
+- When multiple interests are listed and the requested batch can cover them,
+  distribute quests across those interests rather than focusing on only one.
 
 Do not reuse a previous quest title for the same game:
 {$this->formatPreviousTaskTitles($previousTaskTitles)}
@@ -1010,12 +1045,13 @@ PROMPT;
 
                 $xp = max(10, min(50, $xp));
 
-                if (! in_array($difficulty, ['beginner', 'intermediate', 'advanced'], true)) {
-                    $difficulty = strtolower(trim($experienceLevel));
-                }
+                if ($difficulty !== $experienceLevel) {
+                    Log::warning('Gemini returned a quest for a different course stage.', [
+                        'expected_difficulty' => $experienceLevel,
+                        'generated_difficulty' => $difficulty,
+                    ]);
 
-                if (! in_array($difficulty, ['beginner', 'intermediate', 'advanced'], true)) {
-                    $difficulty = 'beginner';
+                    continue;
                 }
 
                 /*

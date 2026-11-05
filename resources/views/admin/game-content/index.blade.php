@@ -187,8 +187,6 @@
 
                                     <i class="bi bi-eye me-1"></i>
 
-                                    View Content
-
                                 </a>
 
                             </td>

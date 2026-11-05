@@ -26,7 +26,7 @@
 
                 <div>
                     <span class="badge bg-dark px-3 py-2">
-                        {{ $engines->count() }} Engines
+                        {{ $engines->total() }} Engines
                     </span>
                 </div>
 
@@ -80,14 +80,14 @@
 
                     <tbody>
 
-                        @forelse($engines as $index => $engine)
+                        @forelse($engines as $engine)
 
                         <tr>
 
                             {{-- Number --}}
                             <td class="px-4">
 
-                                {{ $index + 1 }}
+                                {{ $engines->firstItem() + $loop->index }}
 
                             </td>
 
@@ -199,6 +199,12 @@
                 </table>
 
             </div>
+
+            @if($engines->hasPages())
+                <div class="card-footer bg-white border-0 p-4">
+                    {{ $engines->links() }}
+                </div>
+            @endif
 
         </div>
 

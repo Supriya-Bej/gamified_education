@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\StudentLearningMaterialController;
 use App\Models\Badge;
+use App\Models\Certificate;
 use App\Models\Game;
 use App\Models\LeaderboardXpAdjustment;
 use App\Models\LearningMaterial;
@@ -110,6 +111,8 @@ class StudentPlayableTasksTest extends TestCase
 
         Http::assertSent(fn (ClientRequest $request) => ! str_contains($request->url(), 'key=')
             && str_contains($request['contents'][0]['parts'][0]['text'], 'Chess Tactics Challenge')
+            && str_contains($request['contents'][0]['parts'][0]['text'], '25 distinct quests')
+            && str_contains($request['contents'][0]['parts'][0]['text'], 'exactly "beginner"')
             && str_contains($request['contents'][0]['parts'][0]['text'], 'Color Theory Studio')
             && str_contains($request['contents'][0]['parts'][0]['text'], 'Music Notes & Rhythm')
             && ! str_contains($request['contents'][0]['parts'][0]['text'], 'Math Speed Challenge')
@@ -256,6 +259,82 @@ class StudentPlayableTasksTest extends TestCase
             ->assertSee('Sports Rules Practice');
     }
 
+    public function test_admin_game_engine_catalog_is_paginated(): void
+    {
+        $admin = UserRegister::create([
+            'name' => 'Engine Admin',
+            'email' => 'engine-admin@example.test',
+            'password' => 'password',
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.engines.index'))
+            ->assertOk()
+            ->assertSee('12 Engines')
+            ->assertSee('pagination');
+
+        $this->get(route('admin.engines.index', ['page' => 2]))
+            ->assertOk()
+            ->assertSee('Game Engine Management');
+    }
+
+    public function test_admin_student_and_engine_details_paginate_long_task_lists(): void
+    {
+        $admin = UserRegister::create([
+            'name' => 'Detail Admin',
+            'email' => 'detail-admin@example.test',
+            'password' => 'password',
+            'role' => 'admin',
+        ]);
+        $student = $this->studentWithInterests(['Sports']);
+        $game = Game::query()->where('game_type', 'sports_quiz')->firstOrFail();
+
+        foreach (range(1, 11) as $index) {
+            foreach (['completed', 'pending'] as $status) {
+                LearningTask::create([
+                    'user_id' => $student->id,
+                    'game_id' => $game->id,
+                    'game_type' => $game->game_type,
+                    'title' => ucfirst($status).' sports quest '.$index,
+                    'description' => 'Paginated task test.',
+                    'category' => 'sports',
+                    'difficulty' => 'beginner',
+                    'xp' => 20,
+                    'status' => $status,
+                    'game_data' => [],
+                ]);
+            }
+
+            Game::create([
+                'subject_id' => $game->subject_id,
+                'name' => 'Sports library entry '.$index,
+                'description' => 'Additional game using the sports engine.',
+                'category' => 'sports',
+                'game_type' => 'sports_quiz',
+                'difficulty' => 'beginner',
+            ]);
+        }
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.students.show', [
+                'student' => $student->id,
+                'completed_page' => 2,
+                'pending_page' => 2,
+            ]))
+            ->assertOk()
+            ->assertSee('11 completed tasks')
+            ->assertSee('11 pending tasks');
+
+        $this->get(route('admin.engines.show', [
+            'gameType' => 'sports_quiz',
+            'games_page' => 2,
+            'tasks_page' => 2,
+        ]))
+            ->assertOk()
+            ->assertSee('22 learning tasks currently use this engine');
+    }
+
     public function test_art_and_music_games_render_and_are_graded_by_the_server(): void
     {
         $student = $this->studentWithInterests(['Art', 'Music']);
@@ -329,6 +408,8 @@ class StudentPlayableTasksTest extends TestCase
         $this->actingAs($student, 'student')
             ->get(route('student.dashboard'))
             ->assertOk()
+            ->assertSee('class="theme-creative"', false)
+            ->assertSee('The Art Studio')
             ->assertSee($this->artTask()['title'])
             ->assertSee($this->musicTask()['title'])
             ->assertSee('Start Quest')
@@ -348,6 +429,97 @@ class StudentPlayableTasksTest extends TestCase
                 ->where('status', 'pending')
                 ->pluck('game_type')
                 ->all()
+        );
+    }
+
+    public function test_selected_dashboard_theme_is_scoped_to_each_student_account(): void
+    {
+        Http::fake([
+            '*' => Http::response([], 503),
+        ]);
+
+        $musicStudent = $this->studentWithInterests(['Chess', 'Music']);
+        $chessStudent = $this->studentWithInterests(['Chess']);
+
+        $this->actingAs($musicStudent, 'student')
+            ->get(route('student.dashboard', ['focus' => 'Music']))
+            ->assertOk()
+            ->assertSee('<body class="theme-music">', false);
+
+        $this->actingAs($chessStudent, 'student')
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee('<body class="theme-chess">', false)
+            ->assertDontSee('<body class="theme-music">', false);
+
+        $this->actingAs($musicStudent, 'student')
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee('<body class="theme-music">', false);
+    }
+
+    public function test_dashboard_uses_ai_generated_art_and_music_icons_for_matching_themes(): void
+    {
+        Http::fake([
+            '*' => Http::response($this->geminiResponse([
+                $this->artTask(),
+                $this->musicTask(),
+            ])),
+        ]);
+
+        foreach ([
+            ['Art', 'creative', '🖍️'],
+            ['Music', 'music', '🎹'],
+        ] as [$interest, $theme, $icon]) {
+            $student = $this->studentWithInterests([$interest]);
+            $preference = $student->preferences;
+            $aiProfile = $preference->ai_profile;
+            $aiProfile['visual_theme'] = $theme;
+            $aiProfile['theme_icon'] = $icon;
+            $preference->update(['ai_profile' => $aiProfile]);
+
+            $this->actingAs($student, 'student')
+                ->get(route('student.dashboard'))
+                ->assertOk()
+                ->assertSee('class="theme-'.$theme.'"', false)
+                ->assertSee($theme === 'creative' ? 'The Art Studio' : 'The Music Room')
+                ->assertSee($theme === 'creative' ? 'Your creative corner' : 'Find your rhythm')
+                ->assertSee($icon);
+        }
+    }
+
+    public function test_gemini_profile_prompt_requests_subject_specific_dashboard_icons(): void
+    {
+        Http::fake([
+            '*' => Http::response([
+                'candidates' => [[
+                    'content' => [
+                        'parts' => [[
+                            'text' => json_encode([
+                                'visual_theme' => 'creative',
+                                'theme_icon' => '🖌️',
+                            ], JSON_THROW_ON_ERROR),
+                        ]],
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $profile = app(GeminiService::class)->generateProfile(
+            ['Art'],
+            'Explore color',
+            'beginner'
+        );
+
+        $this->assertSame('🖌️', $profile['theme_icon']);
+        Http::assertSent(fn (ClientRequest $request) => str_contains(
+            $request['contents'][0]['parts'][0]['text'],
+            'For music interests, choose exactly one music-related emoji or symbol'
+        ) &&
+            str_contains(
+                $request['contents'][0]['parts'][0]['text'],
+                'For art, drawing, painting, or design interests, choose exactly one art-related emoji'
+            )
         );
     }
 
@@ -620,6 +792,139 @@ class StudentPlayableTasksTest extends TestCase
             ->assertSee($newTask['title'])
             ->assertDontSee($repeatedTask['title']);
         Http::assertSentCount(4);
+    }
+
+    public function test_interest_course_unlocks_levels_after_25_completions_without_exceeding_the_stage_cap(): void
+    {
+        $initialOutputBufferLevel = ob_get_level();
+        Http::fake([
+            '*' => Http::response([], 503),
+        ]);
+
+        $student = $this->studentWithInterests(['Chess']);
+        $game = Game::query()->where('game_type', 'chess_tactics')->firstOrFail();
+        $gameData = $this->chessTask()['game_data'];
+
+        for ($index = 1; $index <= 24; $index++) {
+            LearningTask::create([
+                'user_id' => $student->id,
+                'game_id' => $game->id,
+                'game_type' => $game->game_type,
+                'title' => 'Beginner chess practice '.$index,
+                'description' => 'Practice a beginner chess concept.',
+                'category' => 'chess',
+                'difficulty' => 'beginner',
+                'xp' => 20,
+                'status' => 'completed',
+                'game_data' => $gameData,
+            ]);
+        }
+
+        $this->actingAs($student, 'student')
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertDontSee('Beginner stage');
+
+        $this->get(route('student.progress'))
+            ->assertOk()
+            ->assertSee('Beginner stage')
+            ->assertSee('24/25 games');
+
+        $pendingBeginnerTasks = LearningTask::query()
+            ->where('user_id', $student->id)
+            ->where('status', 'pending')
+            ->get();
+        $this->assertCount(1, $pendingBeginnerTasks);
+        $this->assertSame('beginner', $pendingBeginnerTasks->first()->difficulty);
+        $this->assertSame(25, LearningTask::query()
+            ->where('user_id', $student->id)
+            ->where('category', 'chess')
+            ->where('difficulty', 'beginner')
+            ->count());
+        $this->assertDatabaseMissing('certificates', ['user_id' => $student->id]);
+
+        $finalBeginnerTask = $pendingBeginnerTasks->first();
+        $this->postJson(route('student.game.complete', $finalBeginnerTask), [
+            'answers' => [$finalBeginnerTask->game_data['puzzles'][0]['answer']],
+        ])->assertOk()->assertJsonPath('course_progress.active_level', 'intermediate');
+
+        $this->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertDontSee('Intermediate stage');
+        $this->get(route('student.progress'))
+            ->assertOk()
+            ->assertSee('Intermediate stage');
+
+        $pendingIntermediateTasks = LearningTask::query()
+            ->where('user_id', $student->id)
+            ->where('status', 'pending')
+            ->get();
+        $this->assertCount(1, $pendingIntermediateTasks);
+        $this->assertTrue($pendingIntermediateTasks->every(
+            fn (LearningTask $task) => $task->difficulty === 'intermediate'
+        ));
+        $this->assertSame(25, LearningTask::query()
+            ->where('user_id', $student->id)
+            ->where('category', 'chess')
+            ->where('difficulty', 'beginner')
+            ->count());
+
+        while (ob_get_level() > $initialOutputBufferLevel) {
+            ob_end_clean();
+        }
+    }
+
+    public function test_student_gets_one_interest_certificate_after_all_75_games_are_completed(): void
+    {
+        $student = $this->studentWithInterests(['Chess']);
+        $game = Game::query()->where('game_type', 'chess_tactics')->firstOrFail();
+        $gameData = $this->chessTask()['game_data'];
+        $finalTask = null;
+
+        foreach (['beginner' => 25, 'intermediate' => 25, 'advanced' => 25] as $difficulty => $count) {
+            for ($index = 1; $index <= $count; $index++) {
+                $finalTask = LearningTask::create([
+                    'user_id' => $student->id,
+                    'game_id' => $game->id,
+                    'game_type' => $game->game_type,
+                    'title' => ucfirst($difficulty).' chess challenge '.$index,
+                    'description' => 'Solve an interest-matched chess challenge.',
+                    'category' => 'chess',
+                    'difficulty' => $difficulty,
+                    'xp' => 20,
+                    'status' => $difficulty === 'advanced' && $index === $count
+                        ? 'pending'
+                        : 'completed',
+                    'game_data' => $gameData,
+                ]);
+            }
+        }
+
+        $this->actingAs($student, 'student')
+            ->postJson(route('student.game.complete', $finalTask), [
+                'answers' => [$gameData['puzzles'][0]['answer']],
+            ])
+            ->assertOk()
+            ->assertJsonPath('certificate.title', 'Chess Mastery Certificate')
+            ->assertJsonPath('certificate.status', 'pending_review');
+
+        $this->assertDatabaseHas('certificates', [
+            'user_id' => $student->id,
+            'interest' => 'chess',
+            'title' => 'Chess Mastery Certificate',
+            'status' => 'pending_review',
+        ]);
+        $this->assertSame(1, Certificate::query()
+            ->where('user_id', $student->id)
+            ->where('interest', 'chess')
+            ->count());
+
+        $certificate = Certificate::query()
+            ->where('user_id', $student->id)
+            ->where('interest', 'chess')
+            ->firstOrFail();
+        $this->get(route('student.certificates.show', $certificate))
+            ->assertNotFound();
     }
 
     public function test_invalid_pending_task_does_not_block_a_valid_interest_matched_quest(): void
@@ -1126,6 +1431,10 @@ class StudentPlayableTasksTest extends TestCase
             ->assertSee('In progress')
             ->assertSee('Completed')
             ->assertSee('Quiz pending')
+            ->assertSee('Interest Course Progress')
+            ->assertSee('Coding')
+            ->assertSee('10/25 games')
+            ->assertDontSee('Badges Earned')
             ->assertSee('completed_page=2')
             ->assertSee('materials_page=2');
 
@@ -1190,7 +1499,9 @@ class StudentPlayableTasksTest extends TestCase
         $this->actingAs($student, 'student')
             ->get(route('student.progress'))
             ->assertOk()
-            ->assertSee('Quest Champion');
+            ->assertSee('Interest Course Progress')
+            ->assertDontSee('Quest Champion')
+            ->assertDontSee('Badges Earned');
 
         $this->assertSame(
             1,
@@ -2104,6 +2415,22 @@ class StudentPlayableTasksTest extends TestCase
             $table->timestamp('awarded_at');
             $table->timestamps();
             $table->unique(['user_id', 'badge_id']);
+        });
+
+        Schema::create('certificates', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('task_id');
+            $table->string('interest')->nullable();
+            $table->unsignedBigInteger('quest_attempt_id')->nullable()->unique();
+            $table->unsignedBigInteger('issued_by')->nullable();
+            $table->string('certificate_number')->unique();
+            $table->string('title')->default('Certificate of Achievement');
+            $table->string('status')->default('issued');
+            $table->timestamp('issued_at')->nullable();
+            $table->timestamp('revoked_at')->nullable();
+            $table->timestamps();
+            $table->unique(['user_id', 'interest']);
         });
     }
 

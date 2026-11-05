@@ -441,12 +441,12 @@
             </div>
         </div>
 
-        {{-- Badges --}}
+        {{-- Interest courses --}}
         <div class="stat-card-inner">
-            <div class="stat-icon-box">🎖️</div>
+            <div class="stat-icon-box">📚</div>
             <div>
-                <div class="stat-label">Badges Earned</div>
-                <div class="stat-value">{{ $badges->count() }}</div>
+                <div class="stat-label">Interest Courses</div>
+                <div class="stat-value">{{ count($courseProgress) }}</div>
             </div>
         </div>
 
@@ -584,35 +584,67 @@
     </div>
 
 
-    {{-- ── BADGES ────────────────────────────────────────────────────── --}}
+    {{-- ── INTEREST COURSE PROGRESS ──────────────────────────────────── --}}
     <div class="section-card">
         <div class="section-card-header">
-            <div class="section-icon">🏅</div>
+            <div class="section-icon">🎮</div>
             <div>
-                <h5>Badges Earned</h5>
-                <p>Achievements unlocked on your journey</p>
+                <h5>Interest Course Progress</h5>
+                <p>Complete 25 games at each level to earn a certificate for each interest</p>
             </div>
         </div>
 
-        @forelse($badges as $badge)
-        <div class="badge-row">
-            <div class="badge-emoji">
-                {{ $badge->badge?->icon ?? '🏅' }}
-            </div>
-            <div>
-                <div class="badge-name">{{ $badge->badge?->name ?? 'Badge' }}</div>
-                <div class="badge-date">
-                    {{ $badge->awarded_at?->format('M d, Y') ?? $badge->created_at?->format('M d, Y') }}
+        <div class="row g-3 px-3 pb-3">
+            @forelse($courseProgress as $course)
+                @php
+                    $courseLevels = ['beginner', 'intermediate', 'advanced'];
+                    $activeLevelIndex = array_search($course['active_difficulty'], $courseLevels, true);
+                @endphp
+                <div class="col-md-6 col-xl-4">
+                    <div class="level-card h-100 mb-0">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <strong>{{ ucfirst($course['interest']) }}</strong>
+                            <span class="xp-pill">
+                                {{ $course['certificate_status'] === 'issued'
+                                    ? 'Certificate earned'
+                                    : ($course['certificate_status'] === 'pending_review'
+                                        ? 'Awaiting admin approval'
+                                        : ($course['course_complete']
+                                            ? 'Course complete'
+                                            : ucfirst($course['active_difficulty']).' stage')) }}
+                            </span>
+                        </div>
+                        @foreach ($courseLevels as $levelIndex => $level)
+                            @php
+                                $completedAtLevel = min(25, $course['levels'][$level]['completed']);
+                                $isLocked = $activeLevelIndex !== false && $levelIndex > $activeLevelIndex;
+                            @endphp
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="quest-meta">
+                                        {{ ucfirst($level) }}{{ $isLocked ? ' · Locked' : '' }}
+                                    </span>
+                                    <span class="quest-meta">{{ $completedAtLevel }}/25 games</span>
+                                </div>
+                                <div class="xp-track" role="progressbar"
+                                     aria-label="{{ ucfirst($course['interest']) }} {{ $level }} progress"
+                                     aria-valuenow="{{ $completedAtLevel }}" aria-valuemin="0" aria-valuemax="25">
+                                    <div class="xp-fill" style="width: {{ ($completedAtLevel / 25) * 100 }}%;"></div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
-            </div>
+            @empty
+                <div class="col-12">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎮</div>
+                        <h6>No interest courses available</h6>
+                        <p>Add an interest with playable games to track its course progress here.</p>
+                    </div>
+                </div>
+            @endforelse
         </div>
-        @empty
-        <div class="empty-state">
-            <div class="empty-state-icon">🏅</div>
-            <h6>No badges yet</h6>
-            <p>Complete quests and challenges to earn badges!</p>
-        </div>
-        @endforelse
     </div>
 
 </div>

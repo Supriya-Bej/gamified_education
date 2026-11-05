@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use App\Models\StudentPreference;
 use App\Models\StudentBadge;
@@ -116,6 +117,22 @@ class StudentProfileController extends Controller
         return redirect()
             ->route('student.profile')
             ->with('success', 'Profile updated successfully!');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => ['required', 'current_password:student'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user = Auth::guard('student')->user();
+        $user->password = Hash::make($validated['password']);
+        $user->save();
+
+        return redirect()
+            ->route('student.profile')
+            ->with('success', 'Password updated successfully.');
     }
 
 

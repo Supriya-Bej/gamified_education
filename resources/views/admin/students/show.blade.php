@@ -187,10 +187,15 @@
 
     <div class="card-body">
 
-        <h5 class="fw-bold mb-3">
-            <i class="bi bi-check-circle-fill text-success me-2"></i>
-            Completed Tasks
-        </h5>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h5 class="fw-bold mb-1">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    Completed Tasks
+                </h5>
+                <small class="text-muted">{{ $completedTasks->total() }} completed {{ $completedTasks->total() === 1 ? 'task' : 'tasks' }}</small>
+            </div>
+        </div>
 
         <div class="table-responsive">
 
@@ -254,6 +259,12 @@
 
         </div>
 
+        @if($completedTasks->hasPages())
+            <div class="px-4 pb-4">
+                {{ $completedTasks->links() }}
+            </div>
+        @endif
+
     </div>
 
 </div>
@@ -265,10 +276,13 @@
 
     <div class="card-body">
 
-        <h5 class="fw-bold mb-3">
-            <i class="bi bi-hourglass-split text-warning me-2"></i>
-            Pending Tasks
-        </h5>
+        <div class="mb-3">
+            <h5 class="fw-bold mb-1">
+                <i class="bi bi-hourglass-split text-warning me-2"></i>
+                Pending Tasks
+            </h5>
+            <small class="text-muted">{{ $pendingTasks->total() }} pending {{ $pendingTasks->total() === 1 ? 'task' : 'tasks' }}</small>
+        </div>
 
         <div class="table-responsive">
 
@@ -331,6 +345,12 @@
             </table>
 
         </div>
+
+        @if($pendingTasks->hasPages())
+            <div class="px-4 pb-4">
+                {{ $pendingTasks->links() }}
+            </div>
+        @endif
 
     </div>
 

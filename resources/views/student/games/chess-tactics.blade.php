@@ -267,6 +267,14 @@
                         resultMessage.textContent +=
                             ` New badge${data.badges.length === 1 ? '' : 's'} earned: ${badgeNames}.`;
                     }
+                    if (data.certificate?.url) {
+                        const certificateLink = document.createElement('a');
+                        certificateLink.href = data.certificate.url;
+                        certificateLink.textContent = ' View your interest certificate.';
+                        resultMessage.appendChild(certificateLink);
+                    } else if (data.certificate?.status === 'pending_review') {
+                        resultMessage.textContent += ' Your course certificate is waiting for admin approval.';
+                    }
                 } catch (error) {
                     resultMessage.textContent = error.message;
                     resultMessage.classList.add('error');
