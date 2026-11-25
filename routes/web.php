@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\CertificateManagementController;
 use App\Http\Controllers\Admin\GameContentManagementController;
 use App\Http\Controllers\Admin\GameEngineManagementController;
 use App\Http\Controllers\Admin\GameManagementController;
+use App\Http\Controllers\Admin\HomepageContentController;
+use App\Http\Controllers\Admin\AIManagementController;
 use App\Http\Controllers\Admin\LeaderboardManagementController;
 use App\Http\Controllers\Admin\LearningMaterialManagementController;
 use App\Http\Controllers\Admin\LearningTaskManagementController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\Admin\RewardManagementController;
 use App\Http\Controllers\Admin\StudentManagementController;
 use App\Http\Controllers\Admin\TopicManagementController;
 use App\Http\Controllers\AdminGameController;
+use App\Http\Controllers\HomepageController;
 use App\Http\Controllers\QuestController;
 use App\Http\Controllers\StudentBadgeController;
 use App\Http\Controllers\StudentCertificateController;
@@ -29,9 +32,7 @@ use App\Http\Controllers\UserController;
 use App\Models\Task;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('user.index');
-});
+Route::get('/', [HomepageController::class, 'show'])->name('home');
 
 // Registration
 Route::get('/student/register', [UserController::class, 'registration'])->name('user.register');
@@ -42,7 +43,10 @@ Route::get('/student/login', [UserController::class, 'login'])->name('login');
 Route::post('/student/login', [UserController::class, 'loginUser'])->name('login-user');
 
 // Dashboard
-Route::middleware('auth:student')->group(function () {
+Route::middleware([
+    'auth:student',
+    'cache.headers:private;no_store;no_cache;must_revalidate',
+])->group(function () {
 
     // Dashboard
     Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])
@@ -151,11 +155,26 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
 // ADMIN PANEL
 // ===============================
 
-Route::middleware(['admin'])->prefix('admin')->group(function () {
+Route::middleware([
+    'admin',
+    'cache.headers:private;no_store;no_cache;must_revalidate',
+])->prefix('admin')->group(function () {
 
     // Admin Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
         ->name('admin.dashboard');
+
+    Route::get('/homepage', [HomepageContentController::class, 'edit'])
+        ->name('admin.homepage.edit');
+
+    Route::put('/homepage', [HomepageContentController::class, 'update'])
+        ->name('admin.homepage.update');
+
+    Route::get('/ai/reports', [AIManagementController::class, 'reports'])
+        ->name('admin.ai.reports');
+
+    Route::put('/ai/verification-rules', [AIManagementController::class, 'updateRules'])
+        ->name('admin.ai.rules.update');
 
     // Dashboard er students page
     Route::get('/students', [StudentManagementController::class, 'index'])
@@ -164,6 +183,9 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
     // Dashboard er students er view button
     Route::get('/students/{student}', [StudentManagementController::class, 'show'])
         ->name('admin.students.show');
+
+    Route::get('/student-progress', [StudentManagementController::class, 'progressIndex'])
+        ->name('admin.student-progress.index');
 
     Route::get('/certificates', [CertificateManagementController::class, 'index'])
         ->name('admin.certificates.index');

@@ -142,13 +142,41 @@ class StudentThemeService
 
             // Science
             'science' => 'science',
-            'environment' => 'science',
 
-            // Creative
-            'drawing' => 'creative',
-            'painting' => 'creative',
-            'art' => 'creative',
-            'art & design' => 'creative',
+            // Environment
+            'environment' => 'environment',
+            'environmental education' => 'environment',
+            'eco' => 'environment',
+            'nature' => 'environment',
+            'plant' => 'environment',
+            'green' => 'environment',
+
+            // History
+            'history' => 'history',
+            'world history' => 'history',
+            'ancient history' => 'history',
+
+            // Geography
+            'geography' => 'geography',
+            'geo' => 'geography',
+
+            // Psychology
+            'psychology' => 'psychology',
+            'mental health' => 'psychology',
+
+            // Self Improvement
+            'self improvement' => 'self_improvement',
+            'self-improvement' => 'self_improvement',
+            'self_improvement' => 'self_improvement',
+            'habits' => 'self_improvement',
+
+            // Art
+            'art' => 'art',
+            'art & design' => 'art',
+            'painting' => 'art',
+            'drawing' => 'art',
+
+            // Creative (remaining)
             'design' => 'creative',
             'crafts' => 'creative',
             'craft' => 'creative',
@@ -161,7 +189,7 @@ class StudentThemeService
             'books' => 'reading',
 
             // Puzzles
-            'puzzles' => 'chess',
+            'puzzles' => 'general',
 
             // Business
             'business' => 'business',

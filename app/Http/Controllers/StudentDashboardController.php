@@ -602,8 +602,13 @@ class StudentDashboardController extends Controller
             ->whereIn('review_status', ['pending_review', 'approved'])
             ->whereDoesntHave('submissions', fn ($query) => $query->where('status', 'accepted'))
             ->exists();
+        $today = now()->toDateString();
+        $hasProjectChallengeToday = ProjectChallenge::query()
+            ->where('user_id', $user->id)
+            ->whereDate('created_at', $today)
+            ->exists();
         $projectChallengeGenerationFailed = $interests === [];
-        if (! $hasActiveProjectChallenge && $interests !== []) {
+        if (! $hasActiveProjectChallenge && ! $hasProjectChallengeToday && $interests !== []) {
             $previousChallenges = ProjectChallenge::query()
                 ->where('user_id', $user->id)
                 ->get(['title', 'project_brief'])
@@ -623,7 +628,7 @@ class StudentDashboardController extends Controller
             if ($projectChallengeData === null) {
                 $projectChallengeGenerationFailed = true;
             } else {
-                DB::transaction(function () use ($user, $projectChallengeData): void {
+                DB::transaction(function () use ($user, $projectChallengeData, $today): void {
                     UserRegister::query()
                         ->whereKey($user->id)
                         ->lockForUpdate()
@@ -634,8 +639,12 @@ class StudentDashboardController extends Controller
                         ->whereIn('review_status', ['pending_review', 'approved'])
                         ->whereDoesntHave('submissions', fn ($query) => $query->where('status', 'accepted'))
                         ->exists();
+                    $alreadyCreatedToday = ProjectChallenge::query()
+                        ->where('user_id', $user->id)
+                        ->whereDate('created_at', $today)
+                        ->exists();
 
-                    if (! $alreadyHasActiveChallenge) {
+                    if (! $alreadyHasActiveChallenge && ! $alreadyCreatedToday) {
                         $alreadyCreated = ProjectChallenge::query()
                             ->where('user_id', $user->id)
                             ->whereRaw('LOWER(title) = ?', [
@@ -650,11 +659,17 @@ class StudentDashboardController extends Controller
                         ProjectChallenge::create([
                             ...$projectChallengeData,
                             'user_id' => $user->id,
+                            'ai_verification_status' => 'passed',
                             'review_status' => 'pending_review',
                         ]);
                     }
                 });
             }
+
+            $hasProjectChallengeToday = ProjectChallenge::query()
+                ->where('user_id', $user->id)
+                ->whereDate('created_at', $today)
+                ->exists();
         }
 
         $projectChallenge = ProjectChallenge::query()
@@ -829,6 +844,7 @@ class StudentDashboardController extends Controller
                 'dailyMissionAction',
                 'pendingReviewCount',
                 'projectChallenge',
+                'hasProjectChallengeToday',
                 'projectChallengeGenerationFailed',
                 'recommendedTopics',
                 'learningStyle',

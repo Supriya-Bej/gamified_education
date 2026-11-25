@@ -299,6 +299,21 @@
 
     <script src="{{ asset('Asset/Bootstrap-5/js/bootstrap.bundle.min.js') }}">
     </script>
+    <script>
+        let revalidatingAdminLogin = false;
+        const revalidateAdminLogin = () => {
+            if (revalidatingAdminLogin) return;
+            revalidatingAdminLogin = true;
+            window.location.reload();
+        };
+
+        window.addEventListener('pageshow', event => {
+            if (event.persisted) {
+                revalidateAdminLogin();
+            }
+        });
+        window.addEventListener('popstate', revalidateAdminLogin);
+    </script>
 
 </body>
 

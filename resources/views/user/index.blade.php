@@ -1495,7 +1495,7 @@
 
                     <i class="bi bi-stars"></i>
 
-                    Eco<span>Quest</span>
+                    {{ $content['brand_name'] }}
 
                 </a>
 
@@ -1520,7 +1520,7 @@
                     <li class="nav-item">
 
                         <a class="nav-link" href="#home">
-                            Home
+                            {{ $content['nav_home'] }}
                         </a>
 
                     </li>
@@ -1529,7 +1529,7 @@
                     <li class="nav-item">
 
                         <a class="nav-link" href="#subjects">
-                            Learning
+                            {{ $content['nav_learning'] }}
                         </a>
 
                     </li>
@@ -1538,7 +1538,7 @@
                     <li class="nav-item">
 
                         <a class="nav-link" href="#how">
-                            How It Works
+                            {{ $content['nav_how'] }}
                         </a>
 
                     </li>
@@ -1547,7 +1547,7 @@
                     <li class="nav-item">
 
                         <a class="nav-link" href="#games">
-                            Games
+                            {{ $content['nav_games'] }}
                         </a>
 
                     </li>
@@ -1556,7 +1556,7 @@
                     <li class="nav-item">
 
                         <a class="nav-link login-nav" href="{{route('login')}}">
-                            Login
+                            {{ $content['nav_login'] }}
                         </a>
 
                     </li>
@@ -1565,7 +1565,7 @@
                     <li class="nav-item">
 
                         <a class="nav-link register-nav" href="{{route('user.register')}}">
-                            Get Started
+                            {{ $content['nav_register'] }}
                         </a>
 
                     </li>
@@ -1635,26 +1635,21 @@
 
                         <i class="bi bi-stars"></i>
 
-                        A smarter way to learn
+                        {{ $content['hero_badge'] }}
 
                     </div>
 
 
                     <h1 class="hero-title">
 
-                        Learning is better
-
-                        <span>when it feels like a game.</span>
+                        {{ $content['hero_title'] }}
 
                     </h1>
 
 
                     <p class="hero-description">
 
-                        EcoQuest is a personalized gamified learning platform
-                        where students can learn academic subjects, develop
-                        useful skills, solve challenges, play educational games,
-                        earn XP and grow every day.
+                        {{ $content['hero_description'] }}
 
                     </p>
 
@@ -1665,7 +1660,7 @@
                             href="{{route('user.register')}}"
                             class="btn-start">
 
-                            Start Learning
+                            {{ $content['hero_primary_button'] }}
 
                             <i class="bi bi-arrow-right ms-2"></i>
 
@@ -1678,7 +1673,7 @@
 
                             <i class="bi bi-play-circle me-2"></i>
 
-                            Explore EcoQuest
+                            {{ $content['hero_secondary_button'] }}
 
                         </a>
 
@@ -1687,49 +1682,15 @@
 
                     <div class="hero-stats">
 
-                        <div class="hero-stat">
-
-                            <strong>10+</strong>
-
-                            <span>Learning Areas</span>
-
-                        </div>
-
-
-                        <div class="stat-divider"></div>
-
-
-                        <div class="hero-stat">
-
-                            <strong>50+</strong>
-
-                            <span>Games & Quizzes</span>
-
-                        </div>
-
-
-                        <div class="stat-divider"></div>
-
-
-                        <div class="hero-stat">
-
-                            <strong>100+</strong>
-
-                            <span>Challenges</span>
-
-                        </div>
-
-
-                        <div class="stat-divider"></div>
-
-
-                        <div class="hero-stat">
-
-                            <strong>∞</strong>
-
-                            <span>Ways to Grow</span>
-
-                        </div>
+                        @foreach ($stats as $index => $stat)
+                            @if ($index > 0)
+                                <div class="stat-divider"></div>
+                            @endif
+                            <div class="hero-stat">
+                                <strong>{{ $stat['value'] }}</strong>
+                                <span>{{ $stat['label'] }}</span>
+                            </div>
+                        @endforeach
 
                     </div>
 
@@ -1839,23 +1800,21 @@
 
                     <i class="bi bi-grid"></i>
 
-                    Explore Learning
+                    {{ $content['subjects_badge'] }}
 
                 </div>
 
 
                 <h2 class="section-title">
 
-                    Learn more than just a <span>subject.</span>
+                    {{ $content['subjects_title'] }}
 
                 </h2>
 
 
                 <p class="section-description mx-auto">
 
-                    EcoQuest brings academic learning, practical knowledge,
-                    technology, awareness and skill development together
-                    in one interactive platform.
+                    {{ $content['subjects_description'] }}
 
                 </p>
 
@@ -1875,11 +1834,10 @@
                             🧮
                         </div>
 
-                        <h5>Mathematics</h5>
+                        <h5>{{ $content['subject_math_title'] }}</h5>
 
                         <p>
-                            Practice calculations, algebra, logic and
-                            problem-solving through interactive challenges.
+                            {{ $content['subject_math_description'] }}
                         </p>
 
                     </div>
@@ -1897,11 +1855,10 @@
                             🧪
                         </div>
 
-                        <h5>Science</h5>
+                        <h5>{{ $content['subject_science_title'] }}</h5>
 
                         <p>
-                            Explore scientific concepts through quizzes,
-                            experiments, games and visual learning.
+                            {{ $content['subject_science_description'] }}
                         </p>
 
                     </div>
@@ -1919,11 +1876,10 @@
                             💻
                         </div>
 
-                        <h5>Computer & Technology</h5>
+                        <h5>{{ $content['subject_computer_title'] }}</h5>
 
                         <p>
-                            Learn computer fundamentals, programming,
-                            internet concepts and digital awareness.
+                            {{ $content['subject_computer_description'] }}
                         </p>
 
                     </div>
@@ -1941,11 +1897,10 @@
                             📚
                         </div>
 
-                        <h5>English</h5>
+                        <h5>{{ $content['subject_english_title'] }}</h5>
 
                         <p>
-                            Improve vocabulary, grammar, communication
-                            and language skills through practice.
+                            {{ $content['subject_english_description'] }}
                         </p>
 
                     </div>
@@ -1963,11 +1918,10 @@
                             🌱
                         </div>
 
-                        <h5>Environment</h5>
+                        <h5>{{ $content['subject_environment_title'] }}</h5>
 
                         <p>
-                            Understand environmental issues and develop
-                            responsible real-world habits.
+                            {{ $content['subject_environment_description'] }}
                         </p>
 
                     </div>
@@ -1985,11 +1939,10 @@
                             🧠
                         </div>
 
-                        <h5>Logical Reasoning</h5>
+                        <h5>{{ $content['subject_reasoning_title'] }}</h5>
 
                         <p>
-                            Improve critical thinking, patterns,
-                            decision making and problem-solving.
+                            {{ $content['subject_reasoning_description'] }}
                         </p>
 
                     </div>
@@ -2007,11 +1960,10 @@
                             💡
                         </div>
 
-                        <h5>General Knowledge</h5>
+                        <h5>{{ $content['subject_knowledge_title'] }}</h5>
 
                         <p>
-                            Discover useful facts, current awareness
-                            and knowledge beyond textbooks.
+                            {{ $content['subject_knowledge_description'] }}
                         </p>
 
                     </div>
@@ -2029,11 +1981,10 @@
                             🤝
                         </div>
 
-                        <h5>Life Skills</h5>
+                        <h5>{{ $content['subject_life_title'] }}</h5>
 
                         <p>
-                            Develop communication, time management,
-                            decision making and practical skills.
+                            {{ $content['subject_life_description'] }}
                         </p>
 
                     </div>
@@ -2051,11 +2002,10 @@
                             ❤️
                         </div>
 
-                        <h5>Health & Safety</h5>
+                        <h5>{{ $content['subject_health_title'] }}</h5>
 
                         <p>
-                            Learn important knowledge about personal
-                            health, safety and everyday situations.
+                            {{ $content['subject_health_description'] }}
                         </p>
 
                     </div>
@@ -2085,22 +2035,21 @@
 
                     <i class="bi bi-lightning-charge"></i>
 
-                    Simple Learning Journey
+                    {{ $content['journey_badge'] }}
 
                 </div>
 
 
                 <h2 class="section-title">
 
-                    Learn. Play. <span>Grow.</span>
+                    {{ $content['journey_title'] }}
 
                 </h2>
 
 
                 <p class="section-description mx-auto">
 
-                    EcoQuest turns learning into a journey where every
-                    activity helps you move one step forward.
+                    {{ $content['journey_description'] }}
 
                 </p>
 
@@ -2118,11 +2067,10 @@
                             01
                         </div>
 
-                        <h5>Discover</h5>
+                        <h5>{{ $content['step_1_title'] }}</h5>
 
                         <p>
-                            Tell EcoQuest about your class, interests
-                            and learning goals.
+                            {{ $content['step_1_description'] }}
                         </p>
 
                         <div class="process-line"></div>
@@ -2140,11 +2088,10 @@
                             02
                         </div>
 
-                        <h5>Learn</h5>
+                        <h5>{{ $content['step_2_title'] }}</h5>
 
                         <p>
-                            Explore personalized lessons and
-                            educational content.
+                            {{ $content['step_2_description'] }}
                         </p>
 
                         <div class="process-line"></div>
@@ -2162,11 +2109,10 @@
                             03
                         </div>
 
-                        <h5>Play & Practice</h5>
+                        <h5>{{ $content['step_3_title'] }}</h5>
 
                         <p>
-                            Solve quizzes, play games and complete
-                            interactive challenges.
+                            {{ $content['step_3_description'] }}
                         </p>
 
                         <div class="process-line"></div>
@@ -2184,11 +2130,10 @@
                             04
                         </div>
 
-                        <h5>Earn & Grow</h5>
+                        <h5>{{ $content['step_4_title'] }}</h5>
 
                         <p>
-                            Earn XP, unlock badges and track
-                            your learning progress.
+                            {{ $content['step_4_description'] }}
                         </p>
 
                     </div>
@@ -2222,23 +2167,21 @@
 
                             <i class="bi bi-controller me-1"></i>
 
-                            SAMPLE GAME
+                            {{ $content['game_preview_label'] }}
 
                         </div>
 
 
                         <h3 class="game-title">
 
-                            Turn your knowledge into XP.
+                            {{ $content['game_title'] }}
 
                         </h3>
 
 
                         <p class="game-subtitle">
 
-                            From mathematics to computer science,
-                            environmental awareness to logical reasoning,
-                            every topic can become an interactive challenge.
+                            {{ $content['game_description'] }}
 
                         </p>
 
@@ -2248,7 +2191,7 @@
                             <div class="game-option">
 
                                 <span>
-                                    🧮 Solve the equation
+                                    🧮 {{ $content['game_prompt_1'] }}
                                 </span>
 
                                 <i class="bi bi-check-circle"></i>
@@ -2259,7 +2202,7 @@
                             <div class="game-option">
 
                                 <span>
-                                    💻 Identify the programming concept
+                                    💻 {{ $content['game_prompt_2'] }}
                                 </span>
 
                                 <i class="bi bi-check-circle"></i>
@@ -2270,7 +2213,7 @@
                             <div class="game-option">
 
                                 <span>
-                                    🧠 Find the missing pattern
+                                    🧠 {{ $content['game_prompt_3'] }}
                                 </span>
 
                                 <i class="bi bi-check-circle"></i>
@@ -2281,7 +2224,7 @@
                             <div class="game-option">
 
                                 <span>
-                                    🌱 Complete the eco challenge
+                                    🌱 {{ $content['game_prompt_4'] }}
                                 </span>
 
                                 <i class="bi bi-check-circle"></i>
@@ -2301,24 +2244,21 @@
 
                         <i class="bi bi-controller"></i>
 
-                        Gamified Learning
+                        {{ $content['game_badge'] }}
 
                     </div>
 
 
                     <h2 class="section-title">
 
-                        Studying doesn't have to feel like <span>studying.</span>
+                        {{ $content['engagement_title'] }}
 
                     </h2>
 
 
                     <p class="section-description">
 
-                        EcoQuest uses games, quizzes, missions and rewards
-                        to make learning more engaging. Instead of simply
-                        reading information, students actively interact
-                        with what they are learning.
+                        {{ $content['engagement_description'] }}
 
                     </p>
 
@@ -2330,11 +2270,11 @@
                             <div class="p-3 rounded-3 bg-light">
 
                                 <strong class="d-block">
-                                    🎮 Mini Games
+                                    🎮 {{ $content['engagement_card_1_title'] }}
                                 </strong>
 
                                 <small class="text-muted">
-                                    Learn through play
+                                    {{ $content['engagement_card_1_description'] }}
                                 </small>
 
                             </div>
@@ -2347,11 +2287,11 @@
                             <div class="p-3 rounded-3 bg-light">
 
                                 <strong class="d-block">
-                                    🧩 Challenges
+                                    🧩 {{ $content['engagement_card_2_title'] }}
                                 </strong>
 
                                 <small class="text-muted">
-                                    Practice your skills
+                                    {{ $content['engagement_card_2_description'] }}
                                 </small>
 
                             </div>
@@ -2364,11 +2304,11 @@
                             <div class="p-3 rounded-3 bg-light">
 
                                 <strong class="d-block">
-                                    🏆 Leaderboard
+                                    🏆 {{ $content['engagement_card_3_title'] }}
                                 </strong>
 
                                 <small class="text-muted">
-                                    Compete & improve
+                                    {{ $content['engagement_card_3_description'] }}
                                 </small>
 
                             </div>
@@ -2381,11 +2321,11 @@
                             <div class="p-3 rounded-3 bg-light">
 
                                 <strong class="d-block">
-                                    ⭐ XP & Badges
+                                    ⭐ {{ $content['engagement_card_4_title'] }}
                                 </strong>
 
                                 <small class="text-muted">
-                                    Get rewarded
+                                    {{ $content['engagement_card_4_description'] }}
                                 </small>
 
                             </div>
@@ -2421,24 +2361,21 @@
 
                         <i class="bi bi-person-hearts"></i>
 
-                        Personalized For You
+                        {{ $content['personal_badge'] }}
 
                     </div>
 
 
                     <h2 class="section-title">
 
-                        Your learning journey should be <span>your own.</span>
+                        {{ $content['personal_title'] }}
 
                     </h2>
 
 
                     <p class="section-description">
 
-                        Everyone learns differently. During registration,
-                        EcoQuest learns about your education level, interests,
-                        subjects and goals. Your dashboard can then highlight
-                        relevant topics, games and challenges.
+                        {{ $content['personal_description'] }}
 
                     </p>
 
@@ -2454,12 +2391,11 @@
                             <div>
 
                                 <strong>
-                                    Personalized Recommendations
+                                    {{ $content['personal_recommendations_title'] }}
                                 </strong>
 
                                 <p class="text-muted small mb-0 mt-1">
-                                    Discover content selected according
-                                    to your learning preferences.
+                                    {{ $content['personal_recommendations_description'] }}
                                 </p>
 
                             </div>
@@ -2476,12 +2412,11 @@
                             <div>
 
                                 <strong>
-                                    Track Your Progress
+                                    {{ $content['personal_progress_title'] }}
                                 </strong>
 
                                 <p class="text-muted small mb-0 mt-1">
-                                    See where you are improving and
-                                    which areas need more practice.
+                                    {{ $content['personal_progress_description'] }}
                                 </p>
 
                             </div>
@@ -2498,12 +2433,11 @@
                             <div>
 
                                 <strong>
-                                    Keep Improving
+                                    {{ $content['personal_improve_title'] }}
                                 </strong>
 
                                 <p class="text-muted small mb-0 mt-1">
-                                    Your learning journey grows with
-                                    your performance.
+                                    {{ $content['personal_improve_description'] }}
                                 </p>
 
                             </div>
@@ -2531,11 +2465,11 @@
                             <div>
 
                                 <h6>
-                                    Your Personalized Dashboard
+                                    {{ $content['dashboard_title'] }}
                                 </h6>
 
                                 <small>
-                                    Recommended based on your interests
+                                    {{ $content['dashboard_subtitle'] }}
                                 </small>
 
                             </div>
@@ -2552,17 +2486,17 @@
                             <div>
 
                                 <strong>
-                                    Programming Fundamentals
+                                    {{ $content['dashboard_item_1_title'] }}
                                 </strong>
 
                                 <small>
-                                    Recommended for you
+                                    {{ $content['dashboard_item_1_description'] }}
                                 </small>
 
                             </div>
 
                             <span class="ms-auto text-success">
-                                +50 XP
+                                {{ $content['dashboard_item_1_xp'] }}
                             </span>
 
                         </div>
@@ -2577,17 +2511,17 @@
                             <div>
 
                                 <strong>
-                                    Logical Reasoning Challenge
+                                    {{ $content['dashboard_item_2_title'] }}
                                 </strong>
 
                                 <small>
-                                    Improve your problem solving
+                                    {{ $content['dashboard_item_2_description'] }}
                                 </small>
 
                             </div>
 
                             <span class="ms-auto text-success">
-                                +75 XP
+                                {{ $content['dashboard_item_2_xp'] }}
                             </span>
 
                         </div>
@@ -2602,17 +2536,17 @@
                             <div>
 
                                 <strong>
-                                    Mathematics Quiz
+                                    {{ $content['dashboard_item_3_title'] }}
                                 </strong>
 
                                 <small>
-                                    Practice today's topic
+                                    {{ $content['dashboard_item_3_description'] }}
                                 </small>
 
                             </div>
 
                             <span class="ms-auto text-success">
-                                +50 XP
+                                {{ $content['dashboard_item_3_xp'] }}
                             </span>
 
                         </div>
@@ -2627,17 +2561,17 @@
                             <div>
 
                                 <strong>
-                                    Environmental Challenge
+                                    {{ $content['dashboard_item_4_title'] }}
                                 </strong>
 
                                 <small>
-                                    Complete today's mission
+                                    {{ $content['dashboard_item_4_description'] }}
                                 </small>
 
                             </div>
 
                             <span class="ms-auto text-success">
-                                +100 XP
+                                {{ $content['dashboard_item_4_xp'] }}
                             </span>
 
                         </div>
@@ -2648,11 +2582,11 @@
                             <div class="d-flex justify-content-between">
 
                                 <small class="text-muted">
-                                    Overall Learning Progress
+                                    {{ $content['dashboard_progress_label'] }}
                                 </small>
 
                                 <small class="fw-bold">
-                                    68%
+                                    {{ $content['dashboard_progress_value'] }}
                                 </small>
 
                             </div>
@@ -2697,22 +2631,21 @@
 
                     <i class="bi bi-trophy"></i>
 
-                    Gamification
+                    {{ $content['rewards_badge'] }}
 
                 </div>
 
 
                 <h2 class="section-title">
 
-                    Every achievement deserves a <span>reward.</span>
+                    {{ $content['rewards_title'] }}
 
                 </h2>
 
 
                 <p class="section-description mx-auto">
 
-                    Learn more, complete more and unlock achievements
-                    as you progress through your journey.
+                    {{ $content['rewards_description'] }}
 
                 </p>
 
@@ -2730,10 +2663,10 @@
                             ⭐
                         </div>
 
-                        <h5>Earn XP</h5>
+                        <h5>{{ $content['reward_xp_title'] }}</h5>
 
                         <p>
-                            Get points for learning and completing activities.
+                            {{ $content['reward_xp_description'] }}
                         </p>
 
                     </div>
@@ -2749,10 +2682,10 @@
                             🏅
                         </div>
 
-                        <h5>Unlock Badges</h5>
+                        <h5>{{ $content['reward_badges_title'] }}</h5>
 
                         <p>
-                            Show what you have achieved.
+                            {{ $content['reward_badges_description'] }}
                         </p>
 
                     </div>
@@ -2768,10 +2701,10 @@
                             🏆
                         </div>
 
-                        <h5>Climb Leaderboards</h5>
+                        <h5>{{ $content['reward_leaderboard_title'] }}</h5>
 
                         <p>
-                            Challenge yourself and compete with others.
+                            {{ $content['reward_leaderboard_description'] }}
                         </p>
 
                     </div>
@@ -2787,10 +2720,10 @@
                             📜
                         </div>
 
-                        <h5>Get Certificates</h5>
+                        <h5>{{ $content['reward_certificate_title'] }}</h5>
 
                         <p>
-                            Receive certificates for important milestones.
+                            {{ $content['reward_certificate_description'] }}
                         </p>
 
                     </div>
@@ -2815,15 +2748,14 @@
 
             <h2 class="cta-title">
 
-                Ready to make learning more exciting?
+                {{ $content['cta_title'] }}
 
             </h2>
 
 
             <p class="cta-description">
 
-                Create your EcoQuest account, tell us what you want
-                to learn and start your personalized learning journey.
+                {{ $content['cta_description'] }}
 
             </p>
 
@@ -2832,7 +2764,7 @@
                 href="{{route('user.register')}}"
                 class="btn-start">
 
-                Create Your Account
+                {{ $content['cta_button'] }}
 
                 <i class="bi bi-arrow-right ms-2"></i>
 
@@ -2861,16 +2793,14 @@
 
                         <i class="bi bi-stars text-success"></i>
 
-                        Eco<span>Quest</span>
+                        {{ $content['brand_name'] }}
 
                     </div>
 
 
                     <p class="footer-description">
 
-                        A gamified personalized learning platform
-                        designed to make education interactive,
-                        practical and enjoyable.
+                        {{ $content['footer_description'] }}
 
                     </p>
 
@@ -2880,26 +2810,26 @@
                 <div class="col-6 col-lg-2">
 
                     <h6>
-                        Platform
+                        {{ $content['footer_platform_title'] }}
                     </h6>
 
                     <ul>
 
                         <li>
                             <a href="#subjects">
-                                Learning
+                                {{ $content['footer_learning_link'] }}
                             </a>
                         </li>
 
                         <li>
                             <a href="#games">
-                                Games
+                                {{ $content['footer_games_link'] }}
                             </a>
                         </li>
 
                         <li>
                             <a href="#how">
-                                How It Works
+                                {{ $content['footer_how_link'] }}
                             </a>
                         </li>
 
@@ -2911,20 +2841,20 @@
                 <div class="col-6 col-lg-2">
 
                     <h6>
-                        Account
+                        {{ $content['footer_account_title'] }}
                     </h6>
 
                     <ul>
 
                         <li>
                             <a href="{{route('login')}}">
-                                Login
+                                {{ $content['footer_login_link'] }}
                             </a>
                         </li>
 
                         <li>
                             <a href="{{route('user.register')}}">
-                                Register
+                                {{ $content['footer_register_link'] }}
                             </a>
                         </li>
 
@@ -2936,32 +2866,32 @@
                 <div class="col-6 col-lg-3">
 
                     <h6>
-                        Learning
+                        {{ $content['footer_learning_title'] }}
                     </h6>
 
                     <ul>
 
                         <li>
                             <a href="#">
-                                Mathematics
+                                {{ $content['footer_math_link'] }}
                             </a>
                         </li>
 
                         <li>
                             <a href="#">
-                                Science
+                                {{ $content['footer_science_link'] }}
                             </a>
                         </li>
 
                         <li>
                             <a href="#">
-                                Computer
+                                {{ $content['footer_computer_link'] }}
                             </a>
                         </li>
 
                         <li>
                             <a href="#">
-                                Life Skills
+                                {{ $content['footer_life_link'] }}
                             </a>
                         </li>
 
@@ -2977,11 +2907,11 @@
                 <div class="d-flex justify-content-between flex-wrap gap-2">
 
                     <span class="text-center">
-                        © 2026 EcoQuest. All rights reserved.
+                        {{ $content['footer_copyright'] }}
                     </span>
 
                     <span>
-                        Learn. Play. Practice. Grow.
+                        {{ $content['footer_slogan'] }}
                     </span>
 
                 </div>

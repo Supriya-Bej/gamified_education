@@ -11,6 +11,7 @@ class ProjectChallengeSubmission extends Model
         'project_challenge_id',
         'user_id',
         'project_url',
+        'evidence_image',
         'reflection',
         'status',
         'review_note',

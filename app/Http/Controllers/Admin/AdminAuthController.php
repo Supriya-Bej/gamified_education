@@ -10,11 +10,23 @@ class AdminAuthController extends Controller
 {
     public function showLogin()
     {
-        return view('admin.auth.login');
+        if ($redirect = $this->redirectAuthenticatedAdmin()) {
+            return $redirect;
+        }
+
+        return response()
+            ->view('admin.auth.login')
+            ->header('Cache-Control', 'private, no-store, no-cache, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
     public function login(Request $request)
     {
+        if ($redirect = $this->redirectAuthenticatedAdmin()) {
+            return $redirect;
+        }
+
         $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required',
@@ -38,6 +50,23 @@ class AdminAuthController extends Controller
                 'email' => 'Invalid admin email or password.',
             ])
             ->withInput($request->only('email'));
+    }
+
+    private function redirectAuthenticatedAdmin()
+    {
+        $admin = Auth::guard('admin')->user();
+
+        if (!$admin) {
+            return null;
+        }
+
+        if ($admin->role !== 'admin') {
+            Auth::guard('admin')->logout();
+
+            return null;
+        }
+
+        return redirect()->route('admin.dashboard');
     }
 
     // public function logout(Request $request)

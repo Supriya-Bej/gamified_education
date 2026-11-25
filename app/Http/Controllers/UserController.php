@@ -18,12 +18,20 @@ class UserController extends Controller
     //Registration
     public function registration()
     {
-        return view('user.register');
+        if ($redirect = $this->redirectAuthenticatedStudent()) {
+            return $redirect;
+        }
+
+        return $this->guestAuthView('user.register');
     }
 
     // Store Registration Data
     public function registerUser(Request $request)
     {
+        if ($redirect = $this->redirectAuthenticatedStudent()) {
+            return $redirect;
+        }
+
         $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:user_registers,email',
@@ -77,11 +85,19 @@ class UserController extends Controller
     // Login
     public function login()
     {
-        return view('user.login');
+        if ($redirect = $this->redirectAuthenticatedStudent()) {
+            return $redirect;
+        }
+
+        return $this->guestAuthView('user.login');
     }
 
     public function loginUser(Request $request)
     {
+        if ($redirect = $this->redirectAuthenticatedStudent()) {
+            return $redirect;
+        }
+
         $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required',
@@ -97,6 +113,22 @@ class UserController extends Controller
         return back()->withErrors([
             'email' => 'Invalid email or password.',
         ])->onlyInput('email');
+    }
+
+    private function redirectAuthenticatedStudent()
+    {
+        return Auth::guard('student')->check()
+            ? redirect()->route('student.dashboard')
+            : null;
+    }
+
+    private function guestAuthView(string $view)
+    {
+        return response()
+            ->view($view)
+            ->header('Cache-Control', 'private, no-store, no-cache, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
     // Logout

@@ -39,7 +39,7 @@
         .detail { flex: 1; min-width: 0; }
         .detail-value { display: flex; min-height: 48px; align-items: flex-end; justify-content: center; padding-bottom: 8px; border-bottom: 1px solid #aeb9b2; }
         .detail-label { display: block; padding-top: 8px; }
-        .signature { color: #173d32; font: italic 14px/1.1 Arial, sans-serif; }
+        .signature { color: #173d32; font: 400 14px/1.1 "Segoe Script", "Brush Script MT", cursive; }
         .actions { margin: 24px auto; text-align: center; font: 15px Arial, sans-serif; }
         .actions a, .actions button { margin: 0 6px; border: 0; border-radius: 6px; padding: 10px 16px; background: #246b55; color: white; text-decoration: none; cursor: pointer; }
         @media print {

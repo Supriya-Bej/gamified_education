@@ -18,6 +18,17 @@ class StudentManagementController extends Controller
         return view('admin.students.index', compact('students'));
     }
 
+    public function progressIndex()
+    {
+        $students = UserRegister::query()
+            ->where('role', 'student')
+            ->with('progress')
+            ->orderBy('name')
+            ->paginate(15);
+
+        return view('admin.student-progress.index', compact('students'));
+    }
+
     public function show(UserRegister $student)
     {
         if ($student->role !== 'student') {

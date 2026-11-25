@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class StudentProjectChallengeController extends Controller
@@ -32,11 +33,12 @@ class StudentProjectChallengeController extends Controller
         abort_if($projectChallenge->xp_awarded_at !== null, 409);
 
         $validated = $request->validate([
-            'project_url' => ['required', 'url', 'max:2048'],
+            'project_url' => ['required_without:evidence_image', 'nullable', 'url', 'max:2048'],
+            'evidence_image' => ['required_without:project_url', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'reflection' => ['required', 'string', 'min:30', 'max:3000'],
         ]);
 
-        DB::transaction(function () use ($projectChallenge, $student, $validated): void {
+        DB::transaction(function () use ($projectChallenge, $student, $request, $validated): void {
             $challenge = ProjectChallenge::query()
                 ->whereKey($projectChallenge->id)
                 ->lockForUpdate()
@@ -48,10 +50,19 @@ class StudentProjectChallengeController extends Controller
             abort_if($latestSubmission?->status === 'submitted', 409);
             abort_if($latestSubmission?->status === 'accepted', 409);
 
+            $imagePath = null;
+            if ($request->hasFile('evidence_image')) {
+                $imagePath = $request->file('evidence_image')->store('project-submissions', 'public');
+                if ($imagePath === false) {
+                    throw new \RuntimeException('Unable to store project evidence image.');
+                }
+            }
+
             ProjectChallengeSubmission::create([
                 'project_challenge_id' => $challenge->id,
                 'user_id' => $student->id,
-                'project_url' => $validated['project_url'],
+                'project_url' => $validated['project_url'] ?? null,
+                'evidence_image' => $imagePath,
                 'reflection' => trim($validated['reflection']),
                 'status' => 'submitted',
             ]);

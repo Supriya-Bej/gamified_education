@@ -18,6 +18,7 @@ class ProjectChallenge extends Model
         'deliverables',
         'difficulty',
         'xp',
+        'ai_verification_status',
         'review_status',
         'review_note',
         'reviewed_by',

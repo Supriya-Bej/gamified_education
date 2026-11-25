@@ -76,6 +76,49 @@ class StudentProfilePasswordTest extends TestCase
         $this->assertSame($originalHash, $student->fresh()->password);
     }
 
+    public function test_authenticated_student_is_redirected_from_login_and_registration_routes(): void
+    {
+        $student = $this->student();
+
+        $this->actingAs($student, 'student')
+            ->get(route('login'))
+            ->assertRedirect(route('student.dashboard'));
+
+        $this->get(route('user.register'))
+            ->assertRedirect(route('student.dashboard'));
+
+        $this->post(route('login-user'), [])
+            ->assertRedirect(route('student.dashboard'));
+
+        $this->post(route('register-user'), [])
+            ->assertRedirect(route('student.dashboard'));
+    }
+
+    public function test_guest_auth_pages_are_not_cached_by_the_browser(): void
+    {
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertHeader('Cache-Control', 'must-revalidate, no-cache, no-store, private')
+            ->assertHeader('Pragma', 'no-cache')
+            ->assertHeader('Expires', '0');
+
+        $this->get(route('user.register'))
+            ->assertOk()
+            ->assertHeader('Cache-Control', 'must-revalidate, no-cache, no-store, private');
+    }
+
+    public function test_logged_out_student_cannot_reopen_a_protected_page(): void
+    {
+        $student = $this->student();
+
+        $this->actingAs($student, 'student')
+            ->post(route('logout-user'))
+            ->assertRedirect(route('login'));
+
+        $this->get(route('student.profile'))
+            ->assertRedirect(route('login'));
+    }
+
     private function student(): UserRegister
     {
         return UserRegister::create([

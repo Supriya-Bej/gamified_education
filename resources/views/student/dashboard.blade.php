@@ -373,6 +373,7 @@
         }
 
 
+
         body {
 
             margin: 0;
@@ -395,7 +396,62 @@
 
             overflow-x: hidden;
 
+            position: relative;
+
         }
+
+        /* ── Per-theme watermark patterns (shared with app.blade.php) ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        body.student-theme-chess::before {
+            background-image:
+                linear-gradient(45deg, rgba(255,255,255,0.025) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(255,255,255,0.025) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.025) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.025) 75%);
+            background-size: 56px 56px;
+            background-position: 0 0, 0 28px, 28px -28px, -28px 0px;
+        }
+
+        body.student-theme-music::before,
+        body.theme-music::before {
+            background-image:
+                repeating-linear-gradient(
+                    to bottom,
+                    transparent 0,
+                    transparent 16px,
+                    rgba(142,68,173,0.10) 17px,
+                    transparent 18px
+                ),
+                repeating-linear-gradient(
+                    to bottom,
+                    transparent 0,
+                    transparent 85px,
+                    rgba(142,68,173,0.055) 86px,
+                    transparent 87px
+                );
+        }
+
+        body.student-theme-technology::before { background-image: radial-gradient(circle, rgba(0,229,255,0.18) 1px, transparent 1px), linear-gradient(rgba(0,229,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.04) 1px, transparent 1px); background-size: 32px 32px, 32px 32px, 32px 32px; }
+        body.student-theme-science::before { background-image: radial-gradient(circle at 50% 50%, rgba(52,152,219,0.09) 0, transparent 60%), radial-gradient(circle, rgba(22,160,133,0.09) 1px, transparent 1px), linear-gradient(rgba(52,152,219,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(52,152,219,0.045) 1px, transparent 1px); background-size: 100% 100%, 28px 28px, 28px 28px, 28px 28px; }
+        body.student-theme-mathematics::before { background-image: linear-gradient(rgba(57,73,171,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(57,73,171,0.10) 1px, transparent 1px), linear-gradient(rgba(57,73,171,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(57,73,171,0.04) 1px, transparent 1px); background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px; }
+        body.student-theme-sports::before { background-image: repeating-linear-gradient(-55deg, transparent, transparent 28px, rgba(255,87,34,0.07) 28px, rgba(255,87,34,0.07) 29px), repeating-linear-gradient(35deg, transparent, transparent 50px, rgba(30,136,229,0.05) 50px, rgba(30,136,229,0.05) 51px); }
+        body.student-theme-creative::before, body.theme-creative::before,
+        body.student-theme-art::before { background-image: repeating-linear-gradient(-45deg, transparent, transparent 22px, rgba(232,67,147,0.06) 22px, rgba(232,67,147,0.06) 23px), radial-gradient(circle at 20% 30%, rgba(255,196,74,0.12), transparent 35%), radial-gradient(circle at 80% 70%, rgba(108,92,231,0.10), transparent 30%), radial-gradient(circle at 60% 15%, rgba(232,67,147,0.09), transparent 22%); }
+        body.student-theme-reading::before { background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, rgba(161,136,127,0.13) 28px, transparent 29px), linear-gradient(90deg, rgba(121,85,72,0.07) 1px, transparent 1px); background-size: 100% 100%, 60px 100%; }
+        body.student-theme-gaming::before { background-image: linear-gradient(45deg, rgba(224,64,251,0.08) 25%, transparent 25%), linear-gradient(-45deg, rgba(124,77,255,0.08) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(224,64,251,0.06) 75%), linear-gradient(-45deg, transparent 75%, rgba(124,77,255,0.06) 75%), radial-gradient(circle, rgba(224,64,251,0.12) 1px, transparent 1px); background-size: 36px 36px, 36px 36px, 36px 36px, 36px 36px, 36px 36px; background-position: 0 0, 0 18px, 18px -18px, -18px 0px, 0 0; }
+        body.student-theme-environment::before { background-image: radial-gradient(ellipse at 15% 50%, rgba(76,175,80,0.11) 0, transparent 45%), radial-gradient(ellipse at 85% 20%, rgba(27,94,32,0.09) 0, transparent 40%), radial-gradient(ellipse at 55% 85%, rgba(139,195,74,0.10) 0, transparent 38%), radial-gradient(circle, rgba(76,175,80,0.07) 1px, transparent 1px); background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px; }
+        body.student-theme-history::before { background-image: repeating-linear-gradient(0deg, transparent, transparent 34px, rgba(109,76,65,0.08) 35px, transparent 36px), repeating-linear-gradient(90deg, transparent, transparent 54px, rgba(109,76,65,0.055) 55px, transparent 56px), repeating-linear-gradient(-30deg, transparent, transparent 60px, rgba(161,136,127,0.04) 61px, transparent 62px); }
+        body.student-theme-geography::before { background-image: linear-gradient(rgba(21,101,192,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(21,101,192,0.09) 1px, transparent 1px), radial-gradient(circle at 50% 50%, rgba(41,182,246,0.06) 0, transparent 70%); background-size: 60px 60px, 60px 60px, 100% 100%; }
+        body.student-theme-psychology::before { background-image: radial-gradient(ellipse at 30% 40%, rgba(106,27,154,0.10) 0, transparent 55%), radial-gradient(ellipse at 70% 65%, rgba(171,71,188,0.09) 0, transparent 48%), radial-gradient(circle, rgba(171,71,188,0.07) 1px, transparent 1px), radial-gradient(circle, rgba(206,147,216,0.05) 1px, transparent 1px); background-size: 100% 100%, 100% 100%, 44px 44px, 22px 22px; background-position: 0 0, 0 0, 0 0, 11px 11px; }
+        body.student-theme-self_improvement::before { background-image: repeating-linear-gradient(60deg, transparent, transparent 24px, rgba(230,81,0,0.07) 24px, rgba(230,81,0,0.07) 25px), repeating-linear-gradient(-30deg, transparent, transparent 48px, rgba(255,138,101,0.05) 48px, rgba(255,138,101,0.05) 49px); }
+        body.student-theme-general::before { background-image: radial-gradient(circle, rgba(108,92,231,0.10) 1px, transparent 1px), radial-gradient(circle at 30% 60%, rgba(0,206,201,0.08) 0, transparent 50%), radial-gradient(circle at 75% 25%, rgba(108,92,231,0.07) 0, transparent 45%); background-size: 36px 36px, 100% 100%, 100% 100%; }
 
         body.theme-creative {
             background:
@@ -409,13 +465,6 @@
             background:
                 radial-gradient(circle at 88% 12%, rgba(142, 68, 173, .16), transparent 24%),
                 radial-gradient(circle at 12% 82%, rgba(214, 162, 232, .2), transparent 24%),
-                repeating-linear-gradient(
-                    to bottom,
-                    transparent 0,
-                    transparent 54px,
-                    rgba(142, 68, 173, .055) 55px,
-                    transparent 56px
-                ),
                 linear-gradient(135deg, #faf9ff, #f8f2fc 55%, #fffafd);
         }
 
@@ -876,18 +925,9 @@
 
         .logout-link {
 
-            color: #ef4444 !important;
-
             cursor: pointer;
 
             text-align: left;
-
-        }
-
-
-        .logout-link:hover {
-
-            background: rgba(239,68,68,.08);
 
         }
 
@@ -1907,7 +1947,7 @@
 </head>
 
 
-<body class="theme-{{ $themeKey }}">
+<body class="theme-{{ $themeKey }} student-theme student-theme-{{ $themeKey }}">
 
     <button
         type="button"
@@ -2981,11 +3021,11 @@
         </div>
 
 
-        <!-- <div class="section-header" id="project-challenges">
+        <div class="section-header" id="project-challenges">
             <div>
                 <div class="section-title">Project Challenges</div>
                 <div class="section-subtitle">
-                    Real-world projects created for your interests and reviewed by an admin
+                    One real-world project challenge each day, based on your interests and reviewed by an admin
                 </div>
             </div>
         </div> 
@@ -3005,6 +3045,10 @@
             <div class="glass-card mb-5">
                 <div class="quest-top mb-3">
                     <span class="quest-category">{{ $projectChallenge->interest }} project</span>
+                    <span class="badge text-bg-success">
+                        <i class="bi bi-shield-check me-1"></i>
+                        Automatic challenge checks: {{ ucfirst($projectChallenge->ai_verification_status ?? 'passed') }}
+                    </span>
                     <span class="quest-xp">
                         <i class="bi bi-lightning-charge-fill"></i>
                         +{{ $projectChallenge->xp }} XP after approval
@@ -3052,7 +3096,7 @@
                 </div>
                 @if ($projectChallenge->review_status === 'pending_review')
                     <p class="small mt-3 mb-0" style="color:var(--text-muted);">
-                        Your project brief is being checked before it is published. This is separate from your game quests.
+                        Automatic checks passed. An admin is reviewing the challenge before it is published. The uploaded activity evidence will be reviewed by an admin too.
                     </p>
                 @elseif ($latestProjectSubmission?->status === 'revision_requested')
                     <p class="small mt-3 mb-0" style="color:var(--text-muted);">
@@ -3060,7 +3104,7 @@
                     </p>
                 @elseif ($latestProjectSubmission?->status === 'submitted')
                     <p class="small mt-3 mb-0" style="color:var(--text-muted);">
-                        Your project link is waiting for an admin to review it.
+                        Your activity evidence is waiting for an admin to review it.
                     </p>
                 @endif
             </div>
@@ -3072,6 +3116,13 @@
                     We could not generate a project challenge right now. Please try again later.
                 </p>
             </div>
+        @elseif ($hasProjectChallengeToday)
+            <div class="glass-card text-center py-4 mb-5">
+                <h4>Your project challenge for today has been delivered</h4>
+                <p class="mb-0" style="color:var(--text-muted);">
+                    Come back tomorrow for your next interest-based challenge.
+                </p>
+            </div>
         @else
             <div class="glass-card text-center py-4 mb-5">
                 <h4>Your project challenge is being prepared</h4>
@@ -3080,7 +3131,6 @@
                 </p>
             </div>
         @endif
--->
 
         {{-- =================================================
              AI TOPICS

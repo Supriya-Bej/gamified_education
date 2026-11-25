@@ -4,12 +4,17 @@ namespace App\Services;
 
 use App\Models\Game;
 use App\Models\GameEngine;
+use App\Services\AIVerificationRules;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class GeminiService
 {
+    public function __construct(private AIVerificationRules $verificationRules)
+    {
+    }
+
     /**
      * Supported Gemini models in priority order.
      */
@@ -661,6 +666,9 @@ Return ONLY valid JSON.
         |--------------------------------------------------------------------------
         */
 
+        // ── Interest-specific task context hints ──────────────────────────────
+        $interestHints = $this->buildInterestTaskHints($interests, $experienceLevel);
+
         $prompt = <<<PROMPT
 You are an AI learning task generator for a gamified education platform.
 
@@ -674,6 +682,9 @@ Learning Goal:
 
 Experience Level:
 {$experienceLevel}
+
+INTEREST-SPECIFIC TASK RULES:
+{$interestHints}
 
 COURSE PROGRESSION RULES:
 
@@ -870,10 +881,10 @@ Return exactly this structure:
 PROMPT;
 
         /*
-    |--------------------------------------------------------------------------
-    | CALL GEMINI
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | CALL GEMINI
+        |--------------------------------------------------------------------------
+        */
 
         $result = $this->callGemini(
             $prompt,
@@ -883,10 +894,10 @@ PROMPT;
         );
 
         /*
-    |--------------------------------------------------------------------------
-    | VALIDATE GEMINI RESPONSE
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | VALIDATE GEMINI RESPONSE
+        |--------------------------------------------------------------------------
+        */
 
         if (
             $result &&
@@ -1171,10 +1182,15 @@ PROMPT;
             ->values()
             ->all();
 
-        $prompt = <<<PROMPT
-You design realistic, small portfolio projects for students.
+        $rules = $this->verificationRules->current();
+        $minimumObjectives = (int) $rules['minimum_objectives'];
+        $minimumBriefCharacters = (int) $rules['minimum_brief_characters'];
+        $maximumXp = (int) $rules['maximum_xp'];
 
-Create one original project challenge for a student. It must be an actual project with a useful deliverable, not a quiz, game, worksheet, or short learning quest.
+        $prompt = <<<PROMPT
+You design practical, real-world learning activities for students.
+
+Create one original challenge that helps the student learn by doing something real. Prefer a safe, achievable offline or community activity when it suits the interest; a digital project is also suitable when it creates something useful. Do not default to websites or portfolios. This must not be a quiz, game, worksheet, or short theoretical exercise.
 
 Student interests (choose exactly one and copy it into "interest"):
 {$this->jsonForPrompt($interestOptions)}
@@ -1185,20 +1201,24 @@ Experience level: {$experienceLevel}
 Previous projects for this student (do not repeat their title, brief, or core idea; create a clearly different project):
 {$this->jsonForPrompt($previousChallenges)}
 
-The project must be achievable by this experience level, solve or explore a practical real-world problem, and have clear acceptance criteria. Give the student a project brief, 3-5 measurable objectives, and 2-4 concrete deliverables. Keep the brief focused and understandable.
+Choose an activity closely connected to one supplied interest and the student's learning goal. Make the student practice a skill, learn a concept, and reflect on what they learned. Examples of the level of practicality (do not repeat these automatically): for Environment, plant and care for a suitable native plant, then document its location and care plan with a photo; for Art, create and share an original awareness poster; for Sports, plan and record a safe personal fitness activity; for Reading, read and explain a useful idea to someone; for Science, observe and document a real local phenomenon. Create a different activity for the student's selected interest.
+
+Make the challenge visual and easy to do: give it one clear action the student can finish in 15-60 minutes, 3-5 simple ordered steps, and a visible result to photograph, draw, record, or show. Use everyday materials and places where possible. The challenge must be achievable at the given experience level, with clear acceptance criteria. Give the student a focused project brief of at least {$minimumBriefCharacters} characters, {$minimumObjectives}-5 measurable objectives that double as simple action steps, and 2-4 concrete deliverables. When suitable, accept a photo, short notes, a reflection, or a link as evidence; do not require a public website or public post. Include a photo or other observable proof in the deliverables for activities that happen in the real world.
+
+All activities must be safe, legal, low-cost, and appropriate for a student. Do not require travel to unsafe/private places, handling hazardous materials, spending money, or photographing people without their consent. Mention getting adult/guardian permission when an activity or location requires it.
 
 Return ONLY JSON in this shape:
 {
   "interest": "one exact item from the supplied interests",
   "title": "Project title",
-  "project_brief": "A clear practical project description",
-  "objectives": ["Measurable objective"],
-  "deliverables": ["Concrete item the student should produce"],
+  "project_brief": "A short, direct instruction for the activity and what to learn",
+  "objectives": ["One short, ordered action step"],
+  "deliverables": ["A photo, recording, notes, or link showing the result"],
   "difficulty": "beginner",
   "xp": 40
 }
 
-Difficulty must be beginner, intermediate, or advanced. XP must be an integer from 20 to 100. Do not include game mechanics, game_data, quizzes, or generic practice tasks.
+Difficulty must be beginner, intermediate, or advanced. XP must be an integer from 20 to {$maximumXp}. Do not include game mechanics, game_data, quizzes, or generic practice tasks. A project may be a hands-on real-world activity; it does not have to be a software portfolio project.
 PROMPT;
 
         $result = $this->callGemini($prompt, 0.5, 30, 1800);
@@ -1213,19 +1233,19 @@ PROMPT;
         $brief = trim((string) ($result['project_brief'] ?? ''));
         $difficulty = strtolower(trim((string) ($result['difficulty'] ?? '')));
         $xp = filter_var($result['xp'] ?? null, FILTER_VALIDATE_INT);
-        $objectives = $this->validateProjectItems($result['objectives'] ?? null, 3, 5);
+        $objectives = $this->validateProjectItems($result['objectives'] ?? null, $minimumObjectives, 5);
         $deliverables = $this->validateProjectItems($result['deliverables'] ?? null, 2, 4);
 
         if (
             $matchingInterest === null
             || $title === ''
             || mb_strlen($title) > 255
-            || $brief === ''
+            || mb_strlen($brief) < $minimumBriefCharacters
             || mb_strlen($brief) > 5000
             || ! in_array($difficulty, ['beginner', 'intermediate', 'advanced'], true)
             || $xp === false
             || $xp < 20
-            || $xp > 100
+            || $xp > $maximumXp
             || $objectives === null
             || $deliverables === null
         ) {
@@ -2033,6 +2053,297 @@ PROMPT;
         }
 
         return true;
+    }
+
+    /**
+     * Build per-interest task-generation hints for the Gemini prompt.
+     * Gives Gemini concrete, real-world context so it creates interest-perfect tasks.
+     */
+    protected function buildInterestTaskHints(array $interests, string $level): string
+    {
+        $hints = [];
+
+        foreach ($interests as $interest) {
+            $key = strtolower(trim($interest));
+
+            if (str_contains($key, 'chess') || str_contains($key, 'strateg')) {
+                $hints[] = <<<HINT
+CHESS tasks:
+- Create tactical puzzle challenges: opening theory, fork/pin tactics, endgame studies.
+- Difficulty progression: beginner=piece movements, intermediate=combinations, advanced=positional sacrifice.
+- Use chess_tactics game type. Each puzzle must have a clear question, correct answer, and 3 distractors.
+- Example: "White rook on e1, Black king on g8 — what move delivers checkmate?" Answer: Re8#
+HINT;
+            }
+
+            if (str_contains($key, 'environ') || str_contains($key, 'eco') || str_contains($key, 'nature')
+                || str_contains($key, 'green') || str_contains($key, 'plant') || str_contains($key, 'tree')) {
+                $hints[] = <<<HINT
+ENVIRONMENT tasks:
+- Create REAL-WORLD action-based learning challenges connected to actual environmental issues.
+- Use sorting_challenge game type for waste/recycling tasks.
+- Task themes MUST include: tree planting, waste sorting, composting, water conservation,
+  energy saving, clean-up drives, nature observation, biodiversity tracking.
+- Descriptions must mention that the student can upload a photo as proof of completing
+  the real-world action (e.g., "Plant a sapling and photograph it.").
+- Beginner: simple sorting/identification. Intermediate: measuring impact. Advanced: community action.
+- Make game_data items culturally relevant (Indian context if possible): banana peels, coconut shells,
+  plastic sachets, glass bottles, etc.
+HINT;
+            }
+
+            if (str_contains($key, 'music') || str_contains($key, 'song') || str_contains($key, 'guitar')
+                || str_contains($key, 'piano') || str_contains($key, 'sing') || str_contains($key, 'rhythm')) {
+                $hints[] = <<<HINT
+MUSIC tasks:
+- Create tasks about note values, rhythm patterns, music theory, instrument techniques.
+- Use music_note_rhythm game type.
+- Each question must teach something specific: quarter/half/whole notes, time signatures,
+  chord names, music symbols, tempo markings (Allegro, Andante, Presto).
+- Beginner: note values. Intermediate: scales and chords. Advanced: composition theory.
+HINT;
+            }
+
+            if (str_contains($key, 'cod') || str_contains($key, 'program') || str_contains($key, 'software')
+                || str_contains($key, 'web dev') || str_contains($key, 'javascript') || str_contains($key, 'python')) {
+                $hints[] = <<<HINT
+CODING tasks:
+- Create creative_coding canvas challenges where the student writes real JavaScript.
+- Each task must produce a visible result on the canvas (shapes, animations, patterns).
+- Starter code should use the canvas 2D context. Challenges should be specific steps.
+- Beginner: draw shapes with loops. Intermediate: use conditionals and functions.
+  Advanced: animations with requestAnimationFrame or complex algorithms.
+- Example: "Draw a chessboard pattern using nested loops and fillRect()."
+HINT;
+            }
+
+            if (str_contains($key, 'math') || str_contains($key, 'algebra') || str_contains($key, 'geometr')) {
+                $hints[] = <<<HINT
+MATHEMATICS tasks:
+- Use arithmetic_speed game type with progressive math problems.
+- Beginner: addition/subtraction/multiplication facts.
+- Intermediate: fractions, percentages, basic algebra.
+- Advanced: quadratic equations, geometry proofs, statistics.
+- Each question must have exactly one correct numerical answer in the options.
+HINT;
+            }
+
+            if (str_contains($key, 'sport') || str_contains($key, 'football') || str_contains($key, 'cricket')
+                || str_contains($key, 'basketball') || str_contains($key, 'hockey') || str_contains($key, 'tennis')) {
+                $hints[] = <<<HINT
+SPORTS tasks:
+- Create sports_quiz questions about rules, famous players, fitness science, tactics.
+- Include Indian sports context: IPL, cricket rules, kabaddi, badminton, field hockey.
+- Beginner: basic rules. Intermediate: strategy and famous records. Advanced: physics of sport.
+HINT;
+            }
+
+            if (str_contains($key, 'art') || str_contains($key, 'draw') || str_contains($key, 'paint')
+                || str_contains($key, 'design') || str_contains($key, 'color') || str_contains($key, 'colour')) {
+                $hints[] = <<<HINT
+ART tasks:
+- Use art_color_theory game type with questions about color mixing, art history, composition.
+- Teach: primary/secondary/complementary colors, famous artists (Picasso, Da Vinci, Raja Ravi Varma),
+  art movements (Impressionism, Cubism), composition rules (rule of thirds, symmetry).
+- Beginner: basic color theory. Intermediate: art history. Advanced: advanced composition.
+HINT;
+            }
+
+            if (str_contains($key, 'histor') || str_contains($key, 'ancient')) {
+                $hints[] = <<<HINT
+HISTORY tasks:
+- Create history_exploration or general_knowledge_quiz questions about world/Indian history.
+- Include: Mughal Empire, Indian Independence, World Wars, ancient civilizations.
+- Beginner: dates and figures. Intermediate: causes and effects. Advanced: historiography.
+HINT;
+            }
+
+            if (str_contains($key, 'geo') || str_contains($key, 'map') || str_contains($key, 'world') || str_contains($key, 'country')) {
+                $hints[] = <<<HINT
+GEOGRAPHY tasks:
+- Create geography_exploration or general_knowledge_quiz with map/country/capital questions.
+- Include Indian geography: states, capitals, rivers, mountains, climate zones.
+- Also world geography: continents, oceans, famous landmarks.
+HINT;
+            }
+
+            if (str_contains($key, 'read') || str_contains($key, 'book') || str_contains($key, 'literatur')) {
+                $hints[] = <<<HINT
+READING tasks:
+- Create reading_quiz questions on comprehension, vocabulary, literary devices.
+- Teach: inference, context clues, main idea, figurative language (simile, metaphor).
+- Beginner: basic comprehension. Intermediate: literary analysis. Advanced: critical reading.
+HINT;
+            }
+        }
+
+        if (empty($hints)) {
+            return 'Generate quests relevant to the student\'s listed interests. Make them educational, practical, and engaging.';
+        }
+
+        return implode("\n\n", $hints);
+    }
+
+    /**
+     * Verify a student's photo evidence for a real-world project challenge using Gemini Vision.
+     *
+     * Accepts a base64-encoded image (or image URL) and verifies whether it shows
+     * the described activity has been completed.
+     *
+     * @param  string  $imageBase64  Base64 string of the image (without data URI prefix)
+     * @param  string  $mimeType     e.g. 'image/jpeg'
+     * @param  string  $interest     The challenge interest (e.g., 'Environment')
+     * @param  string  $title        The challenge title
+     * @param  string  $projectBrief The challenge brief / description
+     * @param  array   $deliverables What deliverables were expected
+     * @param  string  $reflection   The student's written reflection
+     * @return array{
+     *   status: 'approved'|'needs_revision'|'rejected',
+     *   confidence: int,
+     *   feedback: string,
+     *   detected_activity: string,
+     *   is_relevant: bool
+     * }
+     */
+    public function verifyPhotoEvidence(
+        string $imageBase64,
+        string $mimeType,
+        string $interest,
+        string $title,
+        string $projectBrief,
+        array $deliverables,
+        string $reflection
+    ): array {
+        $apiKey = config('services.gemini.api_key');
+
+        if (! $apiKey) {
+            Log::warning('Gemini API key not set — skipping photo verification.');
+            return $this->photoVerificationFallback('Photo verification unavailable — API key missing.');
+        }
+
+        $deliverablesText = implode('; ', $deliverables);
+
+        $prompt = <<<PROMPT
+You are an AI learning activity verifier for a student gamified education platform.
+
+A student has submitted a photo as proof of completing a real-world learning activity.
+
+CHALLENGE DETAILS:
+- Interest: {$interest}
+- Title: {$title}
+- Brief: {$projectBrief}
+- Expected deliverables: {$deliverablesText}
+- Student reflection: {$reflection}
+
+TASK:
+Examine the uploaded photo carefully and determine whether it shows evidence that
+the student has genuinely completed or attempted the described activity.
+
+VERIFICATION RULES:
+1. For ENVIRONMENT activities: look for plants, soil, trees, nature, waste sorting,
+   clean-up areas, composting pits, water conservation, environmental posters, etc.
+2. For ART activities: look for hand-drawn artwork, paintings, sketches, color wheels, etc.
+3. For SPORTS activities: look for sports equipment, outdoor activities, fitness exercises, etc.
+4. For CODING activities: look for code on a screen, a running program, printed code, etc.
+5. For MUSIC activities: look for instruments, sheet music, practice notes, etc.
+6. For GENERAL activities: look for any visible study/learning artifact relevant to the brief.
+
+If the photo is CLEARLY UNRELATED (random selfie, food photo, completely blank image):
+- set status to "rejected"
+- confidence to 10-25
+
+If the photo shows PARTIAL evidence (some relevant elements but not complete):
+- set status to "needs_revision"
+- confidence to 40-65
+
+If the photo shows CLEAR evidence matching the activity:
+- set status to "approved"
+- confidence to 70-98
+
+Return ONLY valid JSON — no markdown, no extra text:
+{
+  "status": "approved",
+  "confidence": 85,
+  "feedback": "Great work! The photo clearly shows a sapling planted in soil with a care label. Your reflection matches the visible activity.",
+  "detected_activity": "Student planted a small tree/sapling in a pot or garden",
+  "is_relevant": true
+}
+PROMPT;
+
+        try {
+            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
+
+            $response = Http::withHeaders([
+                'x-goog-api-key' => $apiKey,
+            ])->timeout(20)->post($url, [
+                'contents' => [
+                    [
+                        'parts' => [
+                            [
+                                'text' => $prompt,
+                            ],
+                            [
+                                'inline_data' => [
+                                    'mime_type' => $mimeType,
+                                    'data'      => $imageBase64,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                'generationConfig' => [
+                    'temperature'       => 0.2,
+                    'maxOutputTokens'   => 400,
+                    'responseMimeType'  => 'application/json',
+                ],
+            ]);
+
+            if ($response->successful()) {
+                $text = $response->json('candidates.0.content.parts.0.text');
+
+                if ($text) {
+                    $cleaned = preg_replace('/^```(?:json)?\s*/i', '', trim($text));
+                    $cleaned = preg_replace('/\s*```$/i', '', $cleaned);
+                    $data    = json_decode(trim($cleaned), true);
+
+                    if (is_array($data) && isset($data['status'], $data['confidence'])) {
+                        $status = in_array($data['status'], ['approved', 'needs_revision', 'rejected'], true)
+                            ? $data['status']
+                            : 'needs_revision';
+
+                        return [
+                            'status'            => $status,
+                            'confidence'        => (int) min(100, max(0, $data['confidence'] ?? 50)),
+                            'feedback'          => trim((string) ($data['feedback'] ?? 'Photo reviewed by AI.')),
+                            'detected_activity' => trim((string) ($data['detected_activity'] ?? 'Activity detected.')),
+                            'is_relevant'       => (bool) ($data['is_relevant'] ?? true),
+                        ];
+                    }
+                }
+            }
+
+            Log::warning('Gemini photo verification returned an unexpected response.', [
+                'status' => $response->status(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Gemini photo verification failed.', ['exception' => $e::class]);
+        }
+
+        return $this->photoVerificationFallback('AI photo review is temporarily unavailable. An admin will review your submission manually.');
+    }
+
+    /**
+     * Fallback verification result when Gemini is unavailable.
+     */
+    protected function photoVerificationFallback(string $feedback): array
+    {
+        return [
+            'status'            => 'needs_revision',
+            'confidence'        => 0,
+            'feedback'          => $feedback,
+            'detected_activity' => 'Could not analyze photo automatically.',
+            'is_relevant'       => true,
+        ];
     }
 
     /**

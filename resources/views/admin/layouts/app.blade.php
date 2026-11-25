@@ -189,7 +189,7 @@
             padding: clamp(18px, 3vw, 34px);
         }
 
-        .dashboard-content > .container-fluid {
+        .dashboard-content>.container-fluid {
             padding-right: 0;
             padding-left: 0;
         }
@@ -210,7 +210,7 @@
             color: #334b58;
         }
 
-        .dashboard-content .table > :not(caption) > * > * {
+        .dashboard-content .table> :not(caption)>*>* {
             padding-top: .9rem;
             padding-bottom: .9rem;
             border-color: #edf1f3;
@@ -406,6 +406,15 @@
 
             </a>
 
+            <a href="{{ route('admin.homepage.edit') }}"
+                class="sidebar-link {{ request()->routeIs('admin.homepage.*') ? 'active' : '' }}">
+
+                <i class="bi bi-window"></i>
+
+                <span>Homepage Content</span>
+
+            </a>
+
 
             <!-- STUDENTS -->
 
@@ -422,8 +431,8 @@
 
             </a>
 
-            <a href="#"
-                class="sidebar-link">
+            <a href="{{ route('admin.student-progress.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.student-progress.*') ? 'active' : '' }}">
 
                 <i class="bi bi-bar-chart-fill"></i>
 
@@ -508,11 +517,8 @@
 
             <a href="#"
                 class="sidebar-link">
-
                 <i class="bi bi-robot"></i>
-
                 <span>AI Tasks</span>
-
             </a>
 
 
@@ -559,22 +565,19 @@
                 AI Monitoring
             </div>
 
-            <a href="#"
-                class="sidebar-link">
+            <a href="{{ route('admin.ai.reports') }}"
+                class="sidebar-link {{ request()->routeIs('admin.ai.*') ? 'active' : '' }}">
 
                 <i class="bi bi-activity"></i>
 
-                <span>AI Activity</span>
+                <span>AI Reports & Rules</span>
 
             </a>
 
-            <a href="#"
+            <a href="{{ route('admin.project-challenges.index') }}"
                 class="sidebar-link">
-
                 <i class="bi bi-flag-fill"></i>
-
                 <span>Flagged Activities</span>
-
             </a>
 
 
@@ -712,6 +715,20 @@
 
 
     <script>
+        let revalidatingAdminPage = false;
+        const revalidateAdminPage = () => {
+            if (revalidatingAdminPage) return;
+            revalidatingAdminPage = true;
+            window.location.reload();
+        };
+
+        window.addEventListener('pageshow', event => {
+            if (event.persisted) {
+                revalidateAdminPage();
+            }
+        });
+        window.addEventListener('popstate', revalidateAdminPage);
+
         function toggleSidebar() {
             document
                 .getElementById('adminSidebar')

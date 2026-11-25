@@ -12,6 +12,7 @@ use App\Models\LearningMaterialProgress;
 use App\Models\LearningTask;
 use App\Models\ProjectChallenge;
 use App\Models\ProjectChallengeSubmission;
+use App\Models\SiteSetting;
 use App\Models\StudentBadge;
 use App\Models\StudentPreference;
 use App\Models\StudentProgress;
@@ -25,9 +26,11 @@ use Database\Seeders\InterestLearningMaterialsSeeder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Pagination\UrlWindow;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Tests\TestCase;
 
@@ -42,7 +45,7 @@ class StudentPlayableTasksTest extends TestCase
         $this->seed(GameEngineSeeder::class);
     }
 
-    private function projectChallengeResponse(): array
+    private function projectChallengeResponse(string $title = 'Build a practical portfolio website'): array
     {
         return [
             'candidates' => [
@@ -51,7 +54,7 @@ class StudentPlayableTasksTest extends TestCase
                         'parts' => [[
                             'text' => json_encode([
                                 'interest' => 'Coding',
-                                'title' => 'Build a practical portfolio website',
+                                'title' => $title,
                                 'project_brief' => 'Design and build a responsive portfolio that presents a student’s work.',
                                 'objectives' => [
                                     'Create a responsive page layout.',
@@ -1278,6 +1281,7 @@ class StudentPlayableTasksTest extends TestCase
             ->assertOk()
             ->assertSee('Project Challenges')
             ->assertSee('Your project challenge is under admin review')
+            ->assertSee('Automatic challenge checks: Passed')
             ->assertSee('Build a practical portfolio website')
             ->assertSee('This project challenge is waiting for admin approval.')
             ->assertSee('Waiting for admin approval');
@@ -1287,6 +1291,7 @@ class StudentPlayableTasksTest extends TestCase
             ->latest()
             ->firstOrFail();
         $this->assertSame('Coding', $challenge->interest);
+        $this->assertSame('passed', $challenge->ai_verification_status);
         $this->assertSame('pending_review', $challenge->review_status);
         $this->assertSame(0, ProjectChallengeSubmission::query()->count());
         $this->assertSame(0, LearningTask::query()->where('title', $challenge->title)->count());
@@ -1339,6 +1344,7 @@ class StudentPlayableTasksTest extends TestCase
             ->get(route('student.project-challenges.show', $challenge))
             ->assertOk()
             ->assertSee('Project brief')
+            ->assertSee('Automatic challenge checks: Passed')
             ->assertSee('Submit your project');
         $this->post(route('student.project-challenges.submit', $challenge), [
             'project_url' => 'https://github.com/student/portfolio',
@@ -1358,12 +1364,28 @@ class StudentPlayableTasksTest extends TestCase
             ->get(route('student.project-challenges.show', $challenge))
             ->assertOk()
             ->assertSee('Please add a mobile screenshot to the repository.');
+        Storage::fake('public');
         $this->post(route('student.project-challenges.submit', $challenge), [
-            'project_url' => 'https://github.com/student/portfolio-v2',
-            'reflection' => 'I added the mobile screenshot and updated the readme to explain how the responsive layout works.',
+            'evidence_image' => UploadedFile::fake()->createWithContent(
+                'planting.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/jXcAAAAASUVORK5CYII=')
+            ),
+            'reflection' => 'I planted a native sapling, photographed the work, and wrote down how I will care for it.',
         ])->assertRedirect(route('student.project-challenges.show', $challenge));
 
         $submission = ProjectChallengeSubmission::query()->orderByDesc('id')->firstOrFail();
+        $this->assertNull($submission->project_url);
+        $this->assertNotNull($submission->evidence_image);
+        Storage::disk('public')->assertExists($submission->evidence_image);
+        $this->actingAs($student, 'student')
+            ->get(route('student.project-challenges.show', $challenge))
+            ->assertOk()
+            ->assertSee('Uploaded project evidence');
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.project-challenges.show', $challenge))
+            ->assertOk()
+            ->assertSee('Uploaded project evidence');
         $this->actingAs($admin, 'admin')
             ->put(route('admin.project-challenges.submissions.review', [$challenge, $submission]), [
                 'decision' => 'accept',
@@ -1383,12 +1405,111 @@ class StudentPlayableTasksTest extends TestCase
         $this->actingAs($student, 'student')
             ->get(route('student.dashboard'))
             ->assertOk()
-            ->assertSee('Project challenge is not available yet');
+            ->assertSee('Your project challenge for today has been delivered');
         $this->assertSame(1, ProjectChallenge::query()->where('user_id', $student->id)->count());
         Http::assertSent(fn (ClientRequest $request) => str_contains(
             $request->body(),
             'Build a practical portfolio website'
-        ));
+        ) && str_contains($request->body(), 'real-world learning activities')
+            && str_contains($request->body(), 'plant and care for a suitable native plant'));
+    }
+
+    public function test_students_receive_at_most_one_project_challenge_per_day(): void
+    {
+        $this->travelTo(now()->startOfDay());
+        $student = $this->studentWithInterests(['Coding']);
+        $previousChallenge = ProjectChallenge::create([
+            'user_id' => $student->id,
+            'interest' => 'Coding',
+            'title' => 'Completed project from yesterday',
+            'project_brief' => 'Complete a useful project connected to coding and explain what you learned.',
+            'objectives' => ['Build a small tool.', 'Explain how it works.', 'Reflect on what you learned.'],
+            'deliverables' => ['A project file.', 'A short reflection.'],
+            'difficulty' => 'beginner',
+            'xp' => 40,
+            'review_status' => 'approved',
+        ]);
+        $previousChallenge->created_at = now()->subDay();
+        $previousChallenge->save();
+        ProjectChallengeSubmission::create([
+            'project_challenge_id' => $previousChallenge->id,
+            'user_id' => $student->id,
+            'reflection' => 'I completed and reviewed the project.',
+            'status' => 'accepted',
+        ]);
+
+        $challengeGenerationCount = 0;
+        Http::fake(function (ClientRequest $request) use (&$challengeGenerationCount) {
+            if (str_contains($request->body(), 'You design practical, real-world learning activities')) {
+                $challengeGenerationCount++;
+
+                return Http::response($this->projectChallengeResponse(
+                    $challengeGenerationCount === 1
+                        ? 'Coding activity for the day'
+                        : 'Coding activity for tomorrow'
+                ));
+            }
+
+            return Http::response([], 200);
+        });
+
+        $this->actingAs($student, 'student')
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee('Coding activity for the day');
+        $todayChallenge = ProjectChallenge::query()
+            ->where('user_id', $student->id)
+            ->latest()
+            ->firstOrFail();
+        $this->assertSame('Coding', $todayChallenge->interest);
+
+        ProjectChallengeSubmission::create([
+            'project_challenge_id' => $todayChallenge->id,
+            'user_id' => $student->id,
+            'reflection' => "I completed and reviewed today's project.",
+            'status' => 'accepted',
+        ]);
+        $this->actingAs($student, 'student')
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee('Your project challenge for today has been delivered');
+        $this->assertSame(2, ProjectChallenge::query()->where('user_id', $student->id)->count());
+        $this->assertSame(1, $challengeGenerationCount);
+
+        $this->travelTo(now()->addDay());
+        $this->actingAs($student, 'student')
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee('Coding activity for tomorrow');
+        $this->assertSame(3, ProjectChallenge::query()->where('user_id', $student->id)->count());
+        $this->assertSame(2, $challengeGenerationCount);
+    }
+
+    public function test_configured_ai_verification_rules_reject_challenges_that_do_not_meet_objective_count(): void
+    {
+        SiteSetting::create([
+            'key' => 'ai_verification',
+            'value' => [
+                'minimum_objectives' => 4,
+                'minimum_brief_characters' => 40,
+                'maximum_xp' => 75,
+            ],
+        ]);
+        Http::fake([
+            '*' => Http::response($this->projectChallengeResponse()),
+        ]);
+
+        $challenge = app(GeminiService::class)->generateProjectChallenge(
+            ['Coding'],
+            'Learn by building something useful',
+            'beginner'
+        );
+
+        $this->assertNull($challenge);
+        Http::assertSent(fn (ClientRequest $request) => str_contains(
+            $request->body(),
+            '4-5 measurable objectives'
+        ) && str_contains($request->body(), '20 to 75'));
     }
 
     public function test_progress_page_paginates_completed_quests_and_shows_started_materials(): void
@@ -2280,6 +2401,13 @@ class StudentPlayableTasksTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::create('site_settings', function (Blueprint $table) {
+            $table->id();
+            $table->string('key')->unique();
+            $table->json('value');
+            $table->timestamps();
+        });
+
         Schema::create('student_preferences', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
@@ -2377,6 +2505,7 @@ class StudentPlayableTasksTest extends TestCase
             $table->string('difficulty');
             $table->unsignedSmallInteger('xp');
             $table->string('review_status')->default('pending_review');
+            $table->string('ai_verification_status')->default('passed');
             $table->text('review_note')->nullable();
             $table->unsignedBigInteger('reviewed_by')->nullable();
             $table->timestamp('reviewed_at')->nullable();
@@ -2388,7 +2517,8 @@ class StudentPlayableTasksTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('project_challenge_id');
             $table->unsignedBigInteger('user_id');
-            $table->string('project_url', 2048);
+            $table->string('project_url', 2048)->nullable();
+            $table->string('evidence_image')->nullable();
             $table->text('reflection');
             $table->string('status')->default('submitted');
             $table->text('review_note')->nullable();
