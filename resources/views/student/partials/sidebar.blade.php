@@ -140,6 +140,17 @@
 
     </a>
 
+    <!-- Feedback -->
+    <a
+        href="{{ route('student.feedback') }}"
+        class="side-link {{ request()->routeIs('student.feedback*') ? 'active' : '' }}">
+
+        <i class="bi bi-chat-heart"></i>
+
+        <span>Feedback</span>
+
+    </a>
+
 
     <a
         href="{{ route('student.dashboard') }}#topics"

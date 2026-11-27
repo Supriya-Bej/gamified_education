@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
 
     <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+        content="width=device-width, initial-scale=1.0">
 
     <title>
         {{ $aiProfile['dashboard_title'] ?? 'Student Dashboard' }}
@@ -19,7 +19,7 @@
     ====================================================== --}}
 
     <link rel="stylesheet"
-          href="{{ asset('Asset/Bootstrap-5/css/bootstrap.min.css') }}">
+        href="{{ asset('Asset/Bootstrap-5/css/bootstrap.min.css') }}">
 
 
     {{-- =====================================================
@@ -27,7 +27,7 @@
     ====================================================== --}}
 
     <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 
     {{-- =====================================================
@@ -35,14 +35,14 @@
     ====================================================== --}}
 
     <link rel="preconnect"
-          href="https://fonts.googleapis.com">
+        href="https://fonts.googleapis.com">
 
     <link rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossorigin>
+        href="https://fonts.gstatic.com"
+        crossorigin>
 
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap"
-          rel="stylesheet">
+        rel="stylesheet">
 
 
     {{-- =====================================================
@@ -51,266 +51,243 @@
 
     @php
 
-        /*
-        |--------------------------------------------------------------------------
-        | SAFE AI PROFILE
-        |--------------------------------------------------------------------------
-        */
+    /*
+    |--------------------------------------------------------------------------
+    | SAFE AI PROFILE
+    |--------------------------------------------------------------------------
+    */
+
+    $aiProfile = is_array($aiProfile ?? null)
+    ? $aiProfile
+    : [];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SAFE THEME CONFIG
+    |--------------------------------------------------------------------------
+    */
+
+    $themeConfig = is_array($themeConfig ?? null)
+    ? $themeConfig
+    : [];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | THEME KEY
+    |--------------------------------------------------------------------------
+    */
+
+    $theme = strtolower(
+    trim($themeKey ?? 'general')
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CHESS CHECK
+    |--------------------------------------------------------------------------
+    */
+
+    $isChess = ($theme === 'chess');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | THEME COLORS
+    |
+    | IMPORTANT:
+    |
+    | First use learning_themes.php
+    | Then AI profile
+    | Then fallback.
+    |--------------------------------------------------------------------------
+    */
+
+
+    $primaryColor =
+        $themeConfig['primary']
+        ?? ($isChess ? '#0A0A0C' : '#0F172A');
+
+    $secondaryColor =
+        $themeConfig['secondary']
+        ?? ($isChess ? '#FFFFFF' : '#38BDF8');
+
+    $accentColor =
+        $themeConfig['accent']
+        ?? $secondaryColor;
+
+    $backgroundColor =
+        $themeConfig['background']
+        ?? ($isChess ? '#08080A' : '#0F172A');
 
-        $aiProfile = is_array($aiProfile ?? null)
-            ? $aiProfile
-            : [];
+    $surfaceColor =
+        $themeConfig['surface']
+        ?? ($isChess ? '#121216' : '#1E293B');
+
+    $surfaceAlt =
+        $themeConfig['surface_alt']
+        ?? ($isChess ? '#1C1C24' : '#27354D');
 
+    $borderColor =
+        $themeConfig['border']
+        ?? ($isChess ? '#2E2E3E' : 'rgba(255,255,255,0.10)');
 
-        /*
-        |--------------------------------------------------------------------------
-        | SAFE THEME CONFIG
-        |--------------------------------------------------------------------------
-        */
+    $textColor =
+        $themeConfig['text']
+        ?? '#F8FAFC';
+
+    $mutedColor =
+        $themeConfig['muted']
+        ?? '#94A3B8';
 
-        $themeConfig = is_array($themeConfig ?? null)
-            ? $themeConfig
-            : [];
+    $glowColor =
+        $themeConfig['glow']
+        ?? 'rgba(56,189,248,0.25)';
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | THEME KEY
-        |--------------------------------------------------------------------------
-        */
+    /*
+    |--------------------------------------------------------------------------
+    | ICON
+    |--------------------------------------------------------------------------
+    */
 
-        $theme = strtolower(
-            trim($themeKey ?? 'general')
-        );
+    $generatedThemeIcons = [
+    'music' => ['🎼', '🎹', '🎸', '🎤', '🎧', '♫'],
+    'creative' => ['🎨', '🖌️', '🖍️', '✏️', '🖼️'],
+    ];
+    $generatedTheme = strtolower(trim((string) ($aiProfile['visual_theme'] ?? '')));
+    $generatedThemeIcon = $aiProfile['theme_icon'] ?? null;
 
+    if (
+    $generatedTheme === $theme &&
+    is_string($generatedThemeIcon) &&
+    in_array($generatedThemeIcon, $generatedThemeIcons[$theme] ?? [], true)
+    ) {
+    $themeIcon = $generatedThemeIcon;
+    } else {
+    $themeIcon = $themeConfig['icon']
+    ?? ($isChess ? '♞' : '✦');
+    }
 
-        /*
-        |--------------------------------------------------------------------------
-        | CHESS CHECK
-        |--------------------------------------------------------------------------
-        */
+    $profileMatchesTheme = $generatedTheme === $theme;
 
-        $isChess = ($theme === 'chess');
+    /*
+    |--------------------------------------------------------------------------
+    | FONT
+    |--------------------------------------------------------------------------
+    */
 
+    $fontDisplay =
+    $themeConfig['font_display']
+    ?? $aiProfile['font_display']
+    ?? ($isChess ? 'Cinzel' : 'Plus Jakarta Sans');
 
-        /*
-        |--------------------------------------------------------------------------
-        | THEME COLORS
-        |
-        | IMPORTANT:
-        |
-        | First use learning_themes.php
-        | Then AI profile
-        | Then fallback.
-        |--------------------------------------------------------------------------
-        */
 
+    /*
+    |--------------------------------------------------------------------------
+    | AI CONTENT
+    |--------------------------------------------------------------------------
+    */
 
-        $primaryColor =
-            $themeConfig['primary']
-            ?? $aiProfile['primary_color']
-            ?? ($isChess ? '#08080A' : '#0F172A');
+    $rankTitle =
+    ($profileMatchesTheme ? ($aiProfile['rank_title'] ?? null) : null)
+    ?? $themeConfig['gamified_rank']
+    ?? 'Explorer';
 
 
-        $secondaryColor =
-            $themeConfig['secondary']
-            ?? $aiProfile['secondary_color']
-            ?? ($isChess ? '#E5E7EB' : '#38BDF8');
+    $dashboardTitle =
+    ($profileMatchesTheme ? ($aiProfile['dashboard_title'] ?? null) : null)
+    ?? $themeConfig['title']
+    ?? 'Learning Arena';
 
 
-        $accentColor =
-            $themeConfig['accent']
-            ?? $aiProfile['accent_color']
-            ?? ($isChess ? '#94A3B8' : '#22D3EE');
+    $tagline =
+    ($profileMatchesTheme ? ($aiProfile['tagline'] ?? null) : null)
+    ?? $themeConfig['subtitle']
+    ?? 'Your personalized learning world';
 
 
-        $backgroundColor =
-            $themeConfig['background']
-            ?? $aiProfile['background_color']
-            ?? ($isChess ? '#08080A' : '#0F172A');
+    $motto =
+    ($profileMatchesTheme ? ($aiProfile['motto'] ?? null) : null)
+    ?? $themeConfig['gamified_motto']
+    ?? 'Every step forward makes you stronger.';
 
 
-        $surfaceColor =
-            $themeConfig['surface']
-            ?? $aiProfile['surface_color']
-            ?? ($isChess ? '#121216' : '#1E293B');
+    $welcomeMessage =
+    ($profileMatchesTheme ? ($aiProfile['welcome_message'] ?? null) : null)
+    ?? $themeConfig['welcome_message']
+    ?? 'Welcome to your personalized learning world!';
 
 
-        $surfaceAlt =
-            $themeConfig['surface_alt']
-            ?? $aiProfile['surface_alt_color']
-            ?? ($isChess ? '#1A1A22' : '#27354D');
+    $dailyQuest =
+    ($profileMatchesTheme ? ($aiProfile['daily_quest'] ?? null) : null)
+    ?? $themeConfig['daily_quest']
+    ?? "Complete today's learning challenge";
 
 
-        $borderColor =
-            $themeConfig['border']
-            ?? $aiProfile['border_color']
-            ?? (
-                $isChess
-                    ? '#2E2E3E'
-                    : 'rgba(255,255,255,0.10)'
-            );
+    $recommendedTopics =
+    $aiProfile['recommended_topics']
+    ?? [];
 
+    $recommendedTopics = is_array($recommendedTopics)
+    ? array_values(array_filter(
+    $recommendedTopics,
+    fn ($topic) => is_string($topic) && trim($topic) !== ''
+    ))
+    : [];
 
-        $textColor =
-            $themeConfig['text']
-            ?? $aiProfile['text_color']
-            ?? '#F8FAFC';
 
+    $learningStyle =
+    $aiProfile['learning_style']
+    ?? 'Interactive';
 
-        $mutedColor =
-            $themeConfig['muted']
-            ?? $aiProfile['muted_color']
-            ?? '#94A3B8';
 
+    $difficulty =
+    $aiProfile['difficulty']
+    ?? ($preference->experience_level ?? 'beginner');
 
-        $glowColor =
-            $themeConfig['glow']
-            ?? $aiProfile['glow_color']
-            ?? 'rgba(56,189,248,0.25)';
 
+    /*
+    |--------------------------------------------------------------------------
+    | XP
+    |--------------------------------------------------------------------------
+    */
 
-        /*
-        |--------------------------------------------------------------------------
-        | ICON
-        |--------------------------------------------------------------------------
-        */
+    $userXp =
+    $progress->total_xp ?? 0;
 
-        $generatedThemeIcons = [
-            'music' => ['🎼', '🎹', '🎸', '🎤', '🎧', '♫'],
-            'creative' => ['🎨', '🖌️', '🖍️', '✏️', '🖼️'],
-        ];
-        $generatedTheme = strtolower(trim((string) ($aiProfile['visual_theme'] ?? '')));
-        $generatedThemeIcon = $aiProfile['theme_icon'] ?? null;
 
-        if (
-            $generatedTheme === $theme &&
-            is_string($generatedThemeIcon) &&
-            in_array($generatedThemeIcon, $generatedThemeIcons[$theme] ?? [], true)
-        ) {
-            $themeIcon = $generatedThemeIcon;
-        } else {
-            $themeIcon = $themeConfig['icon']
-                ?? ($isChess ? '♞' : '✦');
-        }
+    $userLevel =
+    $progress->level ?? 1;
 
-        $profileMatchesTheme = $generatedTheme === $theme;
 
-        /*
-        |--------------------------------------------------------------------------
-        | FONT
-        |--------------------------------------------------------------------------
-        */
+    $completedTasks =
+    $progress->completed_tasks ?? 0;
 
-        $fontDisplay =
-            $themeConfig['font_display']
-            ?? $aiProfile['font_display']
-            ?? ($isChess ? 'Cinzel' : 'Plus Jakarta Sans');
 
+    /*
+    |--------------------------------------------------------------------------
+    | LABELS
+    |--------------------------------------------------------------------------
+    */
 
-        /*
-        |--------------------------------------------------------------------------
-        | AI CONTENT
-        |--------------------------------------------------------------------------
-        */
+    $labels =
+    $themeConfig['gamified_labels']
+    ?? [
 
-        $rankTitle =
-            ($profileMatchesTheme ? ($aiProfile['rank_title'] ?? null) : null)
-            ?? $themeConfig['gamified_rank']
-            ?? 'Explorer';
+    'level_prefix' => 'Level',
 
+    'quest_title' => 'Daily Mission',
 
-        $dashboardTitle =
-            ($profileMatchesTheme ? ($aiProfile['dashboard_title'] ?? null) : null)
-            ?? $themeConfig['title']
-            ?? 'Learning Arena';
+    'mission_title' => 'Learning Quests',
 
+    'challenge_title' => 'Challenges',
 
-        $tagline =
-            ($profileMatchesTheme ? ($aiProfile['tagline'] ?? null) : null)
-            ?? $themeConfig['subtitle']
-            ?? 'Your personalized learning world';
+    'exp_label' => 'Total XP',
 
-
-        $motto =
-            ($profileMatchesTheme ? ($aiProfile['motto'] ?? null) : null)
-            ?? $themeConfig['gamified_motto']
-            ?? 'Every step forward makes you stronger.';
-
-
-        $welcomeMessage =
-            ($profileMatchesTheme ? ($aiProfile['welcome_message'] ?? null) : null)
-            ?? $themeConfig['welcome_message']
-            ?? 'Welcome to your personalized learning world!';
-
-
-        $dailyQuest =
-            ($profileMatchesTheme ? ($aiProfile['daily_quest'] ?? null) : null)
-            ?? $themeConfig['daily_quest']
-            ?? "Complete today's learning challenge";
-
-
-        $recommendedTopics =
-            $aiProfile['recommended_topics']
-            ?? [];
-
-        $recommendedTopics = is_array($recommendedTopics)
-            ? array_values(array_filter(
-                $recommendedTopics,
-                fn ($topic) => is_string($topic) && trim($topic) !== ''
-            ))
-            : [];
-
-
-        $learningStyle =
-            $aiProfile['learning_style']
-            ?? 'Interactive';
-
-
-        $difficulty =
-            $aiProfile['difficulty']
-            ?? ($preference->experience_level ?? 'beginner');
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | XP
-        |--------------------------------------------------------------------------
-        */
-
-        $userXp =
-            $progress->total_xp ?? 0;
-
-
-        $userLevel =
-            $progress->level ?? 1;
-
-
-        $completedTasks =
-            $progress->completed_tasks ?? 0;
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | LABELS
-        |--------------------------------------------------------------------------
-        */
-
-        $labels =
-            $themeConfig['gamified_labels']
-            ?? [
-
-                'level_prefix' => 'Level',
-
-                'quest_title' => 'Daily Mission',
-
-                'mission_title' => 'Learning Quests',
-
-                'challenge_title' => 'Challenges',
-
-                'exp_label' => 'Total XP',
-
-            ];
+    ];
 
     @endphp
 
@@ -321,44 +298,101 @@
     ====================================================== --}}
 
     <style>
-
         :root {
 
             /* IMPORTANT:
                These MUST be normal Blade expressions.
             */
 
-            --primary: {{ $primaryColor }};
+            --primary: {
+                    {
+                    $primaryColor
+                }
+            }
 
-            --secondary: {{ $secondaryColor }};
+            ;
 
-            --accent: {{ $accentColor }};
+            --secondary: {
+                    {
+                    $secondaryColor
+                }
+            }
 
-            --page-bg: {{ $backgroundColor }};
+            ;
 
-            --surface: {{ $surfaceColor }};
+            --accent: {
+                    {
+                    $accentColor
+                }
+            }
 
-            --surface-alt: {{ $surfaceAlt }};
+            ;
 
-            --border: {{ $borderColor }};
+            --page-bg: {
+                    {
+                    $backgroundColor
+                }
+            }
 
-            --text-main: {{ $textColor }};
+            ;
 
-            --text-muted: {{ $mutedColor }};
+            --surface: {
+                    {
+                    $surfaceColor
+                }
+            }
 
-            --glow: {{ $glowColor }};
+            ;
+
+            --surface-alt: {
+                    {
+                    $surfaceAlt
+                }
+            }
+
+            ;
+
+            --border: {
+                    {
+                    $borderColor
+                }
+            }
+
+            ;
+
+            --text-main: {
+                    {
+                    $textColor
+                }
+            }
+
+            ;
+
+            --text-muted: {
+                    {
+                    $mutedColor
+                }
+            }
+
+            ;
+
+            --glow: {
+                    {
+                    $glowColor
+                }
+            }
+
+            ;
 
 
-            --font-display:
-                '{{ $fontDisplay }}',
-                serif,
-                sans-serif;
+            --font-display: '{{ $fontDisplay }}',
+            serif,
+            sans-serif;
 
 
-            --font-body:
-                'Plus Jakarta Sans',
-                system-ui,
-                sans-serif;
+            --font-body: 'Plus Jakarta Sans',
+            system-ui,
+            sans-serif;
 
         }
 
@@ -386,11 +420,9 @@
 
             background:
 
-                radial-gradient(
-                    circle at top right,
+                radial-gradient(circle at top right,
                     var(--glow),
-                    transparent 35%
-                ),
+                    transparent 35%),
 
                 var(--page-bg);
 
@@ -411,10 +443,10 @@
 
         body.student-theme-chess::before {
             background-image:
-                linear-gradient(45deg, rgba(255,255,255,0.025) 25%, transparent 25%),
-                linear-gradient(-45deg, rgba(255,255,255,0.025) 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.025) 75%),
-                linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.025) 75%);
+                linear-gradient(45deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.025) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.025) 75%);
             background-size: 56px 56px;
             background-position: 0 0, 0 28px, 28px -28px, -28px 0px;
         }
@@ -422,36 +454,82 @@
         body.student-theme-music::before,
         body.theme-music::before {
             background-image:
-                repeating-linear-gradient(
-                    to bottom,
+                repeating-linear-gradient(to bottom,
                     transparent 0,
                     transparent 16px,
-                    rgba(142,68,173,0.10) 17px,
-                    transparent 18px
-                ),
-                repeating-linear-gradient(
-                    to bottom,
+                    rgba(142, 68, 173, 0.10) 17px,
+                    transparent 18px),
+                repeating-linear-gradient(to bottom,
                     transparent 0,
                     transparent 85px,
-                    rgba(142,68,173,0.055) 86px,
-                    transparent 87px
-                );
+                    rgba(142, 68, 173, 0.055) 86px,
+                    transparent 87px);
         }
 
-        body.student-theme-technology::before { background-image: radial-gradient(circle, rgba(0,229,255,0.18) 1px, transparent 1px), linear-gradient(rgba(0,229,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.04) 1px, transparent 1px); background-size: 32px 32px, 32px 32px, 32px 32px; }
-        body.student-theme-science::before { background-image: radial-gradient(circle at 50% 50%, rgba(52,152,219,0.09) 0, transparent 60%), radial-gradient(circle, rgba(22,160,133,0.09) 1px, transparent 1px), linear-gradient(rgba(52,152,219,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(52,152,219,0.045) 1px, transparent 1px); background-size: 100% 100%, 28px 28px, 28px 28px, 28px 28px; }
-        body.student-theme-mathematics::before { background-image: linear-gradient(rgba(57,73,171,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(57,73,171,0.10) 1px, transparent 1px), linear-gradient(rgba(57,73,171,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(57,73,171,0.04) 1px, transparent 1px); background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px; }
-        body.student-theme-sports::before { background-image: repeating-linear-gradient(-55deg, transparent, transparent 28px, rgba(255,87,34,0.07) 28px, rgba(255,87,34,0.07) 29px), repeating-linear-gradient(35deg, transparent, transparent 50px, rgba(30,136,229,0.05) 50px, rgba(30,136,229,0.05) 51px); }
-        body.student-theme-creative::before, body.theme-creative::before,
-        body.student-theme-art::before { background-image: repeating-linear-gradient(-45deg, transparent, transparent 22px, rgba(232,67,147,0.06) 22px, rgba(232,67,147,0.06) 23px), radial-gradient(circle at 20% 30%, rgba(255,196,74,0.12), transparent 35%), radial-gradient(circle at 80% 70%, rgba(108,92,231,0.10), transparent 30%), radial-gradient(circle at 60% 15%, rgba(232,67,147,0.09), transparent 22%); }
-        body.student-theme-reading::before { background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, rgba(161,136,127,0.13) 28px, transparent 29px), linear-gradient(90deg, rgba(121,85,72,0.07) 1px, transparent 1px); background-size: 100% 100%, 60px 100%; }
-        body.student-theme-gaming::before { background-image: linear-gradient(45deg, rgba(224,64,251,0.08) 25%, transparent 25%), linear-gradient(-45deg, rgba(124,77,255,0.08) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(224,64,251,0.06) 75%), linear-gradient(-45deg, transparent 75%, rgba(124,77,255,0.06) 75%), radial-gradient(circle, rgba(224,64,251,0.12) 1px, transparent 1px); background-size: 36px 36px, 36px 36px, 36px 36px, 36px 36px, 36px 36px; background-position: 0 0, 0 18px, 18px -18px, -18px 0px, 0 0; }
-        body.student-theme-environment::before { background-image: radial-gradient(ellipse at 15% 50%, rgba(76,175,80,0.11) 0, transparent 45%), radial-gradient(ellipse at 85% 20%, rgba(27,94,32,0.09) 0, transparent 40%), radial-gradient(ellipse at 55% 85%, rgba(139,195,74,0.10) 0, transparent 38%), radial-gradient(circle, rgba(76,175,80,0.07) 1px, transparent 1px); background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px; }
-        body.student-theme-history::before { background-image: repeating-linear-gradient(0deg, transparent, transparent 34px, rgba(109,76,65,0.08) 35px, transparent 36px), repeating-linear-gradient(90deg, transparent, transparent 54px, rgba(109,76,65,0.055) 55px, transparent 56px), repeating-linear-gradient(-30deg, transparent, transparent 60px, rgba(161,136,127,0.04) 61px, transparent 62px); }
-        body.student-theme-geography::before { background-image: linear-gradient(rgba(21,101,192,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(21,101,192,0.09) 1px, transparent 1px), radial-gradient(circle at 50% 50%, rgba(41,182,246,0.06) 0, transparent 70%); background-size: 60px 60px, 60px 60px, 100% 100%; }
-        body.student-theme-psychology::before { background-image: radial-gradient(ellipse at 30% 40%, rgba(106,27,154,0.10) 0, transparent 55%), radial-gradient(ellipse at 70% 65%, rgba(171,71,188,0.09) 0, transparent 48%), radial-gradient(circle, rgba(171,71,188,0.07) 1px, transparent 1px), radial-gradient(circle, rgba(206,147,216,0.05) 1px, transparent 1px); background-size: 100% 100%, 100% 100%, 44px 44px, 22px 22px; background-position: 0 0, 0 0, 0 0, 11px 11px; }
-        body.student-theme-self_improvement::before { background-image: repeating-linear-gradient(60deg, transparent, transparent 24px, rgba(230,81,0,0.07) 24px, rgba(230,81,0,0.07) 25px), repeating-linear-gradient(-30deg, transparent, transparent 48px, rgba(255,138,101,0.05) 48px, rgba(255,138,101,0.05) 49px); }
-        body.student-theme-general::before { background-image: radial-gradient(circle, rgba(108,92,231,0.10) 1px, transparent 1px), radial-gradient(circle at 30% 60%, rgba(0,206,201,0.08) 0, transparent 50%), radial-gradient(circle at 75% 25%, rgba(108,92,231,0.07) 0, transparent 45%); background-size: 36px 36px, 100% 100%, 100% 100%; }
+        body.student-theme-technology::before {
+            background-image: radial-gradient(circle, rgba(0, 229, 255, 0.18) 1px, transparent 1px), linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+            background-size: 32px 32px, 32px 32px, 32px 32px;
+        }
+
+        body.student-theme-science::before {
+            background-image: radial-gradient(circle at 50% 50%, rgba(52, 152, 219, 0.09) 0, transparent 60%), radial-gradient(circle, rgba(22, 160, 133, 0.09) 1px, transparent 1px), linear-gradient(rgba(52, 152, 219, 0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(52, 152, 219, 0.045) 1px, transparent 1px);
+            background-size: 100% 100%, 28px 28px, 28px 28px, 28px 28px;
+        }
+
+        body.student-theme-mathematics::before {
+            background-image: linear-gradient(rgba(57, 73, 171, 0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(57, 73, 171, 0.10) 1px, transparent 1px), linear-gradient(rgba(57, 73, 171, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(57, 73, 171, 0.04) 1px, transparent 1px);
+            background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px;
+        }
+
+        body.student-theme-sports::before {
+            background-image: repeating-linear-gradient(-55deg, transparent, transparent 28px, rgba(255, 87, 34, 0.07) 28px, rgba(255, 87, 34, 0.07) 29px), repeating-linear-gradient(35deg, transparent, transparent 50px, rgba(30, 136, 229, 0.05) 50px, rgba(30, 136, 229, 0.05) 51px);
+        }
+
+        body.student-theme-creative::before,
+        body.theme-creative::before,
+        body.student-theme-art::before {
+            background-image: repeating-linear-gradient(-45deg, transparent, transparent 22px, rgba(232, 67, 147, 0.06) 22px, rgba(232, 67, 147, 0.06) 23px), radial-gradient(circle at 20% 30%, rgba(255, 196, 74, 0.12), transparent 35%), radial-gradient(circle at 80% 70%, rgba(108, 92, 231, 0.10), transparent 30%), radial-gradient(circle at 60% 15%, rgba(232, 67, 147, 0.09), transparent 22%);
+        }
+
+        body.student-theme-reading::before {
+            background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, rgba(161, 136, 127, 0.13) 28px, transparent 29px), linear-gradient(90deg, rgba(121, 85, 72, 0.07) 1px, transparent 1px);
+            background-size: 100% 100%, 60px 100%;
+        }
+
+        body.student-theme-gaming::before {
+            background-image: linear-gradient(45deg, rgba(224, 64, 251, 0.08) 25%, transparent 25%), linear-gradient(-45deg, rgba(124, 77, 255, 0.08) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(224, 64, 251, 0.06) 75%), linear-gradient(-45deg, transparent 75%, rgba(124, 77, 255, 0.06) 75%), radial-gradient(circle, rgba(224, 64, 251, 0.12) 1px, transparent 1px);
+            background-size: 36px 36px, 36px 36px, 36px 36px, 36px 36px, 36px 36px;
+            background-position: 0 0, 0 18px, 18px -18px, -18px 0px, 0 0;
+        }
+
+        body.student-theme-environment::before {
+            background-image: radial-gradient(ellipse at 15% 50%, rgba(76, 175, 80, 0.11) 0, transparent 45%), radial-gradient(ellipse at 85% 20%, rgba(27, 94, 32, 0.09) 0, transparent 40%), radial-gradient(ellipse at 55% 85%, rgba(139, 195, 74, 0.10) 0, transparent 38%), radial-gradient(circle, rgba(76, 175, 80, 0.07) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px;
+        }
+
+        body.student-theme-history::before {
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 34px, rgba(109, 76, 65, 0.08) 35px, transparent 36px), repeating-linear-gradient(90deg, transparent, transparent 54px, rgba(109, 76, 65, 0.055) 55px, transparent 56px), repeating-linear-gradient(-30deg, transparent, transparent 60px, rgba(161, 136, 127, 0.04) 61px, transparent 62px);
+        }
+
+        body.student-theme-geography::before {
+            background-image: linear-gradient(rgba(21, 101, 192, 0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(21, 101, 192, 0.09) 1px, transparent 1px), radial-gradient(circle at 50% 50%, rgba(41, 182, 246, 0.06) 0, transparent 70%);
+            background-size: 60px 60px, 60px 60px, 100% 100%;
+        }
+
+        body.student-theme-psychology::before {
+            background-image: radial-gradient(ellipse at 30% 40%, rgba(106, 27, 154, 0.10) 0, transparent 55%), radial-gradient(ellipse at 70% 65%, rgba(171, 71, 188, 0.09) 0, transparent 48%), radial-gradient(circle, rgba(171, 71, 188, 0.07) 1px, transparent 1px), radial-gradient(circle, rgba(206, 147, 216, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 44px 44px, 22px 22px;
+            background-position: 0 0, 0 0, 0 0, 11px 11px;
+        }
+
+        body.student-theme-self_improvement::before {
+            background-image: repeating-linear-gradient(60deg, transparent, transparent 24px, rgba(230, 81, 0, 0.07) 24px, rgba(230, 81, 0, 0.07) 25px), repeating-linear-gradient(-30deg, transparent, transparent 48px, rgba(255, 138, 101, 0.05) 48px, rgba(255, 138, 101, 0.05) 49px);
+        }
+
+        body.student-theme-general::before {
+            background-image: radial-gradient(circle, rgba(108, 92, 231, 0.10) 1px, transparent 1px), radial-gradient(circle at 30% 60%, rgba(0, 206, 201, 0.08) 0, transparent 50%), radial-gradient(circle at 75% 25%, rgba(108, 92, 231, 0.07) 0, transparent 45%);
+            background-size: 36px 36px, 100% 100%, 100% 100%;
+        }
 
         body.theme-creative {
             background:
@@ -478,13 +556,11 @@
         body.theme-music .hero {
             border-color: rgba(142, 68, 173, .24);
             background:
-                repeating-linear-gradient(
-                    to bottom,
+                repeating-linear-gradient(to bottom,
                     transparent 0,
                     transparent 15px,
                     rgba(142, 68, 173, .09) 16px,
-                    transparent 17px
-                ),
+                    transparent 17px),
                 linear-gradient(120deg, #fff 0%, #f8f1fc 55%, #f2f7ff 100%);
         }
 
@@ -528,11 +604,35 @@
             box-shadow: 0 2px 6px rgba(53, 38, 53, .14);
         }
 
-        .paint-dot.one { top: 12px; left: 23px; background: #ef476f; }
-        .paint-dot.two { top: 29px; right: 15px; background: #ffd166; }
-        .paint-dot.three { right: 17px; bottom: 14px; background: #06a77d; }
-        .paint-dot.four { bottom: 11px; left: 24px; background: #4895ef; }
-        .paint-dot.five { top: 11px; right: 43px; background: #9b5de5; }
+        .paint-dot.one {
+            top: 12px;
+            left: 23px;
+            background: #ef476f;
+        }
+
+        .paint-dot.two {
+            top: 29px;
+            right: 15px;
+            background: #ffd166;
+        }
+
+        .paint-dot.three {
+            right: 17px;
+            bottom: 14px;
+            background: #06a77d;
+        }
+
+        .paint-dot.four {
+            bottom: 11px;
+            left: 24px;
+            background: #4895ef;
+        }
+
+        .paint-dot.five {
+            top: 11px;
+            right: 43px;
+            background: #9b5de5;
+        }
 
         .art-brush {
             position: absolute;
@@ -551,13 +651,11 @@
             right: 4px;
             width: 178px;
             height: 76px;
-            background: repeating-linear-gradient(
-                to bottom,
-                transparent 0,
-                transparent 13px,
-                rgba(102, 52, 126, .38) 14px,
-                transparent 15px
-            );
+            background: repeating-linear-gradient(to bottom,
+                    transparent 0,
+                    transparent 13px,
+                    rgba(102, 52, 126, .38) 14px,
+                    transparent 15px);
             transform: rotate(-5deg);
         }
 
@@ -570,9 +668,25 @@
             text-shadow: 0 6px 12px rgba(90, 43, 111, .16);
         }
 
-        .music-note.first { top: 4px; left: 24px; transform: rotate(-8deg); }
-        .music-note.second { top: 32px; left: 82px; color: #e84393; transform: rotate(7deg); }
-        .music-note.third { top: -4px; right: 12px; color: #d29ae4; transform: rotate(12deg); }
+        .music-note.first {
+            top: 4px;
+            left: 24px;
+            transform: rotate(-8deg);
+        }
+
+        .music-note.second {
+            top: 32px;
+            left: 82px;
+            color: #e84393;
+            transform: rotate(7deg);
+        }
+
+        .music-note.third {
+            top: -4px;
+            right: 12px;
+            color: #d29ae4;
+            transform: rotate(12deg);
+        }
 
         .theme-feature {
             position: relative;
@@ -589,7 +703,11 @@
             box-shadow: 0 10px 28px rgba(71, 46, 79, .1);
         }
 
-        .theme-feature-copy { position: relative; z-index: 1; }
+        .theme-feature-copy {
+            position: relative;
+            z-index: 1;
+        }
+
         .theme-feature-kicker {
             margin: 0 0 5px;
             color: var(--secondary);
@@ -598,6 +716,7 @@
             letter-spacing: .13em;
             text-transform: uppercase;
         }
+
         .theme-feature-title {
             margin: 0 0 5px;
             color: var(--text-main);
@@ -605,7 +724,12 @@
             font-size: 1.25rem;
             font-weight: 800;
         }
-        .theme-feature-description { margin: 0; color: var(--text-muted); }
+
+        .theme-feature-description {
+            margin: 0;
+            color: var(--text-muted);
+        }
+
         .theme-feature-decoration {
             flex: 0 0 auto;
             color: var(--secondary);
@@ -622,7 +746,7 @@
         body.theme-music .theme-feature {
             border-color: rgba(142, 68, 173, .22);
             background:
-                repeating-linear-gradient(to bottom, transparent 0 17px, rgba(142,68,173,.07) 18px, transparent 19px),
+                repeating-linear-gradient(to bottom, transparent 0 17px, rgba(142, 68, 173, .07) 18px, transparent 19px),
                 linear-gradient(110deg, #fff, #f7effb 58%, #f0f7ff);
         }
 
@@ -634,9 +758,19 @@
         }
 
         @media (max-width: 767px) {
-            .theme-artwork { margin-top: 6px; transform: scale(.85); }
-            .theme-feature { align-items: flex-start; padding: 18px; }
-            .theme-feature-decoration { font-size: 2rem; }
+            .theme-artwork {
+                margin-top: 6px;
+                transform: scale(.85);
+            }
+
+            .theme-feature {
+                align-items: flex-start;
+                padding: 18px;
+            }
+
+            .theme-feature-decoration {
+                font-size: 2rem;
+            }
         }
 
 
@@ -665,11 +799,9 @@
 
             background:
 
-                linear-gradient(
-                    180deg,
+                linear-gradient(180deg,
                     var(--surface),
-                    var(--page-bg)
-                );
+                    var(--page-bg));
 
             border-right:
                 1px solid var(--border);
@@ -727,11 +859,9 @@
 
             background:
 
-                linear-gradient(
-                    135deg,
+                linear-gradient(135deg,
                     var(--secondary),
-                    var(--accent)
-                );
+                    var(--accent));
 
             box-shadow:
                 0 8px 25px var(--glow);
@@ -833,11 +963,9 @@
 
             background:
 
-                linear-gradient(
-                    135deg,
+                linear-gradient(135deg,
                     var(--secondary),
-                    var(--accent)
-                );
+                    var(--accent));
 
             box-shadow:
                 0 8px 20px var(--glow);
@@ -1051,11 +1179,9 @@
 
             background:
 
-                linear-gradient(
-                    135deg,
+                linear-gradient(135deg,
                     var(--secondary),
-                    var(--accent)
-                );
+                    var(--accent));
 
             color: var(--page-bg);
 
@@ -1119,17 +1245,15 @@
 
             background:
 
-                linear-gradient(
-                    135deg,
+                linear-gradient(135deg,
                     var(--surface),
-                    var(--surface-alt)
-                );
+                    var(--surface-alt));
 
             border:
                 1px solid var(--border);
 
             box-shadow:
-                0 15px 40px rgba(0,0,0,.25);
+                0 15px 40px rgba(0, 0, 0, .25);
 
         }
 
@@ -1235,9 +1359,7 @@
             color: var(--secondary);
 
             filter:
-                drop-shadow(
-                    0 0 25px var(--glow)
-                );
+                drop-shadow(0 0 25px var(--glow));
 
         }
 
@@ -1344,17 +1466,15 @@
 
             background:
 
-                linear-gradient(
-                    145deg,
+                linear-gradient(145deg,
                     var(--surface),
-                    var(--surface-alt)
-                );
+                    var(--surface-alt));
 
             border:
                 1px solid var(--border);
 
             box-shadow:
-                0 8px 25px rgba(0,0,0,.18);
+                0 8px 25px rgba(0, 0, 0, .18);
 
             transition: .25s ease;
 
@@ -1505,11 +1625,9 @@
 
             background:
 
-                linear-gradient(
-                    135deg,
+                linear-gradient(135deg,
                     var(--surface-alt),
-                    var(--surface)
-                );
+                    var(--surface));
 
             border-top:
                 1px solid var(--border);
@@ -1881,7 +1999,7 @@
             }
 
 
-            .topbar > div:first-child {
+            .topbar>div:first-child {
 
                 min-width: 0;
 
@@ -1938,10 +2056,6 @@
             }
 
         }
-
-
-
-
     </style>
 
 </head>
@@ -1953,8 +2067,7 @@
         type="button"
         class="sidebar-backdrop"
         aria-label="Close navigation menu"
-        data-dashboard-sidebar-close
-    ></button>
+        data-dashboard-sidebar-close></button>
 
 
     {{-- =====================================================
@@ -1987,8 +2100,7 @@
                     aria-label="Open navigation menu"
                     aria-controls="studentSidebar"
                     aria-expanded="false"
-                    data-dashboard-sidebar-toggle
-                >
+                    data-dashboard-sidebar-toggle>
                     <i class="bi bi-list" aria-hidden="true"></i>
                 </button>
 
@@ -2021,8 +2133,7 @@
                 <button
                     type="button"
                     class="profile-btn dropdown-toggle"
-                    data-bs-toggle="dropdown"
-                >
+                    data-bs-toggle="dropdown">
 
 
                     <div class="d-none d-sm-block text-end">
@@ -2046,19 +2157,18 @@
 
                     @if($user->profile_picture)
 
-                        <img
-                            src="{{ asset('storage/' . $user->profile_picture) }}"
-                            class="profile-avatar"
-                            alt="Profile Picture"
-                        >
+                    <img
+                        src="{{ asset('storage/' . $user->profile_picture) }}"
+                        class="profile-avatar"
+                        alt="Profile Picture">
 
                     @else
 
-                        <div class="profile-avatar">
+                    <div class="profile-avatar">
 
-                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                        {{ strtoupper(substr($user->name, 0, 1)) }}
 
-                        </div>
+                    </div>
 
                     @endif
 
@@ -2081,8 +2191,7 @@
                             <br>
 
                             <small
-                                style="color:var(--text-muted);"
-                            >
+                                style="color:var(--text-muted);">
 
                                 {{ $user->email }}
 
@@ -2102,8 +2211,7 @@
 
                         <a
                             href="{{ route('student.profile') }}"
-                            class="dropdown-item"
-                        >
+                            class="dropdown-item">
 
                             <i class="bi bi-person-circle me-2"></i>
 
@@ -2118,8 +2226,7 @@
 
                         <a
                             href="{{ route('student.badges') }}"
-                            class="dropdown-item"
-                        >
+                            class="dropdown-item">
 
                             <i class="bi bi-award-fill me-2"></i>
 
@@ -2139,15 +2246,13 @@
 
                         <form
                             action="{{ route('logout-user') }}"
-                            method="POST"
-                        >
+                            method="POST">
 
                             @csrf
 
                             <button
                                 type="submit"
-                                class="dropdown-item text-danger"
-                            >
+                                class="dropdown-item text-danger">
 
                                 <i class="bi bi-box-arrow-right me-2"></i>
 
@@ -2218,135 +2323,134 @@
 
                         @forelse($interests as $interest)
 
-                            @php
+                        @php
 
-                                $cleanInterest =
-                                    strtolower(trim($interest));
+                        $cleanInterest =
+                        strtolower(trim($interest));
 
-                                $themeInterestAliases = [
-                                    'music' => [
-                                        'music', 'song', 'songs', 'singing', 'guitar',
-                                        'piano', 'violin', 'drums', 'instrument',
-                                        'instruments', 'songwriting',
-                                    ],
-                                    'creative' => [
-                                        'art', 'art & design', 'drawing', 'painting',
-                                        'design', 'craft', 'crafts', 'color theory',
-                                        'colour theory', 'illustration',
-                                    ],
-                                ];
-                                $active = $theme === $cleanInterest
-                                    || in_array($cleanInterest, $themeInterestAliases[$theme] ?? [], true);
+                        $themeInterestAliases = [
+                        'music' => [
+                        'music', 'song', 'songs', 'singing', 'guitar',
+                        'piano', 'violin', 'drums', 'instrument',
+                        'instruments', 'songwriting',
+                        ],
+                        'creative' => [
+                        'art', 'art & design', 'drawing', 'painting',
+                        'design', 'craft', 'crafts', 'color theory',
+                        'colour theory', 'illustration',
+                        ],
+                        ];
+                        $active = $theme === $cleanInterest
+                        || in_array($cleanInterest, $themeInterestAliases[$theme] ?? [], true);
 
-                                if(
-                                    $theme === 'chess'
-                                    &&
-                                    (
-                                        str_contains(
-                                            $cleanInterest,
-                                            'chess'
-                                        )
-                                        ||
-                                        str_contains(
-                                            $cleanInterest,
-                                            'puzzle'
-                                        )
-                                    )
-                                ) {
-                                    $active = true;
-                                }
+                        if(
+                        $theme === 'chess'
+                        &&
+                        (
+                        str_contains(
+                        $cleanInterest,
+                        'chess'
+                        )
+                        ||
+                        str_contains(
+                        $cleanInterest,
+                        'puzzle'
+                        )
+                        )
+                        ) {
+                        $active = true;
+                        }
 
-                            @endphp
-
-
-                            <a
-                                href="?focus={{ urlencode($interest) }}"
-                                class="interest-pill
-                                {{ $active ? 'active' : '' }}"
-                            >
-
-                                @if(
-                                    str_contains(
-                                        $cleanInterest,
-                                        'chess'
-                                    )
-                                )
-
-                                    ♟️
-
-                                @elseif(
-                                    str_contains(
-                                        $cleanInterest,
-                                        'code'
-                                    )
-                                    ||
-                                    str_contains(
-                                        $cleanInterest,
-                                        'program'
-                                    )
-                                )
-
-                                    💻
-
-                                @elseif(
-                                    str_contains(
-                                        $cleanInterest,
-                                        'music'
-                                    )
-                                    ||
-                                    str_contains(
-                                        $cleanInterest,
-                                        'song'
-                                    )
-                                )
-
-                                    🎵
-
-                                @elseif(
-                                    str_contains(
-                                        $cleanInterest,
-                                        'sport'
-                                    )
-                                )
-
-                                    ⚽
-
-                                @elseif(
-                                    str_contains(
-                                        $cleanInterest,
-                                        'art'
-                                    )
-                                )
-
-                                    🎨
-
-                                @elseif(
-                                    str_contains(
-                                        $cleanInterest,
-                                        'read'
-                                    )
-                                )
-
-                                    📚
-
-                                @else
-
-                                    ✦
-
-                                @endif
+                        @endphp
 
 
-                                {{ $interest }}
+                        <a
+                            href="?focus={{ urlencode($interest) }}"
+                            class="interest-pill
+                                {{ $active ? 'active' : '' }}">
 
-                            </a>
+                            @if(
+                            str_contains(
+                            $cleanInterest,
+                            'chess'
+                            )
+                            )
+
+                            ♟️
+
+                            @elseif(
+                            str_contains(
+                            $cleanInterest,
+                            'code'
+                            )
+                            ||
+                            str_contains(
+                            $cleanInterest,
+                            'program'
+                            )
+                            )
+
+                            💻
+
+                            @elseif(
+                            str_contains(
+                            $cleanInterest,
+                            'music'
+                            )
+                            ||
+                            str_contains(
+                            $cleanInterest,
+                            'song'
+                            )
+                            )
+
+                            🎵
+
+                            @elseif(
+                            str_contains(
+                            $cleanInterest,
+                            'sport'
+                            )
+                            )
+
+                            ⚽
+
+                            @elseif(
+                            str_contains(
+                            $cleanInterest,
+                            'art'
+                            )
+                            )
+
+                            🎨
+
+                            @elseif(
+                            str_contains(
+                            $cleanInterest,
+                            'read'
+                            )
+                            )
+
+                            📚
+
+                            @else
+
+                            ✦
+
+                            @endif
+
+
+                            {{ $interest }}
+
+                        </a>
 
                         @empty
 
-                            <span class="interest-pill active">
+                        <span class="interest-pill active">
 
-                                General Learning
+                            General Learning
 
-                            </span>
+                        </span>
 
                         @endforelse
 
@@ -2356,13 +2460,11 @@
 
 
                     <div
-                        class="d-flex flex-wrap align-items-center gap-3"
-                    >
+                        class="d-flex flex-wrap align-items-center gap-3">
 
                         <a
                             href="#quests"
-                            class="primary-btn"
-                        >
+                            class="primary-btn">
 
                             <i class="bi bi-play-circle-fill"></i>
 
@@ -2376,8 +2478,7 @@
                                 color:var(--text-muted);
                                 font-size:.78rem;
                                 font-style:italic;
-                            "
-                        >
+                            ">
 
                             "{{ $motto }}"
 
@@ -2399,24 +2500,24 @@
                     </div>
 
                     @if($themeKey === 'creative')
-                        <div class="theme-artwork" aria-hidden="true">
-                            <span class="art-brush">🖌️</span>
-                            <div class="art-palette">
-                                <span class="paint-dot one"></span>
-                                <span class="paint-dot two"></span>
-                                <span class="paint-dot three"></span>
-                                <span class="paint-dot four"></span>
-                                <span class="paint-dot five"></span>
-                            </div>
+                    <div class="theme-artwork" aria-hidden="true">
+                        <span class="art-brush">🖌️</span>
+                        <div class="art-palette">
+                            <span class="paint-dot one"></span>
+                            <span class="paint-dot two"></span>
+                            <span class="paint-dot three"></span>
+                            <span class="paint-dot four"></span>
+                            <span class="paint-dot five"></span>
                         </div>
+                    </div>
                     @elseif($themeKey === 'music')
-                        <div class="theme-artwork" aria-hidden="true">
-                            <div class="music-staff">
-                                <span class="music-note first">♫</span>
-                                <span class="music-note second">♪</span>
-                                <span class="music-note third">♬</span>
-                            </div>
+                    <div class="theme-artwork" aria-hidden="true">
+                        <div class="music-staff">
+                            <span class="music-note first">♫</span>
+                            <span class="music-note second">♪</span>
+                            <span class="music-note third">♬</span>
                         </div>
+                    </div>
                     @endif
 
 
@@ -2425,8 +2526,7 @@
                         style="
                             color:var(--secondary);
                             font-family:var(--font-display);
-                        "
-                    >
+                        ">
 
                         {{ $rankTitle }}
 
@@ -2600,126 +2700,121 @@
 
         @if($isChess)
 
-            <div class="glass-card mt-4">
+        <div class="glass-card mt-4">
 
 
-                <div
-                    class="d-flex align-items-center justify-content-between"
-                >
+            <div
+                class="d-flex align-items-center justify-content-between">
 
 
-                    <div>
+                <div>
 
-                        <div
-                            class="fw-bold"
-                            style="
+                    <div
+                        class="fw-bold"
+                        style="
                                 color:var(--secondary);
                                 font-family:var(--font-display);
-                            "
-                        >
+                            ">
 
-                            ♟ Grandmaster Path
-
-                        </div>
-
-
-                        <div
-                            class="small"
-                            style="color:var(--text-muted);"
-                        >
-
-                            Your chess progression
-
-                        </div>
+                        ♟ Grandmaster Path
 
                     </div>
 
 
-                    <span
-                        style="
+                    <div
+                        class="small"
+                        style="color:var(--text-muted);">
+
+                        Your chess progression
+
+                    </div>
+
+                </div>
+
+
+                <span
+                    style="
                             color:var(--secondary);
                             font-weight:900;
-                        "
-                    >
+                        ">
 
-                        Level {{ $userLevel }}
+                    Level {{ $userLevel }}
 
-                    </span>
-
-
-                </div>
-
-
-                <div
-                    class="d-flex flex-wrap gap-2 mt-3"
-                >
-
-
-                    <span class="interest-pill">
-
-                        ♙ Pawn
-
-                    </span>
-
-
-                    <span class="interest-pill active">
-
-                        ♘ {{ $rankTitle }}
-
-                    </span>
-
-
-                    <span class="interest-pill">
-
-                        ♗ Bishop
-
-                    </span>
-
-
-                    <span class="interest-pill">
-
-                        ♖ Rook
-
-                    </span>
-
-
-                    <span class="interest-pill">
-
-                        ♕ Queen
-
-                    </span>
-
-
-                    <span class="interest-pill">
-
-                        ♔ King
-
-                    </span>
-
-
-                </div>
+                </span>
 
 
             </div>
 
+
+            <div
+                class="d-flex flex-wrap gap-2 mt-3">
+
+
+                <span class="interest-pill">
+
+                    ♙ Pawn
+
+                </span>
+
+
+                <span class="interest-pill active">
+
+                    ♘ {{ $rankTitle }}
+
+                </span>
+
+
+                <span class="interest-pill">
+
+                    ♗ Bishop
+
+                </span>
+
+
+                <span class="interest-pill">
+
+                    ♖ Rook
+
+                </span>
+
+
+                <span class="interest-pill">
+
+                    ♕ Queen
+
+                </span>
+
+
+                <span class="interest-pill">
+
+                    ♔ King
+
+                </span>
+
+
+            </div>
+
+
+        </div>
+
         @elseif($themeKey === 'creative')
-            <section class="theme-feature mt-4" aria-label="Art studio">
-                <div class="theme-feature-copy">
-                    <p class="theme-feature-kicker">Your creative corner</p>
-                    <h2 class="theme-feature-title">The Art Studio</h2>
-                    <p class="theme-feature-description">Mix ideas, explore color, and make every quest your canvas.</p>
-                </div>
-                <div class="theme-feature-decoration" aria-hidden="true">✎ ✿</div>
-            </section>
+        <section class="theme-feature mt-4" aria-label="Art studio">
+            <div class="theme-feature-copy">
+                <p class="theme-feature-kicker">Your creative corner</p>
+                <h2 class="theme-feature-title">The Art Studio</h2>
+                <p class="theme-feature-description">Mix ideas, explore color, and make every quest your canvas.</p>
+            </div>
+            <div class="theme-feature-decoration" aria-hidden="true">✎ ✿</div>
+        </section>
         @elseif($themeKey === 'music')
-            <section class="theme-feature mt-4" aria-label="Music studio">
-                <div class="theme-feature-copy">
-                    <p class="theme-feature-kicker">Find your rhythm</p>
-                    <h2 class="theme-feature-title">The Music Room</h2>
-                    <p class="theme-feature-description">Tune in, follow the beat, and turn each quest into a new composition.</p>
-                </div>
-                <div class="theme-feature-decoration" aria-hidden="true">♫ ♪ ♬</div>
-            </section>
+        <section class="theme-feature mt-4" aria-label="Music studio">
+            <div class="theme-feature-copy">
+                <p class="theme-feature-kicker">Find your rhythm</p>
+                <h2 class="theme-feature-title">The Music Room</h2>
+                <p class="theme-feature-description">Tune in, follow the beat, and turn each quest into a new composition.</p>
+            </div>
+            <div class="theme-feature-decoration" aria-hidden="true">♫ ♪ ♬</div>
+        </section>
         @endif
 
 
@@ -2764,22 +2859,20 @@
 
 
                 <div
-                    class="col-lg-3 text-lg-end mt-3 mt-lg-0"
-                >
+                    class="col-lg-3 text-lg-end mt-3 mt-lg-0">
 
                     @if ($dailyMissionUrl)
-                        <a
-                            href="{{ $dailyMissionUrl }}"
-                            class="primary-btn"
-                        >
+                    <a
+                        href="{{ $dailyMissionUrl }}"
+                        class="primary-btn">
 
-                            {{ $dailyMissionAction }}
+                        {{ $dailyMissionAction }}
 
-                            <i class="bi bi-arrow-right"></i>
+                        <i class="bi bi-arrow-right"></i>
 
-                        </a>
+                    </a>
                     @elseif ($projectChallenge?->review_status === 'pending_review')
-                        <span class="badge text-bg-warning">Waiting for admin approval</span>
+                    <span class="badge text-bg-warning">Waiting for admin approval</span>
                     @endif
 
                 </div>
@@ -2798,8 +2891,7 @@
 
         <div
             class="section-header"
-            id="quests"
-        >
+            id="quests">
 
 
             <div>
@@ -2826,12 +2918,11 @@
                     color:var(--secondary);
                     font-size:.75rem;
                     font-weight:800;
-                "
-            >
+                ">
 
                 {{ $tasks->count() }} Available
                 @if ($pendingReviewCount > 0)
-                    · {{ $pendingReviewCount }} Awaiting approval
+                · {{ $pendingReviewCount }} Awaiting approval
                 @endif
 
             </span>
@@ -2840,10 +2931,10 @@
         </div>
 
         @if ($pendingReviewCount > 0)
-            <div class="alert alert-warning mt-3 mb-0" role="status">
-                <strong>Your quests are being reviewed.</strong>
-                You can see them below, but they will be playable after an admin approves them.
-            </div>
+        <div class="alert alert-warning mt-3 mb-0" role="status">
+            <strong>Your quests are being reviewed.</strong>
+            You can see them below, but they will be playable after an admin approves them.
+        </div>
         @endif
 
 
@@ -2854,158 +2945,94 @@
             @forelse($learningQuests as $task)
 
 
-                <div class="col-md-6 col-xl-4">
+            <div class="col-md-6 col-xl-4">
 
 
-                    <div class="glass-card quest-card">
+                <div class="glass-card quest-card">
 
 
-                        <div>
+                    <div>
 
 
-                            <div class="quest-top">
+                        <div class="quest-top">
 
 
-                                <span class="quest-category">
+                            <span class="quest-category">
 
-                                    {{ $task->category ?? 'Quest' }}
-
-                                </span>
-
-
-                                <span class="quest-xp">
-
-                                    <i class="bi bi-lightning-charge-fill"></i>
-
-                                    +{{ $task->xp ?? 20 }} XP
-
-                                </span>
-                                @if ($task->review_status === 'pending_review')
-                                    <span class="badge text-bg-warning">Awaiting approval</span>
-                                @endif
-
-
-                            </div>
-
-
-
-                            <h4 class="quest-title">
-
-                                {{ $task->title }}
-
-                            </h4>
-
-
-
-                            <p class="quest-description-small">
-
-                                {{ $task->description
-                                    ?? 'Complete this learning challenge.'
-                                }}
-
-                            </p>
-
-
-                        </div>
-
-
-
-                        <div
-                            class="d-flex align-items-center justify-content-between pt-3"
-                            style="
-                                border-top:
-                                    1px solid var(--border);
-                            "
-                        >
-
-
-                            <span
-                                class="small text-capitalize"
-                                style="color:var(--text-muted);"
-                            >
-
-                                <i class="bi bi-bar-chart me-1"></i>
-
-                                {{ $task->difficulty ?? $difficulty }}
+                                {{ $task->category ?? 'Quest' }}
 
                             </span>
 
 
+                            <span class="quest-xp">
 
-                            @if ($task->review_status === 'approved')
-                                <a
-                                    href="{{ route('student.game.play', $task->id) }}"
-                                    class="start-btn"
-                                >
+                                <i class="bi bi-lightning-charge-fill"></i>
 
-                                    Start Quest
+                                +{{ $task->xp ?? 20 }} XP
 
-                                    <i class="bi bi-chevron-right"></i>
-
-                                </a>
-                            @else
-                                <span class="small text-warning-emphasis">Admin review in progress</span>
+                            </span>
+                            @if ($task->review_status === 'pending_review')
+                            <span class="badge text-bg-warning">Awaiting approval</span>
                             @endif
 
 
                         </div>
 
 
+
+                        <h4 class="quest-title">
+
+                            {{ $task->title }}
+
+                        </h4>
+
+
+
+                        <p class="quest-description-small">
+
+                            {{ $task->description
+                                    ?? 'Complete this learning challenge.'
+                                }}
+
+                        </p>
+
+
                     </div>
 
 
-                </div>
-
-
-            @empty
-
-
-                <div class="col-12">
-
 
                     <div
-                        class="glass-card text-center py-5"
-                    >
+                        class="d-flex align-items-center justify-content-between pt-3"
+                        style="
+                                border-top:
+                                    1px solid var(--border);
+                            ">
 
 
-                        <div
-                            style="
-                                font-size:3rem;
-                                color:var(--secondary);
-                            "
-                        >
+                        <span
+                            class="small text-capitalize"
+                            style="color:var(--text-muted);">
 
-                            {{ $themeIcon }}
+                            <i class="bi bi-bar-chart me-1"></i>
 
-                        </div>
+                            {{ $task->difficulty ?? $difficulty }}
+
+                        </span>
 
 
-                        @if ($pendingReviewCount > 0)
-                            <h4 class="mt-3">Your quests are being reviewed</h4>
-                            <p style="color:var(--text-muted);">
-                                Your game-based quests will appear here after an admin approves them.
-                            </p>
-                        @elseif ($questGenerationFailed)
-                            <h4 class="mt-3">No new quests could be loaded</h4>
-                            <p style="color:var(--text-muted);">
-                                We couldn’t get a new interest-matched quest right now. Check your connection and try again.
-                            </p>
-                            <a href="{{ route('student.dashboard') }}" class="start-btn">
-                                Try again <i class="bi bi-arrow-clockwise"></i>
-                            </a>
-                        @elseif ($playableGames->isEmpty())
-                            <h4 class="mt-3">No playable games for these interests yet</h4>
-                            <p style="color:var(--text-muted);">
-                                There isn’t an enabled game for your registered interests right now.
-                            </p>
+
+                        @if ($task->review_status === 'approved')
+                        <a
+                            href="{{ route('student.game.play', $task->id) }}"
+                            class="start-btn">
+
+                            Start Quest
+
+                            <i class="bi bi-chevron-right"></i>
+
+                        </a>
                         @else
-                            <h4 class="mt-3">Preparing your next quests</h4>
-                            <p style="color:var(--text-muted);">
-                                Your completed quests are saved. New interest-matched quests will appear here when they are ready.
-                            </p>
-                            <a href="{{ route('student.dashboard') }}" class="start-btn">
-                                Check for new quests <i class="bi bi-arrow-clockwise"></i>
-                            </a>
+                        <span class="small text-warning-emphasis">Admin review in progress</span>
                         @endif
 
 
@@ -3013,6 +3040,65 @@
 
 
                 </div>
+
+
+            </div>
+
+
+            @empty
+
+
+            <div class="col-12">
+
+
+                <div
+                    class="glass-card text-center py-5">
+
+
+                    <div
+                        style="
+                                font-size:3rem;
+                                color:var(--secondary);
+                            ">
+
+                        {{ $themeIcon }}
+
+                    </div>
+
+
+                    @if ($pendingReviewCount > 0)
+                    <h4 class="mt-3">Your quests are being reviewed</h4>
+                    <p style="color:var(--text-muted);">
+                        Your game-based quests will appear here after an admin approves them.
+                    </p>
+                    @elseif ($questGenerationFailed)
+                    <h4 class="mt-3">No new quests could be loaded</h4>
+                    <p style="color:var(--text-muted);">
+                        We couldn’t get a new interest-matched quest right now. Check your connection and try again.
+                    </p>
+                    <a href="{{ route('student.dashboard') }}" class="start-btn">
+                        Try again <i class="bi bi-arrow-clockwise"></i>
+                    </a>
+                    @elseif ($playableGames->isEmpty())
+                    <h4 class="mt-3">No playable games for these interests yet</h4>
+                    <p style="color:var(--text-muted);">
+                        There isn’t an enabled game for your registered interests right now.
+                    </p>
+                    @else
+                    <h4 class="mt-3">Preparing your next quests</h4>
+                    <p style="color:var(--text-muted);">
+                        Your completed quests are saved. New interest-matched quests will appear here when they are ready.
+                    </p>
+                    <a href="{{ route('student.dashboard') }}" class="start-btn">
+                        Check for new quests <i class="bi bi-arrow-clockwise"></i>
+                    </a>
+                    @endif
+
+
+                </div>
+
+
+            </div>
 
 
             @endforelse
@@ -3028,108 +3114,108 @@
                     One real-world project challenge each day, based on your interests and reviewed by an admin
                 </div>
             </div>
-        </div> 
+        </div>
 
         @if ($projectChallenge)
-            @php
-                $latestProjectSubmission = $projectChallenge->submissions->first();
-            @endphp
-            @if ($projectChallenge->review_status === 'pending_review')
-                <div class="glass-card text-center py-4 mb-5">
-                    <h3 class="h4">Your project challenge is under admin review</h3>
-                    <p class="mb-0" style="color:var(--text-muted);">
-                        The project brief will appear here after it has been approved.
-                    </p>
+        @php
+        $latestProjectSubmission = $projectChallenge->submissions->first();
+        @endphp
+        @if ($projectChallenge->review_status === 'pending_review')
+        <div class="glass-card text-center py-4 mb-5">
+            <h3 class="h4">Your project challenge is under admin review</h3>
+            <p class="mb-0" style="color:var(--text-muted);">
+                The project brief will appear here after it has been approved.
+            </p>
+        </div>
+        @else
+        <div class="glass-card mb-5">
+            <div class="quest-top mb-3">
+                <span class="quest-category">{{ $projectChallenge->interest }} project</span>
+                <span class="badge text-bg-success">
+                    <i class="bi bi-shield-check me-1"></i>
+                    Automatic challenge checks: {{ ucfirst($projectChallenge->ai_verification_status ?? 'passed') }}
+                </span>
+                <span class="quest-xp">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                    +{{ $projectChallenge->xp }} XP after approval
+                </span>
+            </div>
+            <h3 class="quest-title">{{ $projectChallenge->title }}</h3>
+            <p class="quest-description-small">{{ $projectChallenge->project_brief }}</p>
+            <div class="row g-4 mt-2">
+                <div class="col-md-6">
+                    <h5 class="fw-bold">Project goals</h5>
+                    <ul>
+                        @foreach ($projectChallenge->objectives as $objective)
+                        <li class="mb-2">{{ $objective }}</li>
+                        @endforeach
+                    </ul>
                 </div>
-            @else
-            <div class="glass-card mb-5">
-                <div class="quest-top mb-3">
-                    <span class="quest-category">{{ $projectChallenge->interest }} project</span>
-                    <span class="badge text-bg-success">
-                        <i class="bi bi-shield-check me-1"></i>
-                        Automatic challenge checks: {{ ucfirst($projectChallenge->ai_verification_status ?? 'passed') }}
-                    </span>
-                    <span class="quest-xp">
-                        <i class="bi bi-lightning-charge-fill"></i>
-                        +{{ $projectChallenge->xp }} XP after approval
-                    </span>
+                <div class="col-md-6">
+                    <h5 class="fw-bold">What to deliver</h5>
+                    <ul>
+                        @foreach ($projectChallenge->deliverables as $deliverable)
+                        <li class="mb-2">{{ $deliverable }}</li>
+                        @endforeach
+                    </ul>
                 </div>
-                <h3 class="quest-title">{{ $projectChallenge->title }}</h3>
-                <p class="quest-description-small">{{ $projectChallenge->project_brief }}</p>
-                <div class="row g-4 mt-2">
-                    <div class="col-md-6">
-                        <h5 class="fw-bold">Project goals</h5>
-                        <ul>
-                            @foreach ($projectChallenge->objectives as $objective)
-                                <li class="mb-2">{{ $objective }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h5 class="fw-bold">What to deliver</h5>
-                        <ul>
-                            @foreach ($projectChallenge->deliverables as $deliverable)
-                                <li class="mb-2">{{ $deliverable }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pt-3 border-top">
-                    <span class="small text-capitalize" style="color:var(--text-muted);">
-                        {{ $projectChallenge->difficulty }} ·
-                        @if ($projectChallenge->review_status === 'pending_review')
-                            Waiting for admin approval
-                        @elseif ($latestProjectSubmission?->status === 'submitted')
-                            Submission under review
-                        @elseif ($latestProjectSubmission?->status === 'revision_requested')
-                            Changes requested
-                        @else
-                            Ready to start
-                        @endif
-                    </span>
-                    @if ($projectChallenge->review_status === 'approved')
-                        <a href="{{ route('student.project-challenges.show', $projectChallenge) }}" class="start-btn">
-                            {{ $latestProjectSubmission?->status === 'revision_requested' ? 'Update submission' : ($latestProjectSubmission ? 'View submission' : 'View project brief') }}
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
+            </div>
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pt-3 border-top">
+                <span class="small text-capitalize" style="color:var(--text-muted);">
+                    {{ $projectChallenge->difficulty }} ·
+                    @if ($projectChallenge->review_status === 'pending_review')
+                    Waiting for admin approval
+                    @elseif ($latestProjectSubmission?->status === 'submitted')
+                    Submission under review
+                    @elseif ($latestProjectSubmission?->status === 'revision_requested')
+                    Changes requested
+                    @else
+                    Ready to start
                     @endif
-                </div>
-                @if ($projectChallenge->review_status === 'pending_review')
-                    <p class="small mt-3 mb-0" style="color:var(--text-muted);">
-                        Automatic checks passed. An admin is reviewing the challenge before it is published. The uploaded activity evidence will be reviewed by an admin too.
-                    </p>
-                @elseif ($latestProjectSubmission?->status === 'revision_requested')
-                    <p class="small mt-3 mb-0" style="color:var(--text-muted);">
-                        Admin feedback: {{ $latestProjectSubmission->review_note }}
-                    </p>
-                @elseif ($latestProjectSubmission?->status === 'submitted')
-                    <p class="small mt-3 mb-0" style="color:var(--text-muted);">
-                        Your activity evidence is waiting for an admin to review it.
-                    </p>
+                </span>
+                @if ($projectChallenge->review_status === 'approved')
+                <a href="{{ route('student.project-challenges.show', $projectChallenge) }}" class="start-btn">
+                    {{ $latestProjectSubmission?->status === 'revision_requested' ? 'Update submission' : ($latestProjectSubmission ? 'View submission' : 'View project brief') }}
+                    <i class="bi bi-chevron-right"></i>
+                </a>
                 @endif
             </div>
+            @if ($projectChallenge->review_status === 'pending_review')
+            <p class="small mt-3 mb-0" style="color:var(--text-muted);">
+                Automatic checks passed. An admin is reviewing the challenge before it is published. The uploaded activity evidence will be reviewed by an admin too.
+            </p>
+            @elseif ($latestProjectSubmission?->status === 'revision_requested')
+            <p class="small mt-3 mb-0" style="color:var(--text-muted);">
+                Admin feedback: {{ $latestProjectSubmission->review_note }}
+            </p>
+            @elseif ($latestProjectSubmission?->status === 'submitted')
+            <p class="small mt-3 mb-0" style="color:var(--text-muted);">
+                Your activity evidence is waiting for an admin to review it.
+            </p>
             @endif
+        </div>
+        @endif
         @elseif ($projectChallengeGenerationFailed)
-            <div class="glass-card text-center py-4 mb-5">
-                <h4>Project challenge is not available yet</h4>
-                <p style="color:var(--text-muted);">
-                    We could not generate a project challenge right now. Please try again later.
-                </p>
-            </div>
+        <div class="glass-card text-center py-4 mb-5">
+            <h4>Project challenge is not available yet</h4>
+            <p style="color:var(--text-muted);">
+                We could not generate a project challenge right now. Please try again later.
+            </p>
+        </div>
         @elseif ($hasProjectChallengeToday)
-            <div class="glass-card text-center py-4 mb-5">
-                <h4>Your project challenge for today has been delivered</h4>
-                <p class="mb-0" style="color:var(--text-muted);">
-                    Come back tomorrow for your next interest-based challenge.
-                </p>
-            </div>
+        <div class="glass-card text-center py-4 mb-5">
+            <h4>Your project challenge for today has been delivered</h4>
+            <p class="mb-0" style="color:var(--text-muted);">
+                Come back tomorrow for your next interest-based challenge.
+            </p>
+        </div>
         @else
-            <div class="glass-card text-center py-4 mb-5">
-                <h4>Your project challenge is being prepared</h4>
-                <p class="mb-0" style="color:var(--text-muted);">
-                    An AI-generated project based on your interests will appear here after admin review.
-                </p>
-            </div>
+        <div class="glass-card text-center py-4 mb-5">
+            <h4>Your project challenge is being prepared</h4>
+            <p class="mb-0" style="color:var(--text-muted);">
+                An AI-generated project based on your interests will appear here after admin review.
+            </p>
+        </div>
         @endif
 
         {{-- =================================================
@@ -3138,8 +3224,7 @@
 
         <div
             class="section-header"
-            id="topics"
-        >
+            id="topics">
 
 
             <div>
@@ -3173,8 +3258,7 @@
 
 
             <div
-                class="d-flex align-items-center gap-3 mb-3"
-            >
+                class="d-flex align-items-center gap-3 mb-3">
 
 
                 <div class="stat-icon">
@@ -3188,8 +3272,7 @@
 
                     <div
                         class="small text-uppercase fw-bold"
-                        style="color:var(--text-muted);"
-                    >
+                        style="color:var(--text-muted);">
 
                         Gemini AI
 
@@ -3206,35 +3289,34 @@
             </div>
 
             <div
-                class="d-flex flex-wrap gap-2"
-            >
+                class="d-flex flex-wrap gap-2">
                 @forelse($recommendedTopics as $topic)
-                    <span class="topic-chip">
-                        <i class="bi bi-lightbulb"></i>
-                        {{ $topic }}
-                    </span>
+                <span class="topic-chip">
+                    <i class="bi bi-lightbulb"></i>
+                    {{ $topic }}
+                </span>
                 @empty
 
-                    @if(!empty($interests))
-                        @foreach($interests as $item)
-                            <span class="topic-chip">
-                                <i class="bi bi-lightbulb"></i>
-                                {{ $item }} Mastery
-                            </span>
-                        @endforeach
+                @if(!empty($interests))
+                @foreach($interests as $item)
+                <span class="topic-chip">
+                    <i class="bi bi-lightbulb"></i>
+                    {{ $item }} Mastery
+                </span>
+                @endforeach
 
-                    @else
+                @else
 
-                        <span class="topic-chip">
+                <span class="topic-chip">
 
-                            <i class="bi bi-lightbulb"></i>
+                    <i class="bi bi-lightbulb"></i>
 
-                            Personalized Learning
+                    Personalized Learning
 
-                        </span>
+                </span>
 
 
-                    @endif
+                @endif
 
 
                 @endforelse
@@ -3256,8 +3338,7 @@
                 class="d-flex flex-column gap-2 mb-3"
                 aria-live="polite"
                 aria-label="Learning assistant conversation"
-                style="max-height:260px;overflow-y:auto;"
-            >
+                style="max-height:260px;overflow-y:auto;">
                 <div class="topic-chip align-self-start">
                     Hi! Ask me about your recommended topics or learning interests.
                 </div>
@@ -3274,8 +3355,7 @@
                     maxlength="1000"
                     placeholder="Ask a learning question..."
                     autocomplete="off"
-                    required
-                >
+                    required>
                 <button id="recommendationChatSend" class="btn btn-primary" type="submit">
                     Send
                 </button>
@@ -3299,8 +3379,7 @@
                 border-top:
                     1px solid var(--border);
                 font-size:.75rem;
-            "
-        >
+            ">
 
             {{ $themeIcon }}
 
@@ -3402,7 +3481,10 @@
                             'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value,
                             'Accept': 'application/json'
                         },
-                        body: JSON.stringify({ message, history })
+                        body: JSON.stringify({
+                            message,
+                            history
+                        })
                     });
                     const data = await response.json();
                     if (!response.ok || !data.success) {
@@ -3410,13 +3492,16 @@
                     }
 
                     appendMessage('assistant', data.reply);
-                    statusElement.textContent = data.mode === 'offline'
-                        ? 'Gemini is unreachable right now; the built-in learning helper is answering.'
-                        : '';
-                    history.push(
-                        { role: 'user', content: message },
-                        { role: 'assistant', content: data.reply }
-                    );
+                    statusElement.textContent = data.mode === 'offline' ?
+                        'Gemini is unreachable right now; the built-in learning helper is answering.' :
+                        '';
+                    history.push({
+                        role: 'user',
+                        content: message
+                    }, {
+                        role: 'assistant',
+                        content: data.reply
+                    });
                     if (history.length > 8) history.splice(0, history.length - 8);
                 } catch (error) {
                     errorElement.textContent = error.message || 'The learning assistant could not reply. Please try again.';
@@ -3430,6 +3515,7 @@
         })();
     </script>
 
+    @include('student.partials.help-chat')
 </body>
 
 </html>

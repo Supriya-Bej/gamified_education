@@ -29,6 +29,9 @@ use App\Http\Controllers\StudentProfileController;
 use App\Http\Controllers\StudentProgressController;
 use App\Http\Controllers\StudentProjectChallengeController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\StudentHelpChatController;
+use App\Http\Controllers\StudentFeedbackController;
+use App\Http\Controllers\Admin\FeedbackManagementController;
 use App\Models\Task;
 use Illuminate\Support\Facades\Route;
 
@@ -70,9 +73,15 @@ Route::middleware([
     Route::get('/student/certificates/{certificateId}', [StudentCertificateController::class, 'show'])
         ->name('student.certificates.show');
 
+    // Old dashboard chat card: same improved helper, so the existing view keeps workingI
     Route::post('/student/ai-recommendations/chat', [StudentDashboardController::class, 'chat'])
         ->middleware('throttle:12,1')
         ->name('student.ai-recommendations.chat');
+
+    // Floating help chatbot (all student pages)
+    Route::post('/student/help-chat', [StudentHelpChatController::class, 'send'])
+        ->middleware('throttle:20,1')
+        ->name('student.help-chat');
 
     // Profile
     Route::get('/student/profile', [StudentProfileController::class, 'edit'])
@@ -137,6 +146,14 @@ Route::middleware([
     Route::post('/student/project-challenges/{projectChallenge}/submissions', [StudentProjectChallengeController::class, 'submit'])
         ->middleware('throttle:6,1')
         ->name('student.project-challenges.submit');
+
+    // Feedback
+    Route::get('/student/feedback', [StudentFeedbackController::class, 'index'])
+        ->name('student.feedback');
+
+    Route::post('/student/feedback', [StudentFeedbackController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('student.feedback.store');
 });
 // Logout
 Route::post('/student/logout', [UserController::class, 'logoutUser'])->name('logout-user');
@@ -335,18 +352,14 @@ Route::middleware([
 
     Route::delete('/topics/{topic}', [TopicManagementController::class, 'destroy'])
         ->name('admin.topics.destroy');
+
+    // Feedback
+    Route::get('/feedback', [FeedbackManagementController::class, 'index'])
+        ->name('admin.feedback.index');
+
+    Route::put('/feedback/{feedback}/read', [FeedbackManagementController::class, 'markRead'])
+        ->name('admin.feedback.read');
+
+    Route::delete('/feedback/{feedback}', [FeedbackManagementController::class, 'destroy'])
+        ->name('admin.feedback.destroy');
 });
-
-// Admin
-// Route::prefix('admin')->group(function () {
-
-//     Route::get('/games', [AdminGameController::class, 'index'])
-//         ->name('admin.games.index');
-
-//     Route::get('/games/create', [AdminGameController::class, 'create'])
-//         ->name('admin.games.create');
-
-//     Route::post('/games', [AdminGameController::class, 'store'])
-//         ->name('admin.games.store');
-
-// });

@@ -596,6 +596,21 @@
 
             </a>
 
+            <!-- Student Feedback -->
+            <a href="{{ route('admin.feedback.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.feedback.*') ? 'active' : '' }}">
+
+                <i class="bi bi-chat-square-text"></i>
+
+                <span>Feedback</span>
+
+                @php $unreadFeedback = \App\Models\Feedback::where('status', 'new')->count(); @endphp
+                @if($unreadFeedback > 0)
+                <span class="badge text-bg-danger ms-auto">{{ $unreadFeedback }}</span>
+                @endif
+
+            </a>
+
 
             <!-- SYSTEM -->
 

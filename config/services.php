@@ -35,8 +35,17 @@ return [
         ],
     ],
 
+    // 'gemini' => [
+    //     'api_key' => env('GEMINI_API_KEY'),
+    // ],
+
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
+        'chat_models' => array_values(array_unique(array_filter([
+            env('GEMINI_CHAT_MODEL'),
+            'gemini-flash-latest',
+            'gemini-flash-lite-latest',
+        ]))),
     ],
 
 ];

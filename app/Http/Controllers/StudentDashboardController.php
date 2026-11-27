@@ -21,28 +21,17 @@ use Illuminate\Validation\Rule;
 
 class StudentDashboardController extends Controller
 {
-    public function chat(Request $request, GeminiService $gemini)
+    public function chat(Request $request, \App\Services\HelpChatService $helper)
     {
         $validated = $request->validate([
             'message' => ['required', 'string', 'max:1000'],
-            'history' => ['sometimes', 'array', 'max:8'],
+            'history' => ['sometimes', 'array', 'max:10'],
             'history.*.role' => ['required', Rule::in(['user', 'assistant'])],
-            'history.*.content' => ['required', 'string', 'max:1000'],
+            'history.*.content' => ['required', 'string', 'max:4000'],
         ]);
 
-        $student = Auth::guard('student')->user();
-        $preference = $student?->preferences;
-        $interests = is_array($preference?->interests)
-            ? $preference->interests
-            : [];
-        $topics = is_array($preference?->ai_profile)
-            && is_array($preference->ai_profile['recommended_topics'] ?? null)
-            ? $preference->ai_profile['recommended_topics']
-            : [];
-
-        $assistantResponse = $gemini->chatAboutRecommendations(
-            $interests,
-            $topics,
+        $assistantResponse = $helper->reply(
+            Auth::guard('student')->user(),
             $validated['history'] ?? [],
             trim($validated['message'])
         );
@@ -285,10 +274,10 @@ class StudentDashboardController extends Controller
         $loadCourseProgress = function () use ($playableGames, $interestProgression, $user): array {
             return $playableGames
                 ->pluck('category')
-                ->filter(fn ($category) => is_string($category) && trim($category) !== '')
-                ->map(fn ($category) => strtolower(trim($category)))
+                ->filter(fn($category) => is_string($category) && trim($category) !== '')
+                ->map(fn($category) => strtolower(trim($category)))
                 ->unique()
-                ->mapWithKeys(fn (string $category) => [
+                ->mapWithKeys(fn(string $category) => [
                     $category => $interestProgression->stateFor((int) $user->id, $category),
                 ])
                 ->all();
@@ -344,7 +333,7 @@ class StudentDashboardController extends Controller
             }
 
             $categoryGames = $playableGames
-                ->filter(fn (Game $game) => strtolower(trim((string) $game->category)) === $category)
+                ->filter(fn(Game $game) => strtolower(trim((string) $game->category)) === $category)
                 ->values();
             if ($categoryGames->isEmpty()) {
                 continue;
@@ -371,12 +360,12 @@ class StudentDashboardController extends Controller
 
                     return $game instanceof Game
                         && strtolower(trim((string) $task->game_type))
-                            === strtolower(trim((string) $game->game_type))
+                        === strtolower(trim((string) $game->game_type))
                         && strtolower(trim((string) $task->category))
-                            === strtolower(trim((string) $game->category));
+                        === strtolower(trim((string) $game->category));
                 })
-                ->groupBy(fn (LearningTask $task) => strtolower(trim((string) $task->game_type)))
-                ->map(fn ($gameTasks) => $gameTasks->pluck('title')->all())
+                ->groupBy(fn(LearningTask $task) => strtolower(trim((string) $task->game_type)))
+                ->map(fn($gameTasks) => $gameTasks->pluck('title')->all())
                 ->all();
 
             $generationPlans[$difficulty][$category] = [
@@ -449,7 +438,7 @@ class StudentDashboardController extends Controller
                     continue;
                 }
 
-                $taskKey = $gameType.':'.strtolower($title);
+                $taskKey = $gameType . ':' . strtolower($title);
                 if (isset($seenTaskKeys[$taskKey])) {
                     continue;
                 }
@@ -587,9 +576,9 @@ class StudentDashboardController extends Controller
 
                 return $game instanceof Game
                     && strtolower(trim((string) $task->game_type))
-                        === strtolower(trim((string) $game->game_type))
+                    === strtolower(trim((string) $game->game_type))
                     && strtolower(trim((string) $task->category))
-                        === strtolower(trim((string) $game->category));
+                    === strtolower(trim((string) $game->category));
             })
             ->values();
         $learningQuests = $tasks
@@ -600,7 +589,7 @@ class StudentDashboardController extends Controller
         $hasActiveProjectChallenge = ProjectChallenge::query()
             ->where('user_id', $user->id)
             ->whereIn('review_status', ['pending_review', 'approved'])
-            ->whereDoesntHave('submissions', fn ($query) => $query->where('status', 'accepted'))
+            ->whereDoesntHave('submissions', fn($query) => $query->where('status', 'accepted'))
             ->exists();
         $today = now()->toDateString();
         $hasProjectChallengeToday = ProjectChallenge::query()
@@ -612,7 +601,7 @@ class StudentDashboardController extends Controller
             $previousChallenges = ProjectChallenge::query()
                 ->where('user_id', $user->id)
                 ->get(['title', 'project_brief'])
-                ->map(fn (ProjectChallenge $challenge) => [
+                ->map(fn(ProjectChallenge $challenge) => [
                     'title' => $challenge->title,
                     'project_brief' => $challenge->project_brief,
                 ])
@@ -637,7 +626,7 @@ class StudentDashboardController extends Controller
                     $alreadyHasActiveChallenge = ProjectChallenge::query()
                         ->where('user_id', $user->id)
                         ->whereIn('review_status', ['pending_review', 'approved'])
-                        ->whereDoesntHave('submissions', fn ($query) => $query->where('status', 'accepted'))
+                        ->whereDoesntHave('submissions', fn($query) => $query->where('status', 'accepted'))
                         ->exists();
                     $alreadyCreatedToday = ProjectChallenge::query()
                         ->where('user_id', $user->id)
@@ -673,10 +662,10 @@ class StudentDashboardController extends Controller
         }
 
         $projectChallenge = ProjectChallenge::query()
-            ->with(['submissions' => fn ($query) => $query->orderByDesc('id')])
+            ->with(['submissions' => fn($query) => $query->orderByDesc('id')])
             ->where('user_id', $user->id)
             ->whereIn('review_status', ['pending_review', 'approved'])
-            ->whereDoesntHave('submissions', fn ($query) => $query->where('status', 'accepted'))
+            ->whereDoesntHave('submissions', fn($query) => $query->where('status', 'accepted'))
             ->latest()
             ->first();
 
@@ -758,9 +747,9 @@ class StudentDashboardController extends Controller
                 : $materialProgression->nextForInterests($user->id, $interests);
             $dailyMissionProgress = $dailyMissionMaterial
                 ? LearningMaterialProgress::query()
-                    ->where('user_id', $user->id)
-                    ->where('learning_material_id', $dailyMissionMaterial->id)
-                    ->first()
+                ->where('user_id', $user->id)
+                ->where('learning_material_id', $dailyMissionMaterial->id)
+                ->first()
                 : null;
 
             if ($dailyMissionTask) {
@@ -771,10 +760,10 @@ class StudentDashboardController extends Controller
                 $dailyMissionAction = 'Start quest';
             } elseif ($dailyMissionMaterial) {
                 $dailyMissionTitle = $dailyMissionProgress?->completed_at
-                    ? 'Take the quiz: '.$dailyMissionMaterial->title
+                    ? 'Take the quiz: ' . $dailyMissionMaterial->title
                     : ($dailyMissionProgress?->started_at
-                        ? 'Continue lesson: '.$dailyMissionMaterial->title
-                        : 'Start lesson: '.$dailyMissionMaterial->title);
+                        ? 'Continue lesson: ' . $dailyMissionMaterial->title
+                        : 'Start lesson: ' . $dailyMissionMaterial->title);
                 $dailyMissionDescription = $dailyMissionProgress?->completed_at
                     ? 'Pass the lesson quiz with at least 70% to unlock the next level.'
                     : 'Complete this interest-matched lesson, then pass its quiz to unlock the next level.';
@@ -873,11 +862,11 @@ class StudentDashboardController extends Controller
 
                 return $game instanceof Game
                     && strtolower(trim((string) $task->game_type))
-                        === strtolower(trim((string) $game->game_type))
+                    === strtolower(trim((string) $game->game_type))
                     && strtolower(trim((string) $task->category))
-                        === strtolower(trim((string) $game->category));
+                    === strtolower(trim((string) $game->category));
             })
-            ->map(fn (LearningTask $task) => (int) $task->game_id.':'.strtolower(trim($task->title)))
+            ->map(fn(LearningTask $task) => (int) $task->game_id . ':' . strtolower(trim($task->title)))
             ->all();
 
         return LearningTask::query()
@@ -892,11 +881,11 @@ class StudentDashboardController extends Controller
 
                 return $game instanceof Game
                     && strtolower(trim((string) $task->game_type))
-                        === strtolower(trim($game->game_type))
+                    === strtolower(trim($game->game_type))
                     && strtolower(trim((string) $task->category))
-                        === strtolower(trim((string) $game->category))
+                    === strtolower(trim((string) $game->category))
                     && ! in_array(
-                        (int) $task->game_id.':'.strtolower(trim($task->title)),
+                        (int) $task->game_id . ':' . strtolower(trim($task->title)),
                         $completedTitleKeys,
                         true
                     );
@@ -928,11 +917,11 @@ class StudentDashboardController extends Controller
 
                 return $game instanceof Game
                     && strtolower(trim((string) $task->game_type))
-                        === strtolower(trim((string) $game->game_type))
+                    === strtolower(trim((string) $game->game_type))
                     && strtolower(trim((string) $task->category))
-                        === strtolower(trim((string) $game->category));
+                    === strtolower(trim((string) $game->category));
             })
-            ->map(fn (LearningTask $task) => (int) $task->game_id.':'.strtolower(trim($task->title)))
+            ->map(fn(LearningTask $task) => (int) $task->game_id . ':' . strtolower(trim($task->title)))
             ->all();
 
         if ($completedTitleKeys === []) {
@@ -949,11 +938,11 @@ class StudentDashboardController extends Controller
 
                 return $game instanceof Game
                     && strtolower(trim((string) $task->game_type))
-                        === strtolower(trim((string) $game->game_type))
+                    === strtolower(trim((string) $game->game_type))
                     && strtolower(trim((string) $task->category))
-                        === strtolower(trim((string) $game->category))
+                    === strtolower(trim((string) $game->category))
                     && in_array(
-                        (int) $task->game_id.':'.strtolower(trim($task->title)),
+                        (int) $task->game_id . ':' . strtolower(trim($task->title)),
                         $completedTitleKeys,
                         true
                     );
